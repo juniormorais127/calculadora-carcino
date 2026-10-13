@@ -183,7 +183,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
         </div>
 
         {/* Sub-Tabs de Assuntos Direcionados */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-4 mt-3 border-t border-slate-200 no-scrollbar">
+        <div className="flex flex-wrap items-center gap-2 pt-4 mt-3 border-t border-slate-200">
           <button
             onClick={() => setSubTab("racao")}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
@@ -242,6 +242,66 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
           >
             <Sparkles className="w-4 h-4" />
             <span>Povoamento & Metas</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("calibre")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              subTab === "calibre"
+                ? "bg-lime-500 text-slate-950 shadow-sm "
+                : "bg-slate-50 text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Scale className="w-4 h-4" />
+            <span>Calibre & Despesca</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("crescimento")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              subTab === "crescimento"
+                ? "bg-emerald-600 text-white shadow-sm "
+                : "bg-slate-50 text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Crescimento & Índices</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("ionico")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              subTab === "ionico"
+                ? "bg-cyan-500 text-slate-950 shadow-sm "
+                : "bg-slate-50 text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Atom className="w-4 h-4" />
+            <span>Balanço Iônico</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("aeracao")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              subTab === "aeracao"
+                ? "bg-indigo-600 text-white shadow-sm "
+                : "bg-slate-50 text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Wind className="w-4 h-4" />
+            <span>Aeração & Sistema</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("bioflocos")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              subTab === "bioflocos"
+                ? "bg-violet-600 text-white shadow-sm "
+                : "bg-slate-50 text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Leaf className="w-4 h-4" />
+            <span>Bioflocos (C:N)</span>
           </button>
         </div>
       </div>
@@ -909,6 +969,45 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
             </div>
           </div>
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* ABA 6: CALIBRE COMERCIAL & DESPESCA                            */}
+      {/* ============================================================== */}
+      {subTab === "calibre" && (
+        <CalcCalibre
+          viveiroAtual={viveiroAtual}
+          bioAtual={bioAtual}
+          biometriasDoViveiro={biometriasDoViveiro}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* ABA 7: CRESCIMENTO & ÍNDICES ZOOTÉCNICOS                        */}
+      {/* ============================================================== */}
+      {subTab === "crescimento" && (
+        <CalcCrescimento viveiroAtual={viveiroAtual} bioAtual={bioAtual} />
+      )}
+
+      {/* ============================================================== */}
+      {/* ABA 8: BALANÇO IÔNICO (ÁGUA DE BAIXA SALINIDADE)               */}
+      {/* ============================================================== */}
+      {subTab === "ionico" && (
+        <CalcIonico viveiroAtual={viveiroAtual} aguaAtual={aguaAtual} />
+      )}
+
+      {/* ============================================================== */}
+      {/* ABA 9: AERAÇÃO & SISTEMA DE CULTIVO                            */}
+      {/* ============================================================== */}
+      {subTab === "aeracao" && (
+        <CalcAeracao viveiroAtual={viveiroAtual} />
+      )}
+
+      {/* ============================================================== */}
+      {/* ABA 10: BIOFLOCOS E RELAÇÃO C:N                                */}
+      {/* ============================================================== */}
+      {subTab === "bioflocos" && (
+        <CalcBioflocos viveiroAtual={viveiroAtual} bioAtual={bioAtual} aguaAtual={aguaAtual} />
       )}
     </div>
   );

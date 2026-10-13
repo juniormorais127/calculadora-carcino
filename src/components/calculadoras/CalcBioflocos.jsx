@@ -10,6 +10,7 @@ import {
   FaixaAutomatica,
   CartaoResultado,
   CartaoSaida,
+  PainelInterno,
   DicaTecnica
 } from "./CalculadoraUI.jsx";
 
@@ -54,12 +55,12 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div className="lg:col-span-5 bg-slate-800/80 border border-slate-700/80 rounded-3xl p-5 shadow-lg space-y-4">
-        <TituloEntrada icone={Leaf} titulo="Sistema de bioflocos / troca zero" cor="amber" auto={bioAtual ? "Auto (do Viveiro)" : null} />
+      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+        <TituloEntrada icone={Leaf} titulo="Bioflocos / troca zero" cor="violet" auto={bioAtual ? "Auto (do Viveiro)" : null} />
 
         {(bioAtual || aguaAtual) && (
           <FaixaAutomatica
-            cor="amber"
+            cor="violet"
             rotulo="Ração diária sugerida pelo cálculo zootécnico:"
             itens={[
               { rotulo: "Biomassa", valor: `${bioAtual?.biomassaKg || 0} kg` },
@@ -76,7 +77,7 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
             valor={racaoDiariaKg}
             onChange={setRacaoDiariaKg}
             step="1"
-            cor="amber"
+            cor="violet"
             ajuda="Pode ajustar sobre a sugestão automática."
           />
           <CampoNumero
@@ -84,7 +85,7 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
             valor={proteinaBrutaPercent}
             onChange={setProteinaBrutaPercent}
             step="0.5"
-            cor="amber"
+            cor="violet"
             ajuda="A ração é a principal fonte de nitrogênio do sistema."
           />
           <CampoSelect
@@ -92,27 +93,27 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
             valor={alvoCN}
             onChange={(v) => setAlvoCN(Number(v))}
             opcoes={OPCOES_CN}
-            cor="amber"
+            cor="violet"
           />
           <CampoSelect
             label="Fonte de carbono"
             valor={fonteCarbono}
             onChange={setFonteCarbono}
             opcoes={FONTES_CARBONO_BFT.map(f => ({ valor: f.fonte, rotulo: `${f.fonte} (${f.carbonoPercent}% C)` }))}
-            cor="amber"
+            cor="violet"
             ajuda={fonte.observacao}
           />
         </div>
       </div>
 
       <div className="lg:col-span-7 space-y-4">
-        <CartaoSaida titulo="Demanda diária de carbono" cor="amber">
+        <CartaoSaida titulo="Demanda diária de carbono" cor="violet">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CartaoResultado
               titulo={`${fonte.fonte} por dia`}
               valor={resultado.fonteNecessariaKgDia || "0"}
               unidade="kg/dia"
-              cor="amber"
+              cor="violet"
               detalhe={
                 resultado.percentualDaRacao > 0
                   ? `Equivale a ${resultado.percentualDaRacao}% da ração ofertada`
@@ -129,36 +130,35 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-            <div className="bg-slate-950/70 p-3 rounded-2xl border border-amber-500/20">
-              <div className="text-[11px] text-slate-400 font-medium">Carbono da ração</div>
-              <div className="text-lg font-black text-white">{resultado.carbonoRacaoKgDia} kg/dia</div>
+            <div className="bg-slate-50 p-3 rounded-2xl border border-violet-500/20">
+              <div className="text-[11px] text-slate-600 font-medium">Carbono da ração</div>
+              <div className="text-lg font-semibold text-slate-900">{resultado.carbonoRacaoKgDia} kg/dia</div>
             </div>
-            <div className="bg-slate-950/70 p-3 rounded-2xl border border-amber-500/20">
-              <div className="text-[11px] text-slate-400 font-medium">Carbono faltante</div>
-              <div className="text-lg font-black text-amber-400">{resultado.carbonoFaltanteKgDia} kg/dia</div>
+            <div className="bg-slate-50 p-3 rounded-2xl border border-violet-500/20">
+              <div className="text-[11px] text-slate-600 font-medium">Carbono faltante</div>
+              <div className="text-lg font-semibold text-violet-700">{resultado.carbonoFaltanteKgDia} kg/dia</div>
             </div>
-            <div className="bg-slate-950/70 p-3 rounded-2xl border border-amber-500/20">
-              <div className="text-[11px] text-slate-400 font-medium">Bicarbonato (sistema nitrificante)</div>
-              <div className="text-lg font-black text-white">{resultado.bicarbonatoKgDia} kg/dia</div>
+            <div className="bg-slate-50 p-3 rounded-2xl border border-violet-500/20">
+              <div className="text-[11px] text-slate-600 font-medium">Bicarbonato (sistema nitrificante)</div>
+              <div className="text-lg font-semibold text-slate-900">{resultado.bicarbonatoKgDia} kg/dia</div>
             </div>
           </div>
 
-          <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-xs text-slate-200 space-y-1">
-            <div className="font-bold text-amber-300">Como aplicar:</div>
+          <PainelInterno titulo="Como aplicar:" cor="violet">
             <p>{resultado.observacao}</p>
             {resultado.conferenciaPratica && (
-              <p className="text-slate-400 text-[11px]">
+              <p className="text-[11px] text-slate-600">
                 Conferência de campo ({resultado.conferenciaPratica.referencia}): cerca de{" "}
                 <b>{resultado.conferenciaPratica.valorKgDia} kg/dia</b> para esta oferta de ração.
               </p>
             )}
-          </div>
+          </PainelInterno>
 
-          <details className="bg-slate-950/60 rounded-2xl border border-slate-800 p-3">
-            <summary className="text-[11px] font-bold text-slate-300 cursor-pointer">
+          <details className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
+            <summary className="text-[11px] font-bold text-slate-700 cursor-pointer">
               Premissas do cálculo
             </summary>
-            <ul className="mt-2 space-y-1 text-[11px] text-slate-400 list-disc list-inside">
+            <ul className="mt-2 space-y-1 text-[11px] text-slate-600 list-disc list-inside">
               {resultado.premissas.map((p) => (
                 <li key={p}>{p}</li>
               ))}
@@ -167,7 +167,7 @@ export default function CalcBioflocos({ viveiroAtual, bioAtual, aguaAtual }) {
         </CartaoSaida>
 
         <DicaTecnica
-          cor="amber"
+          cor="violet"
           titulo="Carbono derruba oxigênio."
           texto="Aplicar sempre fracionado ao longo do dia, com aeração ligada e pela manhã. Ao aparecer nitrato, reduza a fonte de carbono aos poucos até parar: o sistema passou de heterotrófico para nitrificante e o bicarbonato passa a ser o insumo crítico (0,25 kg por kg de ração)."
         />

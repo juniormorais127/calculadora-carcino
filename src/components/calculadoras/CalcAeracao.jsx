@@ -9,6 +9,7 @@ import {
   FaixaAutomatica,
   CartaoResultado,
   CartaoSaida,
+  PainelInterno,
   DicaTecnica
 } from "./CalculadoraUI.jsx";
 
@@ -27,7 +28,7 @@ export default function CalcAeracao({ viveiroAtual }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div className="lg:col-span-5 bg-slate-800/80 border border-slate-700/80 rounded-3xl p-5 shadow-lg space-y-4">
+      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
         <TituloEntrada icone={Wind} titulo="Estrutura do viveiro" cor="indigo" auto={viveiroAtual ? "Auto (do Viveiro)" : null} />
 
         {viveiroAtual && (
@@ -44,7 +45,15 @@ export default function CalcAeracao({ viveiroAtual }) {
         )}
 
         <div className="space-y-3.5">
-          <CampoNumero label="Área do viveiro" valor={areaM2} onChange={setAreaM2} step="100" sufixo="m²" cor="indigo" ajuda={`${(areaM2 / 10000).toFixed(2)} hectares`} />
+          <CampoNumero
+            label="Área do viveiro"
+            valor={areaM2}
+            onChange={setAreaM2}
+            step="100"
+            sufixo="m²"
+            cor="indigo"
+            ajuda={`${(areaM2 / 10000).toFixed(2)} hectares`}
+          />
           <CampoNumero
             label="Densidade de povoamento"
             valor={densidadeM2}
@@ -52,7 +61,7 @@ export default function CalcAeracao({ viveiroAtual }) {
             step="0.5"
             sufixo="cam/m²"
             cor="indigo"
-            ajuda="Densidade define o sistema e a demanda de aeração."
+            ajuda="A densidade define o sistema e a demanda de aeração."
           />
           <CampoSelect
             label="Tipo de aerador"
@@ -85,20 +94,19 @@ export default function CalcAeracao({ viveiroAtual }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-950/70 p-4 rounded-2xl border border-indigo-500/20">
-              <div className="text-xs text-slate-400 font-medium">Regime de operação</div>
-              <div className="text-lg font-black text-white mt-1">{resultado.regimeAeracao || "—"}</div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
+              <div className="text-xs text-slate-600 font-medium">Regime de operação</div>
+              <div className="text-lg font-semibold text-slate-900 mt-1">{resultado.regimeAeracao || "—"}</div>
             </div>
-            <div className="bg-slate-950/70 p-4 rounded-2xl border border-indigo-500/20">
-              <div className="text-xs text-slate-400 font-medium">Produtividade esperada do sistema</div>
-              <div className="text-sm font-black text-white mt-1">{resultado.produtividadeKgHaCiclo || "—"}</div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
+              <div className="text-xs text-slate-600 font-medium">Produtividade esperada do sistema</div>
+              <div className="text-sm font-bold text-slate-900 mt-1">{resultado.produtividadeKgHaCiclo || "—"}</div>
             </div>
           </div>
 
-          <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-xs text-slate-200 space-y-1">
-            <div className="font-bold text-indigo-300">Manejo recomendado:</div>
+          <PainelInterno titulo="Manejo recomendado:" cor="indigo">
             <p>{resultado.observacao}</p>
-          </div>
+          </PainelInterno>
         </CartaoSaida>
 
         <DicaTecnica

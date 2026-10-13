@@ -1,5 +1,5 @@
 import React from "react";
-import { RefreshCw, AlertCircle, Info, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertCircle, Info } from "lucide-react";
 
 // Classes literais por cor: o Tailwind 4 faz varredura estática do código-fonte,
 // então nada de montar classe por interpolação de string.
@@ -86,11 +86,13 @@ const CORES_STATUS = {
   slate: "cyan"
 };
 
-export function corDoStatus(cor) {
+// Status vindo dos serviços (emerald/amber/rose/slate...) -> entrada de CORES
+function corDoStatus(cor) {
   return CORES[CORES_STATUS[cor] || "emerald"];
 }
 
-export function corDaPaleta(cor) {
+// Aceita tanto um nome de paleta quanto um status de serviço
+function corDaPaleta(cor) {
   return CORES[CORES_STATUS[cor] || cor] || CORES.emerald;
 }
 
@@ -183,9 +185,13 @@ export function CartaoResultado({ titulo, valor, unidade, detalhe, cor = "emeral
   return (
     <div className={`bg-slate-50 p-4 rounded-2xl border ${c.bordaTile}`}>
       <div className="text-xs text-slate-600 font-medium">{titulo}</div>
-      <div className={`text-3xl font-semibold mt-1 ${c.texto}`}>
-        {valor} {unidade && <span className="text-base text-slate-900 font-bold">{unidade}</span>}
-      </div>
+      {valor ? (
+        <div className={`text-3xl font-semibold mt-1 ${c.texto}`}>
+          {valor} {unidade && <span className="text-base text-slate-900 font-bold">{unidade}</span>}
+        </div>
+      ) : (
+        <div className="text-lg font-semibold mt-1 text-slate-400">sem dados ainda</div>
+      )}
       {selo && <div className={`text-[11px] font-black mt-0.5 ${c.texto}`}>{selo}</div>}
       {detalhe && <div className="text-[11px] text-slate-600 mt-1">{detalhe}</div>}
       {rodape}
@@ -284,16 +290,6 @@ export function LinhaLeitura({ titulo, subtitulo, valor, valorDetalhe, cor = "em
         <div className={`text-base font-semibold ${c.texto}`}>{valor}</div>
         {valorDetalhe && <div className="text-[11px] font-bold text-slate-600">{valorDetalhe}</div>}
       </div>
-    </div>
-  );
-}
-
-/** Selo de validação para resultados dentro do esperado. */
-export function SeloOk({ texto }) {
-  return (
-    <div className="text-[11px] mt-1 flex items-center gap-1 font-semibold text-emerald-700">
-      <CheckCircle2 className="w-3.5 h-3.5" />
-      {texto}
     </div>
   );
 }

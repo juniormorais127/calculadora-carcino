@@ -40,7 +40,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @media (max-width: 767px) {
   input, select, textarea { font-size: 16px !important; }
-  main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  main { padding-bottom: 1.5rem; }
   select { min-width: 0; max-width: 100%; }
 }
 

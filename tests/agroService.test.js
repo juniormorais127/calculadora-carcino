@@ -133,6 +133,16 @@ test("correção iônica", async (t) => {
     assert.ok(r.alertas.some(a => /dose elevada/i.test(a)), "deveria alertar sobre dose elevada");
   });
 
+  await t.test("avisa quando os íons medidos não batem com a salinidade", () => {
+    // 22 ppt com Ca/Mg/K de água doce é perfil fisicamente inconsistente
+    const r = calcularBalancoIonico({ volumeM3: 12000, calcio: 30, magnesio: 25, potassio: 12, sodio: 6699, salinidadePpt: 22 });
+    assert.ok(r.alertas.some(a => /muito abaixo do esperado/i.test(a)), "deveria avisar sobre incoerência");
+
+    // Água doce (sal baixa) não dispara esse aviso: ali o piso prático é que manda
+    const aguaDoce = calcularBalancoIonico({ volumeM3: 12000, calcio: 20, magnesio: 25, potassio: 12, sodio: 400, salinidadePpt: 1 });
+    assert.equal(aguaDoce.alertas.some(a => /muito abaixo do esperado/i.test(a)), false);
+  });
+
   await t.test("água equilibrada não gera produtos nem alerta de dose", () => {
     // A 5 ppt o alvo de Mg sobe para 195 mg/L (5 × 39,1), então 200 mg/L fecha a conta
     const r = calcularBalancoIonico({ volumeM3: 10000, calcio: 60, magnesio: 200, potassio: 55, sodio: 1500, salinidadePpt: 5 });

@@ -10,8 +10,7 @@ import {
   CartaoSaida,
   PainelInterno,
   DicaTecnica,
-  LinhaIndicador,
-  corDoStatus
+  LinhaIndicador
 } from "./CalculadoraUI.jsx";
 
 const DIAS_MS = 86400000;
@@ -65,8 +64,6 @@ export default function CalcCrescimento({ viveiroAtual, bioAtual }) {
     },
     metaProdutividade ? { produtividadeKgHaCiclo: metaProdutividade } : {}
   );
-
-  const corCrescimento = corDoStatus(crescimento.cor);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -126,7 +123,7 @@ export default function CalcCrescimento({ viveiroAtual, bioAtual }) {
             />
           </div>
 
-          <PainelInterno titulo="Diagnóstico do crescimento:" cor={corCrescimento === undefined ? "emerald" : undefined}>
+          <PainelInterno titulo="Diagnóstico do crescimento:">
             <p>{crescimento.orientacao}</p>
           </PainelInterno>
 

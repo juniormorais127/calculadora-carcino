@@ -17,13 +17,18 @@ async function expectNoOverflow(page) {
 }
 
 for (const size of sizes) {
-  test(`pages fit ${size.width}x${size.height}`, async ({ page }) => {
+  test(`pages fit ${size.width}x${size.height}`, async ({ page, browserName }, testInfo) => {
     await page.setViewportSize(size);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/');
+    await page.goto('./');
     await expect(page.getByText('Carregando banco de dados local...')).toBeHidden();
     const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
+    await nav.getByRole('button', { name: 'Ajustes', exact: true }).click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Carregar Dados de Exemplo' }).click();
+    await nav.getByRole('button', { name: 'Viveiros', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Viveiro 01 - Engorda Principal' })).toBeVisible();
     for (const name of ['Painel', 'Viveiros', 'Biometria', 'Água', 'Cálculos', 'Sanidade & BPM', 'Ajustes']) {
       await nav.getByRole('button', { name, exact: true }).click();
       await expectNoOverflow(page);
@@ -57,5 +62,10 @@ for (const size of sizes) {
       }
     }
     expect(errors).toEqual([]);
+    if (browserName === 'chromium' && [320, 1440].includes(size.width)) {
+      await nav.getByRole('button', { name: 'Painel', exact: true }).click();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' });
+    }
   });
 }

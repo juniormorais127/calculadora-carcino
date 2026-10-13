@@ -361,6 +361,24 @@ export function calcularBalancoIonico({
 
   // Alertas de viabilidade: corrigir Mg em volume grande é caro e pede fracionamento
   const alertas = [];
+
+  // Coerência entre a salinidade e os íons medidos: água do mar diluída em X ppt
+  // tem um mínimo esperado de cada íon. Valores muito abaixo disso indicam que a
+  // salinidade e a análise podem ser de viveiros (ou datas) diferentes.
+  if (salinidade >= 5) {
+    const abaixo = [
+      { nome: "Cálcio", atual: ca, esperado: alvos.calcio.sec },
+      { nome: "Magnésio", atual: mg, esperado: alvos.magnesio.sec },
+      { nome: "Potássio", atual: k, esperado: alvos.potassio.sec }
+    ].filter(i => i.esperado > 0 && i.atual > 0 && i.atual < i.esperado * 0.4);
+
+    if (abaixo.length > 0) {
+      alertas.push(
+        `${abaixo.map(i => i.nome).join(", ")} muito abaixo do esperado para ${arredondar(salinidade, 1)} ppt (água do mar diluída). Antes de comprar corretivo, confirme se a salinidade e a análise iônica são do mesmo viveiro e da mesma data — corrigir um perfil inconsistente desperdiça produto.`
+      );
+    }
+  }
+
   const maiorDose = produtos.reduce((maior, p) => (p.doseKg > maior.doseKg ? p : maior), { doseKg: 0 });
   if (maiorDose.doseKg >= 1000) {
     alertas.push(

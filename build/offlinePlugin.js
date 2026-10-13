@@ -26,7 +26,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(() => caches.open(CACHE).then(cache => cache.match(BASE + 'index.html'))));
   } else if (FILES.some(file => url.pathname === BASE + file)) {
-    event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(request)) || fetch(request)));
+    event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname, { ignoreVary: true })) || fetch(request)));
   }
 });
 ` });

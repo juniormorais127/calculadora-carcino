@@ -5,3 +5,5 @@ dist
 *.log
 test-results/
 playwright-report/
+capturas/
+e2e/_screenshot-temp.spec.js

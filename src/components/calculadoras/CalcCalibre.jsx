@@ -152,7 +152,7 @@ export default function CalcCalibre({ viveiroAtual, bioAtual, biometriasDoViveir
             />
             <CartaoResultado
               titulo="Dias até o peso alvo"
-              valor={projecao.diasEstimados || "—"}
+              valor={projecao.diasEstimados || null}
               unidade={projecao.diasEstimados ? "dias" : ""}
               cor={corProjecao}
               detalhe={
@@ -171,14 +171,14 @@ export default function CalcCalibre({ viveiroAtual, bioAtual, biometriasDoViveir
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CartaoResultado
               titulo="Conversão alimentar (FCA)"
-              valor={fca.fca || "—"}
+              valor={fca.fca || null}
               unidade={fca.fca ? "kg/kg" : ""}
               cor={fca.cor === "slate" ? "cyan" : fca.cor}
               detalhe={fca.orientacao}
             />
             <CartaoResultado
               titulo="Custo por kg produzido"
-              valor={custo.custoPorKg ? custo.custoPorKg.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+              valor={custo.custoPorKg ? custo.custoPorKg.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null}
               cor="amber"
               detalhe={
                 custo.custoTotal > 0
