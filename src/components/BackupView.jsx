@@ -21,8 +21,25 @@ export default function BackupView({
     setLocalizacao(farmProfile?.localizacao || "Litoral");
   }, [farmProfile]);
 
-  const handleExportarPdf = () => {
+  const handleExportarPdf = async () => {
     try {
+      if (farmProfile?.id) {
+        await db.configuracoes.update(farmProfile.id, {
+          nomeFazenda,
+          produtor,
+          localizacao,
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        await db.configuracoes.add({
+          chave: "perfilFazenda",
+          nomeFazenda,
+          produtor,
+          localizacao,
+          createdAt: new Date().toISOString()
+        });
+      }
+
       gerarRelatorioFazendaPdf({
         farmProfile: {
           nomeFazenda,
@@ -34,8 +51,9 @@ export default function BackupView({
         qualidadeAgua,
         baixar: true
       });
-      setMensagem("Relatório da fazenda em PDF gerado e baixado com sucesso!");
+      setMensagem("Dados salvos e Relatório da Fazenda em PDF baixado com sucesso!");
       setTimeout(() => setMensagem(""), 4000);
+      onReload?.();
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
       alert("Não foi possível gerar o PDF: " + err.message);
