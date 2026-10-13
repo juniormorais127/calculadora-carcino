@@ -10,11 +10,8 @@ export default function Header({ farmProfile }) {
             <Waves className="w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
               CarcinoGestão
-              <span className="text-xs bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">
-                Gratuito
-              </span>
             </h1>
             <p className="text-xs text-slate-600 font-medium break-words">
               {farmProfile?.nomeFazenda || "Gestão simples para sua produção"}

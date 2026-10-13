@@ -114,7 +114,7 @@ export default function Dashboard({
               Visão geral
             </h2>
             <p className="text-sm text-slate-700 mt-1 max-w-xl">
-              Acompanhe viveiros, crescimento e qualidade da água. Gratuito, sem cadastro e com os registros salvos no seu aparelho.
+              Acompanhe viveiros, crescimento e qualidade da água. Seus registros ficam salvos com segurança no seu aparelho.
             </p>
           </div>
 

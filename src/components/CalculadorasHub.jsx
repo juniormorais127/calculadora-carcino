@@ -223,22 +223,8 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
           </div>
         </div>
 
-        {/* Dropdown Rápido para Mobile */}
-        <div className="sm:hidden mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 min-w-0">
-          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Opção ativa:</span>
-          <select
-            value={subTab}
-            onChange={(e) => mudarCalculadora(e.target.value)}
-            className="flex-1 min-w-0 bg-slate-50 text-slate-900 font-black text-xs rounded-xl px-3 py-2 border border-slate-200 focus:outline-none focus:border-emerald-500 truncate"
-          >
-            {CALCULADORAS.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-
         {/* Carrossel de Abas / Pílulas Horizontais (Mobile desliza com dedo; Desktop quebra em chips) */}
-        <div className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth snap-x flex gap-2 pt-3 mt-2 sm:mt-3 border-t sm:border-t-0 border-slate-100 sm:border-transparent sm:flex-wrap">
+        <div className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth snap-x flex gap-2 pt-3 mt-3 border-t border-slate-100 sm:flex-wrap">
           {CALCULADORAS.map((calc) => {
             const Icone = calc.icon;
             const isAtivo = subTab === calc.id;

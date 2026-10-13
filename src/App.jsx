@@ -148,7 +148,7 @@ export default function App() {
         )}
       </main>
       <footer className="site-footer max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 text-xs text-slate-500 flex flex-wrap justify-between gap-2 border-t border-slate-200">
-        <span>CarcinoGestão · Gratuito para produtores de camarão</span>
+        <span>CarcinoGestão · Gestão para produtores de camarão</span>
         <span>Seus registros ficam neste navegador. Faça backups em Ajustes.</span>
       </footer>
     </div>
