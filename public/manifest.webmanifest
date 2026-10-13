@@ -1,0 +1,12 @@
+{
+  "name": "CarcinoGestão — Gestão para produtores de camarão",
+  "short_name": "CarcinoGestão",
+  "description": "Viveiros, biometria, qualidade da água e biossegurança. Gratuito e com dados no seu aparelho.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#047857",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -103,25 +103,26 @@ export default function Dashboard({
   return (
     <div className="space-y-6 pb-20 md:pb-8">
       {/* Top Banner & Quick Actions */}
-      <div className="bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-800/40 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 mb-2">
               <TrendingUp className="w-3.5 h-3.5" />
-              Monitoramento Ativo em Campo
+              Sua produção, em um só lugar
             </span>
-            <h2 className="text-xl md:text-2xl font-black text-white">
-              Painel Geral de Carcinicultura
+            <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+              Visão geral
             </h2>
-            <p className="text-sm text-slate-300 mt-1 max-w-xl">
-              Dados salvos localmente no seu aparelho. Cálculos de arraçoamento, biometria e qualidade de água atualizados.
+            <p className="text-sm text-slate-700 mt-1 max-w-xl">
+              Acompanhe viveiros, crescimento e qualidade da água. Gratuito, sem cadastro e com os registros salvos no seu aparelho.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <button
               onClick={onOpenNewBiometria}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg shadow-emerald-700/30 transition-all active:scale-95"
+              disabled={viveiros.length === 0}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm  transition-all active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Biometria</span>
@@ -129,7 +130,8 @@ export default function Dashboard({
 
             <button
               onClick={onOpenNewAgua}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-lg shadow-cyan-700/30 transition-all active:scale-95"
+              disabled={viveiros.length === 0}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-sm  transition-all active:scale-95"
             >
               <Droplets className="w-4 h-4" />
               <span>+ Qualidade Água</span>
@@ -141,72 +143,72 @@ export default function Dashboard({
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Viveiros Ativos */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Viveiros Ativos</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+            <span className="text-xs font-semibold text-slate-600">Viveiros Ativos</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700">
               <Layers className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white">{viveirosAtivos.length}</div>
-            <div className="text-xs text-slate-400 mt-0.5">
+            <div className="text-2xl font-semibold text-slate-900">{viveirosAtivos.length}</div>
+            <div className="text-xs text-slate-600 mt-0.5">
               de {viveiros.length} cadastrados
             </div>
           </div>
         </div>
 
         {/* Card 2: Biomassa Total */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Biomassa Estimada</span>
-            <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400">
+            <span className="text-xs font-semibold text-slate-600">Biomassa Estimada</span>
+            <div className="p-2 rounded-xl bg-teal-500/10 text-teal-700">
               <Weight className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white">
+            <div className="text-2xl font-semibold text-slate-900">
               {totalBiomassaKg > 1000 
                 ? `${(totalBiomassaKg / 1000).toFixed(2)} ton`
                 : `${totalBiomassaKg.toFixed(0)} kg`}
             </div>
-            <div className="text-xs text-teal-400 font-medium mt-0.5">
+            <div className="text-xs text-teal-700 font-medium mt-0.5">
               Camarão em cultivo
             </div>
           </div>
         </div>
 
         {/* Card 3: Ração Diária Prevista */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Ração Hoje (Prev.)</span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+            <span className="text-xs font-semibold text-slate-600">Ração Hoje (Prev.)</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700">
               <Utensils className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white">
-              {totalRacaoHojeKg.toFixed(0)} <span className="text-sm font-semibold text-slate-400">kg/dia</span>
+            <div className="text-2xl font-semibold text-slate-900">
+              {totalRacaoHojeKg.toFixed(0)} <span className="text-sm font-semibold text-slate-600">kg/dia</span>
             </div>
-            <div className="text-xs text-amber-400 font-medium mt-0.5">
+            <div className="text-xs text-amber-700 font-medium mt-0.5">
               Soma de todos os viveiros
             </div>
           </div>
         </div>
 
         {/* Card 4: Peso Médio */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Peso Médio Geral</span>
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+            <span className="text-xs font-semibold text-slate-600">Peso Médio Geral</span>
+            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-700">
               <Fish className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white">
-              {pesoMedioGeral} <span className="text-sm font-semibold text-slate-400">g</span>
+            <div className="text-2xl font-semibold text-slate-900">
+              {pesoMedioGeral} <span className="text-sm font-semibold text-slate-600">g</span>
             </div>
-            <div className="text-xs text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-600 mt-0.5">
               Últimas biometrias
             </div>
           </div>
@@ -215,8 +217,8 @@ export default function Dashboard({
 
       {/* Alertas Críticos (se houver) */}
       {alertas.length > 0 && (
-        <div className="bg-slate-800/80 border border-amber-600/30 rounded-2xl p-4 shadow-md space-y-2.5">
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+        <div className="bg-white border border-amber-600/30 rounded-2xl p-4 shadow-sm space-y-2.5">
+          <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
             <AlertTriangle className="w-4 h-4" />
             <span>Atenção nos Viveiros ({alertas.length})</span>
           </div>
@@ -226,8 +228,8 @@ export default function Dashboard({
                 key={i} 
                 className={`text-xs p-2.5 rounded-xl flex items-center justify-between ${
                   a.tipo === "danger" 
-                    ? "bg-rose-950/40 text-rose-300 border border-rose-800/40" 
-                    : "bg-amber-950/40 text-amber-300 border border-amber-800/40"
+                    ? "bg-rose-50 text-rose-700 border border-rose-100" 
+                    : "bg-amber-50 text-amber-700 border border-amber-100"
                 }`}
               >
                 <div>
@@ -236,7 +238,7 @@ export default function Dashboard({
                 </div>
                 <button 
                   onClick={() => onNavigate("agua")}
-                  className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium text-[11px]"
+                  className="px-2 py-1 rounded bg-white hover:bg-slate-100 text-slate-900 font-medium text-[11px]"
                 >
                   Ver Água
                 </button>
@@ -249,13 +251,13 @@ export default function Dashboard({
       {/* Status dos Viveiros */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Layers className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-emerald-700" />
             Viveiros em Produção
           </h3>
           <button
             onClick={() => onNavigate("viveiros")}
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"
+            className="text-xs font-semibold text-emerald-700 hover:text-emerald-700 flex items-center gap-0.5"
           >
             <span>Ver todos</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -263,10 +265,10 @@ export default function Dashboard({
         </div>
 
         {viveiros.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-8 text-center space-y-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3">
             <Layers className="w-10 h-10 text-slate-500 mx-auto" />
-            <h4 className="text-base font-bold text-white">Nenhum viveiro cadastrado</h4>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <h4 className="text-base font-bold text-slate-900">Nenhum viveiro cadastrado</h4>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto">
               Cadastre seu primeiro viveiro com a área, data de povoamento e quantidade de pós-larvas para automatizar os cálculos.
             </p>
             <button
@@ -274,7 +276,7 @@ export default function Dashboard({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
             >
               <PlusCircle className="w-4 h-4" />
-              Cadastrar Primeiro Viveiro
+              Cadastrar primeiro viveiro
             </button>
           </div>
         ) : (
@@ -287,25 +289,25 @@ export default function Dashboard({
               return (
                 <div
                   key={v.id}
-                  className="bg-slate-800/70 border border-slate-700/70 hover:border-emerald-600/50 transition-all rounded-2xl p-4 flex flex-col justify-between gap-3"
+                  className="bg-white border border-slate-200 hover:border-emerald-600/50 transition-all rounded-2xl p-4 flex flex-col justify-between gap-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-bold text-white">{v.nome}</span>
+                        <span className="text-base font-bold text-slate-900">{v.nome}</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                           v.status === "ativo" 
-                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
-                            : "bg-slate-700 text-slate-300"
+                            ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30" 
+                    : "bg-slate-100 text-slate-700"
                         }`}>
                           {v.status}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-400 flex items-center gap-3 mt-1">
+                      <div className="text-xs text-slate-600 flex items-center gap-3 mt-1">
                         <span>Área: {(v.areaM2 / 10000).toFixed(2)} ha ({v.areaM2.toLocaleString()} m²)</span>
                         <span>•</span>
-                        <span className="flex items-center gap-1 text-slate-300">
-                          <Calendar className="w-3 h-3 text-slate-400" />
+                        <span className="flex items-center gap-1 text-slate-700">
+                          <Calendar className="w-3 h-3 text-slate-600" />
                           DOC: <b>{doc} dias</b>
                         </span>
                       </div>
@@ -313,36 +315,36 @@ export default function Dashboard({
                   </div>
 
                   {/* Resumo Rápido da Biometria e Água */}
-                  <div className="grid grid-cols-3 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 text-center">
+                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
                     <div>
-                      <div className="text-[10px] font-semibold text-slate-400 uppercase">Peso Atual</div>
-                      <div className="text-sm font-black text-emerald-400 mt-0.5">
+                      <div className="text-[10px] font-semibold text-slate-600 uppercase">Peso Atual</div>
+                      <div className="text-sm font-semibold text-emerald-700 mt-0.5">
                         {bio ? `${bio.pesoMedioG} g` : "Sem bio"}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-semibold text-slate-400 uppercase">Biomassa</div>
-                      <div className="text-sm font-black text-white mt-0.5">
+                      <div className="text-[10px] font-semibold text-slate-600 uppercase">Biomassa</div>
+                      <div className="text-sm font-semibold text-slate-900 mt-0.5">
                         {bio?.biomassaKg ? `${Math.round(bio.biomassaKg)} kg` : "--"}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-semibold text-slate-400 uppercase">Oxigênio</div>
-                      <div className={`text-sm font-black mt-0.5 ${
-                        !agua ? "text-slate-400" : (agua.oxigenio >= 4.0 ? "text-emerald-400" : "text-rose-400")
+                      <div className="text-[10px] font-semibold text-slate-600 uppercase">Oxigênio</div>
+                      <div className={`text-sm font-semibold mt-0.5 ${
+                        !agua ? "text-slate-600" : (agua.oxigenio >= 4.0 ? "text-emerald-700" : "text-rose-700")
                       }`}>
                         {agua ? `${agua.oxigenio} mg/L` : "--"}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-700/50">
-                    <span className="text-slate-400 text-[11px]">
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
+                    <span className="text-slate-600 text-[11px]">
                       {bio ? `Última biometria: ${bio.data}` : "Nenhuma biometria ainda"}
                     </span>
                     <button
                       onClick={() => onNavigate("calculadoras")}
-                      className="text-emerald-400 font-semibold hover:text-emerald-300 flex items-center gap-1"
+                      className="text-emerald-700 font-semibold hover:text-emerald-700 flex items-center gap-1"
                     >
                       Calcular Ração <ChevronRight className="w-3 h-3" />
                     </button>
