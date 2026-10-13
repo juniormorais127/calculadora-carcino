@@ -1,5 +1,8 @@
 # CarcinoGestão
 
+> 🚀 **Acesse o site online funcionando agora:**  
+> 👉 **[https://juniormorais127.github.io/calculadora-carcino/](https://juniormorais127.github.io/calculadora-carcino/)**
+
 Site gratuito para produtores de camarão, com interface adaptada a celulares, tablets e computadores. React, Tailwind CSS e IndexedDB (Dexie).
 
 ## Recursos
