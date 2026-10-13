@@ -1,0 +1,290 @@
+import React, { useState } from "react";
+import { Layers, Plus, Trash2, Edit3, Calendar, Droplets, Maximize2 } from "lucide-react";
+import { db } from "../services/db.js";
+
+export default function ViveirosList({ viveiros = [], onReload }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingViveiro, setEditingViveiro] = useState(null);
+
+  const [nome, setNome] = useState("");
+  const [areaM2, setAreaM2] = useState(10000);
+  const [profundidadeM, setProfundidadeM] = useState(1.2);
+  const [dataPovoamento, setDataPovoamento] = useState(new Date().toISOString().split("T")[0]);
+  const [qtdPovoada, setQtdPovoada] = useState(120000);
+  const [densidadePovoamento, setDensidadePovoamento] = useState(12);
+  const [status, setStatus] = useState("ativo");
+  const [observacoes, setObservacoes] = useState("");
+
+  const handleOpenModal = (v = null) => {
+    if (v) {
+      setEditingViveiro(v);
+      setNome(v.nome);
+      setAreaM2(v.areaM2);
+      setProfundidadeM(v.profundidadeM || 1.2);
+      setDataPovoamento(v.dataPovoamento);
+      setQtdPovoada(v.qtdPovoada || 100000);
+      setDensidadePovoamento(v.densidadePovoamento || 10);
+      setStatus(v.status || "ativo");
+      setObservacoes(v.observacoes || "");
+    } else {
+      setEditingViveiro(null);
+      setNome(`Viveiro 0${viveiros.length + 1}`);
+      setAreaM2(10000);
+      setProfundidadeM(1.2);
+      setDataPovoamento(new Date().toISOString().split("T")[0]);
+      setQtdPovoada(120000);
+      setDensidadePovoamento(12);
+      setStatus("ativo");
+      setObservacoes("");
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const vol = Number((Number(areaM2) * Number(profundidadeM)).toFixed(0));
+    const dens = Number(areaM2) > 0 ? Number((Number(qtdPovoada) / Number(areaM2)).toFixed(1)) : 0;
+
+    const dados = {
+      nome,
+      areaM2: Number(areaM2),
+      profundidadeM: Number(profundidadeM),
+      volumeM3: vol,
+      dataPovoamento,
+      qtdPovoada: Number(qtdPovoada),
+      densidadePovoamento: dens,
+      status,
+      observacoes,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (editingViveiro) {
+      await db.viveiros.update(editingViveiro.id, dados);
+    } else {
+      dados.createdAt = new Date().toISOString();
+      await db.viveiros.add(dados);
+    }
+
+    setIsModalOpen(false);
+    onReload();
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm("Deseja realmente excluir este viveiro? Suas medições também serão removidas.")) {
+      await db.viveiros.delete(id);
+      await db.biometrias.where("viveiroId").equals(id).delete();
+      await db.qualidadeAgua.where("viveiroId").equals(id).delete();
+      onReload();
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-20 md:pb-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
+            <Layers className="w-6 h-6 text-emerald-400" />
+            Gestão de Viveiros da Fazenda
+          </h2>
+          <p className="text-xs md:text-sm text-slate-300 mt-1">
+            Cadastre as dimensões e datas de povoamento para alimentar as calculadoras automáticas.
+          </p>
+        </div>
+
+        <button
+          onClick={() => handleOpenModal()}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Novo Viveiro</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {viveiros.map((v) => (
+          <div
+            key={v.id}
+            className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white">{v.nome}</h3>
+                  <div className="text-xs text-slate-400 mt-0.5">
+                    {(v.areaM2 / 10000).toFixed(2)} ha • {v.areaM2.toLocaleString()} m²
+                  </div>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                  v.status === "ativo" 
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                    : "bg-slate-700 text-slate-300"
+                }`}>
+                  {v.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-4 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Volume d'água</span>
+                  <span className="text-white font-black">{v.volumeM3?.toLocaleString()} m³</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Densidade</span>
+                  <span className="text-emerald-400 font-black">{v.densidadePovoamento || 10} cam/m²</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Povoamento</span>
+                  <span className="text-slate-200 font-bold">{v.dataPovoamento}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">PLs Estocadas</span>
+                  <span className="text-slate-200 font-bold">{v.qtdPovoada?.toLocaleString() || "--"}</span>
+                </div>
+              </div>
+
+              {v.observacoes && (
+                <p className="text-xs text-slate-400 mt-3 italic line-clamp-2">
+                  "{v.observacoes}"
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-700/60">
+              <button
+                onClick={() => handleOpenModal(v)}
+                className="p-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1 font-semibold"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editar</span>
+              </button>
+              <button
+                onClick={() => handleDelete(v.id)}
+                className="p-2 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs flex items-center gap-1 font-semibold border border-rose-800/40"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir</span>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal de Criação / Edição */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-emerald-400" />
+              {editingViveiro ? "Editar Viveiro" : "Cadastrar Novo Viveiro"}
+            </h3>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Nome / Identificação:</label>
+                <input
+                  type="text"
+                  required
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex: Viveiro 01 - Berçário"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold text-sm focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Área (m²):</label>
+                  <input
+                    type="number"
+                    required
+                    value={areaM2}
+                    onChange={(e) => setAreaM2(Number(e.target.value))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400">10.000 m² = 1 ha</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Profundidade Média (m):</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    required
+                    value={profundidadeM}
+                    onChange={(e) => setProfundidadeM(Number(e.target.value))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400">Padrão: 1.0 a 1.4 m</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Data de Povoamento:</label>
+                  <input
+                    type="date"
+                    required
+                    value={dataPovoamento}
+                    onChange={(e) => setDataPovoamento(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Quantidade de Pós-Larvas:</label>
+                  <input
+                    type="number"
+                    required
+                    value={qtdPovoada}
+                    onChange={(e) => setQtdPovoada(Number(e.target.value))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Status:</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold text-sm focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="ativo">Ativo (Em Cultivo)</option>
+                  <option value="preparo">Em Preparação / Calagem</option>
+                  <option value="despescado">Despescado (Vazio)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Observações:</label>
+                <textarea
+                  rows="2"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Histórico do viveiro, aeração, linhagem de PL..."
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-700/30"
+                >
+                  Salvar Viveiro
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
