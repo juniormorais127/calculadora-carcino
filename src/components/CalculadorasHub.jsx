@@ -15,6 +15,8 @@ import {
   Wind,
   Leaf,
   ChevronRight,
+  ChevronDown,
+  X,
   Store,
   ShoppingBag,
   BadgeCheck
@@ -51,21 +53,22 @@ import {
 import { AJUSTE_BANDEJAS_ALIMENTACAO } from "../data/carcinoData.js";
 
 const CALCULADORAS = [
-  { id: "racao", label: "Alimentação / Ração", shortLabel: "Ração", icon: FeedTrayIcon, cor: "amber" },
-  { id: "agua", label: "Tratamento de Água", shortLabel: "Água", icon: Droplets, cor: "cyan" },
-  { id: "solo", label: "Calagem de Solo", shortLabel: "Solo", icon: Sprout, cor: "emerald" },
-  { id: "amonia", label: "Amônia Tóxica (NH3)", shortLabel: "Amônia", icon: FlaskConical, cor: "rose" },
-  { id: "povoamento", label: "Povoamento & Metas", shortLabel: "Povoamento", icon: Sparkles, cor: "indigo" },
-  { id: "calibre", label: "Calibre & Despesca", shortLabel: "Calibre", icon: Scale, cor: "lime" },
-  { id: "crescimento", label: "Crescimento & Índices", shortLabel: "Crescimento", icon: TrendingUp, cor: "emerald" },
-  { id: "ionico", label: "Balanço Iônico", shortLabel: "Íons", icon: Atom, cor: "cyan" },
-  { id: "aeracao", label: "Aeração & Sistema", shortLabel: "Aeração", icon: Wind, cor: "indigo" },
-  { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", icon: Leaf, cor: "violet" },
+  { id: "racao", label: "Alimentação / Ração", shortLabel: "Ração", desc: "Taxa zootécnica, horários e bandejas", icon: FeedTrayIcon, cor: "amber" },
+  { id: "agua", label: "Tratamento de Água", shortLabel: "Água", desc: "Alcalinidade e bicarbonato", icon: Droplets, cor: "cyan" },
+  { id: "solo", label: "Calagem de Solo", shortLabel: "Solo", desc: "Calcário e probióticos de fundo", icon: Sprout, cor: "emerald" },
+  { id: "amonia", label: "Amônia Tóxica (NH3)", shortLabel: "Amônia", desc: "Fração letal em função do pH", icon: FlaskConical, cor: "rose" },
+  { id: "povoamento", label: "Povoamento & Metas", shortLabel: "Povoamento", desc: "Cálculo de PLs e biomassa final", icon: Sparkles, cor: "indigo" },
+  { id: "calibre", label: "Calibre & Despesca", shortLabel: "Calibre", desc: "Classificação comercial e despesca", icon: Scale, cor: "lime" },
+  { id: "crescimento", label: "Crescimento & Índices", shortLabel: "Crescimento", desc: "Curva zootécnica e ganho diário", icon: TrendingUp, cor: "emerald" },
+  { id: "ionico", label: "Balanço Iônico", shortLabel: "Íons", desc: "Ca, Mg, K e salinidade", icon: Atom, cor: "cyan" },
+  { id: "aeracao", label: "Aeração & Sistema", shortLabel: "Aeração", desc: "Cavalos de força e aeradores", icon: Wind, cor: "indigo" },
+  { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", desc: "Relação carbono/nitrogênio e melaço", icon: Leaf, cor: "violet" },
 ];
 
 export default function CalculadorasHub({ viveiros = [], biometrias = [], qualidadeAgua = [], onNavigate }) {
   const [subTab, setSubTab] = useState("racao");
   const [selectedViveiroId, setSelectedViveiroId] = useState("");
+  const [modalSelecaoMobileAberto, setModalSelecaoMobileAberto] = useState(false);
 
   // Mapas com os últimos dados
   const ultimaBiometriaPorViveiro = {};
@@ -217,6 +220,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   });
 
   const calAtualInfo = CALCULADORAS.find(c => c.id === subTab) || CALCULADORAS[0];
+  const IconeAtivo = calAtualInfo.icon;
 
   return (
     <div className="space-y-5 pb-20 md:pb-8">
@@ -252,8 +256,8 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
           </div>
         </div>
 
-        {/* Carrossel de Abas / Pílulas Horizontais (Mobile desliza com dedo; Desktop quebra em chips) */}
-        <div className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth snap-x flex gap-2 pt-3 mt-3 border-t border-slate-100 sm:flex-wrap">
+        {/* Versão Desktop / Tablet: Pílulas e Chips Horizontais Quebráveis (sem barra chata de arrastar) */}
+        <div className="hidden sm:flex sm:flex-wrap gap-2 pt-3 mt-3 border-t border-slate-100">
           {CALCULADORAS.map((calc) => {
             const Icone = calc.icon;
             const isAtivo = subTab === calc.id;
@@ -261,7 +265,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
               <button
                 key={calc.id}
                 onClick={() => mudarCalculadora(calc.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all snap-start flex-shrink-0 active:scale-95 shadow-2xs ${
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 shadow-2xs cursor-pointer ${
                   isAtivo
                     ? "bg-slate-900 text-white shadow-sm ring-2 ring-emerald-500/30"
                     : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80"
@@ -273,7 +277,121 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
             );
           })}
         </div>
+
+        {/* Versão Mobile (Tamanho celular): Botão interativo para clicar e abrir as 10 opções diretamente na tela */}
+        <div className="sm:hidden pt-3 mt-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setModalSelecaoMobileAberto(true)}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white font-bold text-xs shadow-md border border-slate-750 active:scale-98 transition-all cursor-pointer"
+            aria-label="Trocar calculadora (abrir opções)"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 rounded-xl bg-white/10 text-emerald-400 flex-shrink-0">
+                <IconeAtivo className="w-5 h-5" />
+              </div>
+              <div className="text-left min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    Calculadora Ativa
+                  </span>
+                  <span className="relative flex h-2 w-2">
+                    <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                </div>
+                <span className="text-sm font-black text-white truncate block mt-0.5">
+                  {calAtualInfo.label}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-xl text-xs font-black flex-shrink-0">
+              <span>Trocar</span>
+              <ChevronDown className="w-4 h-4" />
+            </div>
+          </button>
+        </div>
       </div>
+
+      {/* Modal / Bottom Sheet de Seleção de Calculadoras para Celular */}
+      {modalSelecaoMobileAberto && (
+        <div 
+          className="sm:hidden fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-xs p-0 animate-in fade-in duration-200"
+          onClick={() => setModalSelecaoMobileAberto(false)}
+        >
+          <div 
+            className="bg-white rounded-t-3xl border-t border-slate-200 w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-250 pb-safe"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Puxador touch para celular */}
+            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1"></div>
+
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-emerald-700" />
+                  <span>Escolha a Calculadora</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Toque na opção desejada para abrir os dados na tela:
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalSelecaoMobileAberto(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                aria-label="Fechar seleção de calculadoras"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 space-y-2 flex-1">
+              {CALCULADORAS.map((calc) => {
+                const Icone = calc.icon;
+                const isAtivo = subTab === calc.id;
+                return (
+                  <button
+                    key={calc.id}
+                    type="button"
+                    aria-label={calc.label}
+                    onClick={() => {
+                      mudarCalculadora(calc.id);
+                      setModalSelecaoMobileAberto(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all active:scale-98 cursor-pointer ${
+                      isAtivo
+                        ? "bg-slate-900 text-white shadow-sm ring-2 ring-emerald-500/40"
+                        : "bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200/80"
+                    }`}
+                  >
+                    <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                      isAtivo 
+                        ? "bg-emerald-500/20 text-emerald-400" 
+                        : "bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                    }`}>
+                      <Icone className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`block font-bold text-sm ${isAtivo ? "text-white" : "text-slate-900"}`}>
+                        {calc.label}
+                      </span>
+                      <span className={`text-[11px] block mt-0.5 truncate ${isAtivo ? "text-slate-300" : "text-slate-500"}`}>
+                        {calc.desc || calc.shortLabel}
+                      </span>
+                    </div>
+                    {isAtivo ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* PAINEL DA CALCULADORA ATIVA (Com âncora suave para celular)   */}

@@ -40,6 +40,10 @@ for (const size of sizes) {
       }
       if (name === 'Cálculos') {
         for (const calc of ['Tratamento de Água', 'Calagem de Solo', 'Amônia Tóxica (NH3)', 'Povoamento & Metas']) {
+          const btnMobile = page.getByRole('button', { name: /trocar calculadora/i });
+          if (await btnMobile.isVisible()) {
+            await btnMobile.click();
+          }
           await page.getByRole('button', { name: calc, exact: true }).click();
           await expectNoOverflow(page);
         }

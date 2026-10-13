@@ -27,6 +27,10 @@ test('abas novas de calculadora renderizam com os dados de exemplo', async ({ pa
   await nav.getByRole('button', { name: 'Cálculos', exact: true }).click();
 
   for (const aba of ABAS) {
+    const seletorMobile = page.getByRole('button', { name: /trocar calculadora/i });
+    if (await seletorMobile.isVisible()) {
+      await seletorMobile.click();
+    }
     await page.getByRole('button', { name: aba.nome, exact: true }).click();
     await expect(page.getByText(aba.esperado)).toBeVisible();
 
