@@ -1,20 +1,17 @@
 import React, { useState } from "react";
 import { 
   Layers, 
-  Weight, 
-  Utensils, 
+  Scale, 
   AlertTriangle, 
   PlusCircle, 
   TrendingUp, 
   Droplets,
   Calendar,
   ChevronRight,
-  Fish,
   Store,
-  Sprout,
-  Megaphone
+  Sprout
 } from "lucide-react";
-import BannerPatrocinador from "./BannerPatrocinador.jsx";
+import { ShrimpIcon, FeedTrayIcon } from "./icons/CustomAquacultureIcons.jsx";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function Dashboard({ 
@@ -165,13 +162,10 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* Banner de Patrocinadores e Fabricantes Homologados */}
-      <BannerPatrocinador onNavigateMercado={() => onNavigate("mercado")} />
-
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Viveiros Ativos */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 hover:border-emerald-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">Viveiros Ativos</span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700">
@@ -187,11 +181,11 @@ export default function Dashboard({
         </div>
 
         {/* Card 2: Biomassa Total */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 hover:border-teal-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">Biomassa Estimada</span>
             <div className="p-2 rounded-xl bg-teal-500/10 text-teal-700">
-              <Weight className="w-5 h-5" />
+              <Scale className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
@@ -207,11 +201,11 @@ export default function Dashboard({
         </div>
 
         {/* Card 3: Ração Diária Prevista */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 hover:border-amber-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">Ração Hoje (Prev.)</span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700">
-              <Utensils className="w-5 h-5" />
+              <FeedTrayIcon className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
@@ -225,11 +219,11 @@ export default function Dashboard({
         </div>
 
         {/* Card 4: Peso Médio */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 hover:border-cyan-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">Peso Médio Geral</span>
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-700">
-              <Fish className="w-5 h-5" />
+              <ShrimpIcon className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2">
@@ -247,7 +241,7 @@ export default function Dashboard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div 
           onClick={() => onNavigate("mercado")}
-          className="bg-white border border-slate-200 hover:border-emerald-500/50 rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
+          className="bg-white border border-slate-200 hover:border-emerald-500/50 card-hover-lift rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
         >
           <div className="space-y-1 min-w-0">
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block">
@@ -267,7 +261,7 @@ export default function Dashboard({
 
         <div 
           onClick={() => onNavigate("calculadoras")}
-          className="bg-white border border-slate-200 hover:border-amber-500/50 rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
+          className="bg-white border border-slate-200 hover:border-amber-500/50 card-hover-lift rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
         >
           <div className="space-y-1 min-w-0">
             <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full inline-block">
@@ -370,21 +364,27 @@ export default function Dashboard({
               return (
                 <div
                   key={v.id}
-                  className="bg-white border border-slate-200 hover:border-emerald-600/50 transition-all rounded-2xl p-4 flex flex-col justify-between gap-3"
+                  className="bg-white border border-slate-200 hover:border-emerald-500/50 card-hover-lift transition-all rounded-2xl p-4 flex flex-col justify-between gap-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-base font-bold text-slate-900">{v.nome}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
                           v.status === "ativo" 
-                            ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30" 
-                    : "bg-slate-100 text-slate-700"
+                            ? "bg-emerald-500/15 text-emerald-800 border border-emerald-500/30 shadow-2xs" 
+                            : "bg-slate-100 text-slate-700"
                         }`}>
+                          {v.status === "ativo" && (
+                            <span className="relative flex h-2 w-2">
+                              <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                            </span>
+                          )}
                           {v.status}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-600 flex items-center gap-3 mt-1">
+                      <div className="text-xs text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
                         <span>Área: {(v.areaM2 / 10000).toFixed(2)} ha ({v.areaM2.toLocaleString()} m²)</span>
                         <span>•</span>
                         <span className="flex items-center gap-1 text-slate-700">
@@ -396,7 +396,7 @@ export default function Dashboard({
                   </div>
 
                   {/* Resumo Rápido da Biometria e Água */}
-                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-200 text-center">
                     <div>
                       <div className="text-[10px] font-semibold text-slate-600 uppercase">Peso Atual</div>
                       <div className="text-sm font-semibold text-emerald-700 mt-0.5">

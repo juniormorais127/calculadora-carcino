@@ -126,7 +126,7 @@ export default function ViveirosList({
         {viveiros.map((v) => (
           <div
             key={v.id}
-            className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-4"
+            className="bg-white border border-slate-200 hover:border-emerald-500/40 card-hover-lift rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-4 transition-all duration-300"
           >
             <div>
               <div className="flex items-start justify-between">
@@ -136,11 +136,17 @@ export default function ViveirosList({
                     {(v.areaM2 / 10000).toFixed(2)} ha • {v.areaM2.toLocaleString()} m²
                   </div>
                 </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
                   v.status === "ativo" 
-                    ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30" 
+                    ? "bg-emerald-500/15 text-emerald-800 border border-emerald-500/30 shadow-2xs" 
                     : "bg-slate-100 text-slate-700"
                 }`}>
+                  {v.status === "ativo" && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                    </span>
+                  )}
                   {v.status}
                 </span>
               </div>

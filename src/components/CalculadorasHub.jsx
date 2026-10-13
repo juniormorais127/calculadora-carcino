@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Utensils,
   Droplets,
   Sprout,
   FlaskConical,
@@ -20,6 +19,7 @@ import {
   ShoppingBag,
   BadgeCheck
 } from "lucide-react";
+import { FeedTrayIcon } from "./icons/CustomAquacultureIcons.jsx";
 import CalcCalibre from "./calculadoras/CalcCalibre.jsx";
 import CalcCrescimento from "./calculadoras/CalcCrescimento.jsx";
 import CalcIonico from "./calculadoras/CalcIonico.jsx";
@@ -51,7 +51,7 @@ import {
 import { AJUSTE_BANDEJAS_ALIMENTACAO } from "../data/carcinoData.js";
 
 const CALCULADORAS = [
-  { id: "racao", label: "Alimentação / Ração", shortLabel: "Ração", icon: Utensils, cor: "amber" },
+  { id: "racao", label: "Alimentação / Ração", shortLabel: "Ração", icon: FeedTrayIcon, cor: "amber" },
   { id: "agua", label: "Tratamento de Água", shortLabel: "Água", icon: Droplets, cor: "cyan" },
   { id: "solo", label: "Calagem de Solo", shortLabel: "Solo", icon: Sprout, cor: "emerald" },
   { id: "amonia", label: "Amônia Tóxica (NH3)", shortLabel: "Amônia", icon: FlaskConical, cor: "rose" },
@@ -312,7 +312,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
               <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Utensils className="w-5 h-5 text-amber-700" />
+                    <FeedTrayIcon className="w-5 h-5 text-amber-700" />
                     O que fornecer para calcular:
                   </h3>
                   {viveiroAtual && (

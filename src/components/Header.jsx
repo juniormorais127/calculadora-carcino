@@ -1,13 +1,14 @@
 import React from "react";
 import { Waves, ShieldCheck } from "lucide-react";
+import { ShrimpIcon } from "./icons/CustomAquacultureIcons.jsx";
 
 export default function Header({ farmProfile }) {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-700 flex items-center justify-center text-white">
-            <Waves className="w-6 h-6" />
+          <div className="relative w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 flex items-center justify-center text-white shadow-sm border border-emerald-500/20 group">
+            <ShrimpIcon className="w-6 h-6 text-white transition-transform duration-300 group-hover:scale-110" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">
