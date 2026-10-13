@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Settings, Download, Upload, Trash2, Smartphone, ShieldCheck, Database, RefreshCw } from "lucide-react";
+import { Settings, Download, Upload, Trash2, Smartphone, ShieldCheck, Database, RefreshCw, FileText } from "lucide-react";
 import { db, exportLocalDatabase, importLocalDatabase, seedInitialDataIfEmpty, clearLocalDatabase } from "../services/db.js";
+import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
 
 export default function BackupView({ 
   farmProfile, 
@@ -19,6 +20,27 @@ export default function BackupView({
     setProdutor(farmProfile?.produtor || "Produtor Rural");
     setLocalizacao(farmProfile?.localizacao || "Litoral");
   }, [farmProfile]);
+
+  const handleExportarPdf = () => {
+    try {
+      gerarRelatorioFazendaPdf({
+        farmProfile: {
+          nomeFazenda,
+          produtor,
+          localizacao
+        },
+        viveiros,
+        biometrias,
+        qualidadeAgua,
+        baixar: true
+      });
+      setMensagem("Relatório da fazenda em PDF gerado e baixado com sucesso!");
+      setTimeout(() => setMensagem(""), 4000);
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Não foi possível gerar o PDF: " + err.message);
+    }
+  };
 
   const handleSalvarPerfil = async (e) => {
     e.preventDefault();
@@ -149,12 +171,24 @@ export default function BackupView({
             />
           </div>
 
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm "
-          >
-            Salvar Dados da Fazenda
-          </button>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              type="submit"
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              Salvar Dados da Fazenda
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportarPdf}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              title="Salvar dados da fazenda em formato PDF"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Salvar em PDF</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -189,16 +223,24 @@ export default function BackupView({
         </div>
 
         {/* Botões de Ação de Backup */}
-        <div className="flex flex-wrap gap-3 pt-2">
+        <div className="flex flex-wrap gap-2.5 pt-2">
+          <button
+            onClick={handleExportarPdf}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Salvar Relatório da Fazenda em PDF</span>
+          </button>
+
           <button
             onClick={handleExport}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs shadow-sm transition-all active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer border border-slate-200"
           >
             <Download className="w-4 h-4 text-emerald-700" />
             <span>Baixar Arquivo de Backup (JSON)</span>
           </button>
 
-          <label className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs shadow-sm cursor-pointer transition-all active:scale-95">
+          <label className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs shadow-sm cursor-pointer transition-all active:scale-95 border border-slate-200">
             <Upload className="w-4 h-4 text-cyan-700" />
             <span>Restaurar Backup</span>
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />

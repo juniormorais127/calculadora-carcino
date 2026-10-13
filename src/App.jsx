@@ -152,6 +152,8 @@ export default function App() {
                 viveiros={viveiros}
                 biometrias={biometrias}
                 qualidadeAgua={qualidadeAgua}
+                farmProfile={farmProfile}
+                onFeedback={setFeedbackBanner}
                 onNavigate={handleNavigate}
                 onOpenNewBiometria={() => {
                   handleNavigate("biometria");

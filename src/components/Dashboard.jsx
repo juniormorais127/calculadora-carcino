@@ -12,15 +12,19 @@ import {
   Fish,
   Store,
   Sprout,
-  Megaphone
+  Megaphone,
+  FileText
 } from "lucide-react";
 import BannerPatrocinador from "./BannerPatrocinador.jsx";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
+import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
 
 export default function Dashboard({ 
   viveiros = [], 
   biometrias = [], 
   qualidadeAgua = [], 
+  farmProfile,
+  onFeedback,
   onNavigate,
   onOpenNewBiometria,
   onOpenNewAgua,
@@ -30,6 +34,25 @@ export default function Dashboard({
 }) {
   const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
   const [tipoAviso, setTipoAviso] = useState("biometria");
+
+  const handleExportarPdf = () => {
+    try {
+      gerarRelatorioFazendaPdf({
+        farmProfile,
+        viveiros,
+        biometrias,
+        qualidadeAgua,
+        baixar: true
+      });
+      onFeedback?.({
+        tipo: "sucesso",
+        texto: "Relatório da fazenda em PDF gerado com sucesso! O download foi iniciado."
+      });
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Não foi possível gerar o PDF: " + err.message);
+    }
+  };
 
   const handleCliqueBiometria = () => {
     if (viveiros.length === 0) {
@@ -160,6 +183,15 @@ export default function Dashboard({
             >
               <Droplets className="w-4 h-4" />
               <span>+ Qualidade Água</span>
+            </button>
+
+            <button
+              onClick={handleExportarPdf}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm shadow-sm transition-all active:scale-95 border border-slate-200 cursor-pointer"
+              title="Salvar relatório técnico da fazenda em PDF"
+            >
+              <FileText className="w-4 h-4 text-rose-600" />
+              <span>Salvar em PDF</span>
             </button>
           </div>
         </div>
