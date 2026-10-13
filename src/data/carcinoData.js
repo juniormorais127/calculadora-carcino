@@ -107,3 +107,323 @@ export const AJUSTE_BANDEJAS_ALIMENTACAO = [
   { status: "Sobras médias (20% a 40%)", ajustePercentual: -25, descricao: "Reduzir 25%. Checar oxigênio dissolvido e temperatura" },
   { status: "Sobras críticas (> 50%) ou ecdise massiva", ajustePercentual: -50, descricao: "Reduzir 50% ou cortar trato. Possível pico de muda ou anoxia" }
 ];
+
+export const DOENCAS_CAMARAO = [
+  {
+    id: "wssv",
+    nome: "Síndrome da Mancha Branca",
+    sigla: "WSSV",
+    tipo: "Viral (Nimaviridae)",
+    gravidade: "Extrema (Mortalidade de até 100% em 3 a 10 dias)",
+    cor: "rose",
+    periodoCritico: "Qualquer fase, especialmente com quedas de temperatura (< 27°C) e estresse osmótico",
+    sintomas: [
+      "Pontos brancos circulares (0.5 a 2 mm) na face interna da carapaça e cefalotórax",
+      "Coloração corporal avermelhada ou rosada generalizada",
+      "Letargia extrema e camarões nadando lentos junto às margens do viveiro",
+      "Corte brusco no consumo de ração nas bandejas",
+      "Intestino e estômago completamente vazios"
+    ],
+    acaoEmergencia: "Notificar imediatamente o serviço veterinário oficial. Isolar 100% o viveiro. NÃO drenar água para o estuário sem antes aplicar cloração de desinfecção (20 a 30 ppm de cloro ativo por 48h). Proceder despesca de emergência se o camarão tiver tamanho comercial.",
+    prevencao: "Exclusividade de PLs certificadas SPF por PCR, filtragem da água de entrada com malha < 300 micras para barrar vetores silvestres (caranguejos e copépodes), cerca anti-pássaro e desinfecção de redes com amônia quaternária."
+  },
+  {
+    id: "imnv",
+    nome: "Mionecrose Infecciosa",
+    sigla: "IMNV",
+    tipo: "Viral (Totiviridae)",
+    gravidade: "Alta (Mortalidade cumulativa de 40% a 70%)",
+    cor: "amber",
+    periodoCritico: "Juvenis e adultos (a partir de 4 a 6 gramas) submetidos a estresse térmico ou de oxigênio",
+    sintomas: [
+      "Músculo do abdômen e cauda com áreas brancas opacas (aspecto leitoso ou 'carne cozida')",
+      "Em estágio avançado, a necrose muscular adquire tom avermelhado",
+      "Morte súbita logo após eventos de manejo brusco (tarrafeadas, biometrias) ou queda noturna de O2",
+      "Flacidez muscular e perda de vigor de natação"
+    ],
+    acaoEmergencia: "Suspender imediatamente qualquer manejo estressante no viveiro (não tarrafear, não fazer biometria invasiva). Ligar aeradores em regime contínuo. Reduzir a ração em 30% a 50% e suplementar com Vitamina C e imunoestimulantes.",
+    prevencao: "Uso de linhagens genéticas resistentes (SPR/SPF), manter oxigênio > 4.5 mg/L, evitar densidades excessivas em viveiros sem aeração e respeitar horários de manejo apenas nas horas mais frescas."
+  },
+  {
+    id: "ahpnd",
+    nome: "Hepatopancreatite Necrosante Aguda (EMS)",
+    sigla: "AHPND / EMS",
+    tipo: "Bacteriana (Vibrio parahaemolyticus com toxina PirA/PirB)",
+    gravidade: "Extrema (Até 100% de mortalidade nas primeiras semanas)",
+    cor: "rose",
+    periodoCritico: "Primeiros 20 a 35 dias após o povoamento (DOC 20-35)",
+    sintomas: [
+      "Hepatopâncreas gravemente atrofiado, pálido, esbranquiçado ou translúcido",
+      "Trato digestivo (intestino) totalmente vazio",
+      "Carapaça mole e flácida",
+      "Camarões nadando em espiral ou caindo para o fundo do tanque"
+    ],
+    acaoEmergencia: "Aplicar probióticos com cepas de Bacillus e bactérias láticas em doses de choque para competição biológica. Suspender arraçoamento por 24h a 48h. Remover lodo do fundo se o sistema possuir dreno central.",
+    prevencao: "Fase de berçário protegido antes da engorda, dessecação e desinfecção enérgica do fundo entre ciclos, e biorremediação biológica profilática permanente da água."
+  },
+  {
+    id: "nhp",
+    nome: "Hepatopancreatite Necrosante Bacteriana",
+    sigla: "NHP",
+    tipo: "Bactéria Intracelular Obrigatória",
+    gravidade: "Moderada a Alta (Mortalidade lenta acumulada até 80%)",
+    cor: "yellow",
+    periodoCritico: "Águas quentes (> 29°C) combinadas com alta salinidade (> 25 ppt)",
+    sintomas: [
+      "Hepatopâncreas atrófico, aquoso e com coloração amarelada ou desbotada",
+      "Redução drástica do apetite e retardo no crescimento do lote",
+      "Exoesqueleto frouxo com presença de incrustações (fouling/sujeira aderida na casca)",
+      "Brânquias escuras e bordas dos urópodes necrosadas"
+    ],
+    acaoEmergencia: "Correção de parâmetros ambientais (reduzir temperatura via lâmina d'água mais profunda se possível), reduzir densidade de ração e utilizar aditivos funcionais fitoterápicos permitidos na ração sob supervisão técnica.",
+    prevencao: "Controle rígido da matéria orgânica no fundo do viveiro, não deixar salinidade e temperatura ultrapassarem limites críticos simultaneamente."
+  },
+  {
+    id: "ehp",
+    nome: "Microsporidiose Hepatopancreática",
+    sigla: "EHP",
+    tipo: "Microsporídio (Enterocytozoon hepatopenaei)",
+    gravidade: "Econômica Severa (Estagnação de crescimento / 'Camarão Canivete')",
+    cor: "amber",
+    periodoCritico: "Presente silenciosamente desde o povoamento, manifesta-se aos 5-8 gramas",
+    sintomas: [
+      "Retardo severo e inexplicável no crescimento (camarão não passa de 6-8g)",
+      "Desuniformidade extrema no lote (camarões muito pequenos misturados com médios)",
+      "Piora acentuada na Conversão Alimentar (FCA > 2.2)",
+      "Carapaça transparente e hepatopâncreas esbranquiçado à microscopia"
+    ],
+    acaoEmergencia: "Não há cura medicamentosa no viveiro. Planejar despesca antecipada para evitar prejuízo com ração desperdiçada. Não transferir animais ou equipamentos para viveiros sadios.",
+    prevencao: "Exame PCR rigoroso de todas as pós-larvas antes da compra. Desinfecção profunda do fundo do viveiro com Cal Virgem (CaO) para elevar o pH do solo acima de 11.0 e destruir esporos altamente resistentes."
+  },
+  {
+    id: "vibriose",
+    nome: "Vibriose Sistêmica & Síndrome da Casca Mole",
+    sigla: "Vibriose",
+    tipo: "Bacteriana Oportunista (Vibrio alginolyticus, V. harveyi)",
+    gravidade: "Média a Alta (Depende da qualidade da água)",
+    cor: "teal",
+    periodoCritico: "Viveiros com excesso de matéria orgânica no fundo e baixa alcalinidade (< 90 mg/L)",
+    sintomas: [
+      "Bioluminescência noturna visível no viveiro e nos camarões (cepas de V. harveyi)",
+      "Manchas marrons ou pretas (melanização) nas patas, pleópodes e brânquias",
+      "Incapacidade de endurecer a casca após a muda (síndrome da casca mole)",
+      "Antenas quebradas e urópodes avermelhados"
+    ],
+    acaoEmergencia: "Elevar a alcalinidade total imediatamente para > 130 mg/L com Bicarbonato de Sódio. Aplicar probióticos bioantagonistas na água e no alimento. Troca parcial de água se a qualidade da fonte permitir.",
+    prevencao: "Monitorar a contagem de bactérias verdes e amarelas em placas TCBS. Manter aeração adequada para manter o potencial redox do fundo positivo."
+  }
+];
+
+export const BOAS_PRATICAS_ABCC = [
+  {
+    id: "preparo",
+    fase: "1. Preparo e Dessecação do Viveiro",
+    descricao: "Limpeza mecânica e sanitária antes de receber novas pós-larvas",
+    itens: [
+      { id: "p1", titulo: "Secagem e Dessecação Solar", detalhe: "Manter o viveiro seco ao sol por 10 a 15 dias até abrir fendas de 2 a 5 cm no lodo, oxidando a matéria orgânica.", obrigatorio: true },
+      { id: "p2", titulo: "Remoção de Sedimentos Negros", detalhe: "Retirar o lodo anaeróbio acumulado nos pontos de baixa drenagem ou próximo às comportas de saída.", obrigatorio: true },
+      { id: "p3", titulo: "Calagem do Solo com Calcário ou Cal Virgem", detalhe: "Aplicar dose técnica conforme pH do solo (1.000 a 3.000 kg/ha) e gradear a 10-15 cm para neutralizar sulfetos.", obrigatorio: true },
+      { id: "p4", titulo: "Filtração da Água de Abastecimento", detalhe: "Instalar telas de filtragem dupla (malha de 250 a 500 micras) na comporta de entrada para barrar vetores de vírus.", obrigatorio: true }
+    ]
+  },
+  {
+    id: "aquisicao",
+    fase: "2. Aquisição e Aclimatação de Pós-Larvas (PLs)",
+    descricao: "Controle de qualidade genética e higiênico-sanitária",
+    itens: [
+      { id: "a1", titulo: "Pós-Larvas com Laudo PCR Negativo (SPF)", detalhe: "Adquirir exclusivamente PLs com certificado negativo para WSSV, IMNV, IHHNV e AHPND emitido por laboratório idôneo.", obrigatorio: true },
+      { id: "a2", titulo: "Teste de Estresse de Salinidade e Térmico", detalhe: "Submeter amostra de PLs a teste de choque salino (choque de 50% por 30 min) com sobrevivência mínima de 80%.", obrigatorio: true },
+      { id: "a3", titulo: "Aclimatação Lenta na Fazenda", detalhe: "Igualar temperatura (< 1°C de diferença) e salinidade (< 2-3 ppt por hora) em tanques de aclimatação com oxigênio suplementar.", obrigatorio: true },
+      { id: "a4", titulo: "Soltura nas Horas Mais Frescas", detalhe: "Povoar o viveiro no início da manhã (antes das 08:00) ou ao entardecer para evitar estresse térmico.", obrigatorio: true }
+    ]
+  },
+  {
+    id: "manejo_alimentar",
+    fase: "3. Boas Práticas de Alimentação e Arraçoamento",
+    descricao: "Eficiência zootécnica e prevenção de poluição do fundo",
+    itens: [
+      { id: "m1", titulo: "Arraçoamento Baseado em Biometria Real", detalhe: "Ajustar o cálculo de ração semanalmente com base na biomassa estimada e taxa percentual de tabela zootécnica.", obrigatorio: true },
+      { id: "m2", titulo: "Uso Obrigatório de Comedouros (Bandejas)", detalhe: "Instalar de 20 a 30 bandejas por hectare com 2% a 5% da cota diária para monitorar o apetite após 1h30 a 2h.", obrigatorio: true },
+      { id: "m3", titulo: "Corte Imediato em Sobras > 25%", detalhe: "Se houver sobras nas bandejas, reduzir 25% a 50% da próxima oferta para evitar fermentação tóxica.", obrigatorio: true },
+      { id: "m4", titulo: "Armazenamento Correto de Ração", detalhe: "Guardar sacarias sobre estrados de madeira a 15 cm do chão e longe de paredes, em local fresco e arejado (< 30 dias).", obrigatorio: false }
+    ]
+  },
+  {
+    id: "biosseguranca",
+    fase: "4. Biossegurança e Sanidade de Campo",
+    descricao: "Proteção contra contaminação cruzada e patógenos externos",
+    itens: [
+      { id: "b1", titulo: "Desinfecção de Redes e Tarrafas", detalhe: "Mergulhar tarrafas, baldes e caixas em solução desinfetante (amônia quaternária ou cloro) antes de usar em outro viveiro.", obrigatorio: true },
+      { id: "b2", titulo: "Proibição de Descarte de Água Contaminada", detalhe: "Viveiros com suspeita de doença jamais devem ser drenados sem tratamento prévio de desinfecção química.", obrigatorio: true },
+      { id: "b3", titulo: "Controle de Acesso de Veículos e Pessoas", detalhe: "Restringir entrada de caminhões e visitantes não autorizados nas margens de cultivo.", obrigatorio: false },
+      { id: "b4", titulo: "Uso Contínuo de Probióticos Benéficos", detalhe: "Adicionar bactérias nitrificantes e Bacillus na água para exclusão competitiva contra Vibrios patogênicos.", obrigatorio: true }
+    ]
+  }
+];
+
+
+// ============================================================================
+// 1. CLASSIFICAÇÃO COMERCIAL POR CALIBRE (camarão inteiro - HOSO)
+// A contagem é o padrão internacional do comércio: unidades por libra (count/lb).
+// Conversão: un/kg = contagem ÷ 0,4536  |  peso médio (g) = 1000 ÷ (un/kg)
+// Ex.: calibre 41/50 -> 90 a 110 un/kg -> peso médio de 9,1 a 11,1 g
+// ============================================================================
+export const TABELA_CALIBRE_MERCADO = [
+  { calibre: "16/20", minPorLibra: 16, maxPorLibra: 20, classe: "Extra grande", destino: "Exportação premium", observacao: "Ciclo longo (140+ dias) e densidade baixa. Maior risco, maior valor por kg." },
+  { calibre: "21/25", minPorLibra: 21, maxPorLibra: 25, classe: "Grande", destino: "Exportação / mercado premium", observacao: "Exige crescimento acima de 0,20 g/dia de forma sustentada." },
+  { calibre: "26/30", minPorLibra: 26, maxPorLibra: 30, classe: "Grande", destino: "Exportação / mercado interno premium", observacao: "Calibre típico de despesca em ciclos de 110 a 130 dias." },
+  { calibre: "31/35", minPorLibra: 31, maxPorLibra: 35, classe: "Médio-grande", destino: "Exportação / mercado interno premium", observacao: "Faixa de maior rentabilidade na maioria dos ciclos semi-intensivos (13 a 15 g)." },
+  { calibre: "36/40", minPorLibra: 36, maxPorLibra: 40, classe: "Médio", destino: "Mercado interno e exportação", observacao: "Alvo de despesca mais comum em 90 a 110 dias de cultivo." },
+  { calibre: "41/50", minPorLibra: 41, maxPorLibra: 50, classe: "Médio", destino: "Mercado interno e exportação", observacao: "Faixa mais líquida do mercado brasileiro (9 a 11 g)." },
+  { calibre: "51/60", minPorLibra: 51, maxPorLibra: 60, classe: "Médio-pequeno", destino: "Mercado interno / restaurantes", observacao: "Comum em despescas antecipadas por sanidade, preço ou oxigênio." },
+  { calibre: "61/70", minPorLibra: 61, maxPorLibra: 70, classe: "Pequeno", destino: "Mercado interno / varejo", observacao: "Sinal de ciclo interrompido ou alta densidade com baixo crescimento." },
+  { calibre: "71/90", minPorLibra: 71, maxPorLibra: 90, classe: "Pequeno", destino: "Varejo / processamento", observacao: "Valor unitário baixo. Revisar densidade, arraçoamento e qualidade de água." },
+  { calibre: "91/130", minPorLibra: 91, maxPorLibra: 130, classe: "Mini / descarte", destino: "Processamento / isca", observacao: "Indica falha grave de manejo (anoxia, doença, densidade excessiva) ou despesca de emergência." }
+];
+
+// ============================================================================
+// 2. GRANULOMETRIA E PROTEÍNA DA RAÇÃO POR FASE (ração extrusada)
+// Faixas usuais de mercado. Sempre confirmar a tabela do fabricante utilizado.
+// ============================================================================
+export const TABELA_GRANULOMETRIA_RACAO = [
+  { minPeso: 0.0, maxPeso: 0.2, fase: "Berçário / PL", granulometriaMinMm: 0.3, granulometriaMaxMm: 0.8, formato: "Farelada (pó)", proteinaBrutaMin: 40, proteinaBrutaMax: 45, observacao: "Nas primeiras 2 semanas considerar oferta em pó fino e/ou alimento natural (bloom)." },
+  { minPeso: 0.2, maxPeso: 1.0, fase: "Pós-berçário", granulometriaMinMm: 0.8, granulometriaMaxMm: 1.2, formato: "Micro-extrusada", proteinaBrutaMin: 40, proteinaBrutaMax: 42, observacao: "Transição crítica: misturar granulometrias por 2 a 3 dias para evitar desperdício." },
+  { minPeso: 1.0, maxPeso: 3.0, fase: "Juvenil inicial", granulometriaMinMm: 1.2, granulometriaMaxMm: 1.5, formato: "Extrusada", proteinaBrutaMin: 38, proteinaBrutaMax: 40, observacao: "Início do uso de bandejas de alimentação para calibrar a oferta." },
+  { minPeso: 3.0, maxPeso: 5.0, fase: "Juvenil médio", granulometriaMinMm: 1.8, granulometriaMaxMm: 2.0, formato: "Extrusada / triturada", proteinaBrutaMin: 35, proteinaBrutaMax: 38, observacao: "Ajuste fino das bandejas a cada 2h a 2h30 após a oferta." },
+  { minPeso: 5.0, maxPeso: 10.0, fase: "Engorda inicial", granulometriaMinMm: 2.2, granulometriaMaxMm: 2.5, formato: "Extrusada", proteinaBrutaMin: 32, proteinaBrutaMax: 35, observacao: "Período de maior consumo de ração e maior carga de nitrogênio no viveiro." },
+  { minPeso: 10.0, maxPeso: 15.0, fase: "Engorda final", granulometriaMinMm: 2.5, granulometriaMaxMm: 3.0, formato: "Extrusada", proteinaBrutaMin: 30, proteinaBrutaMax: 32, observacao: "Monitorar FCA: é a fase que define a rentabilidade do ciclo." },
+  { minPeso: 15.0, maxPeso: 60.0, fase: "Despesca / acabamento", granulometriaMinMm: 3.0, granulometriaMaxMm: 3.5, formato: "Extrusada", proteinaBrutaMin: 28, proteinaBrutaMax: 30, observacao: "Reduzir oferta nas 24 h antes da despesca para limpar o trato digestivo." }
+];
+
+// ============================================================================
+// 3. CURVA DE CRESCIMENTO ESPERADA — L. vannamei (referência de benchmark)
+// Condições de referência: 28 a 31 °C, salinidade 15 a 30 ppt, manejo
+// semi-intensivo com aeração. Serve como linha de base para comparar biometrias;
+// ajustar conforme região, linhagem, densidade e época do ano.
+// GPD = ganho de peso diário médio da semana (g/dia).
+// ============================================================================
+export const CURVA_CRESCIMENTO_VANNAMEI = [
+  { semana: 1, pesoEsperadoG: 0.25, gpdEsperadoG: 0.036, observacao: "Adaptação e aclimatação. Oferta em pó." },
+  { semana: 2, pesoEsperadoG: 0.75, gpdEsperadoG: 0.071, observacao: "Início da alimentação em bandeja." },
+  { semana: 3, pesoEsperadoG: 1.50, gpdEsperadoG: 0.107, observacao: "Crescimento exponencial inicial." },
+  { semana: 4, pesoEsperadoG: 2.40, gpdEsperadoG: 0.129, observacao: "Verificar uniformidade do lote." },
+  { semana: 5, pesoEsperadoG: 3.50, gpdEsperadoG: 0.157, observacao: "Primeira troca de granulometria relevante." },
+  { semana: 6, pesoEsperadoG: 4.70, gpdEsperadoG: 0.171, observacao: "Início do controle rigoroso de bandejas." },
+  { semana: 7, pesoEsperadoG: 5.90, gpdEsperadoG: 0.171, observacao: "Vigiar amônia total e oxigênio no fundo." },
+  { semana: 8, pesoEsperadoG: 7.10, gpdEsperadoG: 0.171, observacao: "Carga de biomassa exige aeração noturna." },
+  { semana: 9, pesoEsperadoG: 8.30, gpdEsperadoG: 0.171, observacao: "Checar alcalinidade (muda frequente)." },
+  { semana: 10, pesoEsperadoG: 9.50, gpdEsperadoG: 0.171, observacao: "Faixa de calibre 41/50." },
+  { semana: 11, pesoEsperadoG: 10.60, gpdEsperadoG: 0.157, observacao: "Avaliar preço de mercado para decidir despesca." },
+  { semana: 12, pesoEsperadoG: 11.60, gpdEsperadoG: 0.143, observacao: "Momento típico de despesca comercial." },
+  { semana: 13, pesoEsperadoG: 12.50, gpdEsperadoG: 0.129, observacao: "Ponto de equilíbrio entre crescimento e custo de ração." },
+  { semana: 14, pesoEsperadoG: 13.30, gpdEsperadoG: 0.114, observacao: "Crescimento desacelera; FCA começa a subir." },
+  { semana: 15, pesoEsperadoG: 14.00, gpdEsperadoG: 0.100, observacao: "Só compensa manter se o calibre valorizar bastante." },
+  { semana: 16, pesoEsperadoG: 14.60, gpdEsperadoG: 0.086, observacao: "Curva em platô. Avaliar risco sanitário do ciclo longo." }
+];
+
+// ============================================================================
+// 4. BALANÇO IÔNICO PARA ÁGUAS DE BAIXA SALINIDADE (< 5 ppt)
+// Em águas interiores o risco não é a salinidade em si, mas o desequilíbrio
+// entre íons. As RELAÇÕES (Na:K e Mg:Ca) são mais importantes que os valores
+// absolutos. Faixas usuais citadas na literatura técnica; calibrar sempre com
+// a análise de água local e com a referência regional (ex.: EMBRAPA/instituições).
+// Relações em base mássica (mg/L).
+// ============================================================================
+export const PARAMETROS_BALANCO_IONICO = {
+  aviso: "Faixas de referência para manejo. Não substituem a análise laboratorial da água e a recomendação de um técnico responsável.",
+  sodio: { nome: "Sódio (Na+)", unidade: "mg/L", alvo: null, observacao: "Não se corrige sódio diretamente: ele é consequência da salinidade/renovação. O manejo é ajustar K, Ca e Mg em relação a ele." },
+  potassio: { nome: "Potássio (K+)", unidade: "mg/L", alvo: 20, minimo: 10, maximo: 40, observacao: "Deficiência de K é a causa clássica de baixa sobrevivência em água doce. Fonte: KCl." },
+  calcio: { nome: "Cálcio (Ca2+)", unidade: "mg/L", alvo: 60, minimo: 40, maximo: 80, observacao: "Essencial na ecdise (formação do exoesqueleto). Fonte: CaCl2, calcário, gesso." },
+  magnesio: { nome: "Magnésio (Mg2+)", unidade: "mg/L", alvo: 30, minimo: 20, maximo: 40, observacao: "Cofator enzimático e componente da carapaça. Fonte: MgSO4 (sal amargo)." },
+  relacoes: {
+    naK: { nome: "Relação Na:K", alvo: 28, minimo: 20, maximo: 35, base: "mássica (mg/L de Na ÷ mg/L de K)" },
+    mgCa: { nome: "Relação Mg:Ca", alvo: 3.0, minimo: 2.0, maximo: 4.0, base: "mássica (mg/L de Mg ÷ mg/L de Ca)" }
+  }
+};
+
+// ============================================================================
+// 5. PRODUTOS PARA CORREÇÃO IÔNICA
+// "elementos" traz a fração mássica de cada elemento no produto comercial puro.
+// Dose (kg) = [déficit (mg/L) × volume (m³)] ÷ [1000 × fração do elemento]
+// Verificar sempre o teor real no rótulo (produtos comerciais variam bastante).
+// ============================================================================
+export const PRODUTOS_CORRECAO_IONICA = [
+  { produto: "Cloreto de Cálcio dihidratado", formula: "CaCl2.2H2O", elementos: { Ca: 27.2 }, observacao: "Alta solubilidade e ação rápida. Não altera o pH." },
+  { produto: "Gesso agrícola", formula: "CaSO4.2H2O", elementos: { Ca: 23.3 }, observacao: "Liberação mais lenta; também auxilia na floculação de argila e no controle de alcalinidade alta." },
+  { produto: "Calcário dolomítico", formula: "CaCO3.MgCO3", elementos: { Ca: 21.7, Mg: 13.2 }, observacao: "Fonte dupla de Ca e Mg. Eleva o pH — evitar em água com pH já alto." },
+  { produto: "Sulfato de Magnésio (sal amargo)", formula: "MgSO4.7H2O", elementos: { Mg: 9.9 }, observacao: "Produto mais usado para corrigir Mg. Alta solubilidade." },
+  { produto: "Cloreto de Potássio", formula: "KCl", elementos: { K: 52.4 }, observacao: "Fonte padrão de K. Aplicar diluído e distribuído, nunca concentrado em um ponto." },
+  { produto: "Sulfato de Potássio", formula: "K2SO4", elementos: { K: 44.9 }, observacao: "Alternativa ao KCl quando se quer evitar excesso de cloreto." },
+  { produto: "Sal grosso (cloreto de sódio)", formula: "NaCl", elementos: { Na: 39.3 }, observacao: "Usado para elevar cloretos e reduzir a toxicidade do nitrito em água doce." }
+];
+
+// ============================================================================
+// 6. FONTES DE CARBONO PARA CONTROLE DE NITROGÊNIO (BFT / bioflocos)
+// Valores aproximados de referência (% de carbono e de nitrogênio na matéria
+// seca/tal qual). Servem para orientar a dose, não para substituir a medição
+// de amônia e a observação do floco.
+// ============================================================================
+export const FONTES_CARBONO_BFT = [
+  { fonte: "Melaço de cana-de-açúcar", carbonoPercent: 45, nitrogenioPercent: 0.4, observacao: "Fonte mais usada. Diluir em água antes de aplicar para não consumir oxigênio no fundo." },
+  { fonte: "Açúcar cristal (sacarose)", carbonoPercent: 42, nitrogenioPercent: 0, observacao: "Resposta muito rápida; cuidado com queda brusca de oxigênio." },
+  { fonte: "Dextrose / glicose", carbonoPercent: 40, nitrogenioPercent: 0, observacao: "Alta solubilidade; custo mais elevado." },
+  { fonte: "Farelo de trigo", carbonoPercent: 45, nitrogenioPercent: 2.5, observacao: "Também serve de substrato particulado para o floco." },
+  { fonte: "Farelo de arroz", carbonoPercent: 40, nitrogenioPercent: 1.5, observacao: "Alternativa regional de baixo custo." },
+  { fonte: "Tapioca / raspa de mandioca", carbonoPercent: 40, nitrogenioPercent: 0.9, observacao: "Boa relação custo/benefício em algumas regiões." }
+];
+
+// ============================================================================
+// 7. SISTEMAS DE CULTIVO — densidade, aeração e produtividade de referência
+// Faixas usuais por nível de intensificação. Aeração em HP por hectare,
+// considerando aeradores de pás e/ou sopradores, com uso noturno obrigatório.
+// ============================================================================
+export const SISTEMAS_CULTIVO = [
+  { sistema: "Extensivo", densidadeMinM2: 1, densidadeMaxM2: 5, aeracaoHpHaMin: 0, aeracaoHpHaMax: 2, produtividadeMinKgHa: 800, produtividadeMaxKgHa: 1500, observacao: "Depende do alimento natural do viveiro. Sem ração ou com suplementação mínima." },
+  { sistema: "Semi-intensivo", densidadeMinM2: 5, densidadeMaxM2: 20, aeracaoHpHaMin: 4, aeracaoHpHaMax: 8, produtividadeMinKgHa: 2000, produtividadeMaxKgHa: 6000, observacao: "Ração completa + aeração noturna + fertilização para bloom. Sistema mais comum no Brasil." },
+  { sistema: "Intensivo", densidadeMinM2: 20, densidadeMaxM2: 50, aeracaoHpHaMin: 10, aeracaoHpHaMax: 20, produtividadeMinKgHa: 6000, produtividadeMaxKgHa: 15000, observacao: "Alta renovação de água ou troca zero com probióticos. Exige energia e monitoramento diário." },
+  { sistema: "Super-intensivo / BFT", densidadeMinM2: 50, densidadeMaxM2: 250, aeracaoHpHaMin: 20, aeracaoHpHaMax: 40, produtividadeMinKgHa: 15000, produtividadeMaxKgHa: 40000, observacao: "Bioflocos com relação C:N controlada e aeração 24 h. Alta exigência técnica e de energia elétrica." }
+];
+
+// ============================================================================
+// 8. METAS DE ÍNDICES ZOOTÉCNICOS (benchmark de desempenho do ciclo)
+// "melhorQuando" indica a direção da melhoria: para FCA, quanto MENOR, melhor.
+// ============================================================================
+export const METAS_INDICES_ZOOTECNICOS = {
+  sobrevivenciaPercent: { nome: "Sobrevivência", unidade: "%", melhorQuando: "maior", otimo: 85, bom: 75, atencao: 60, observacao: "Abaixo de 60% investigar sanidade, qualidade de água e aclimatação das PLs." },
+  fca: { nome: "Conversão Alimentar (FCA)", unidade: "kg ração / kg camarão", melhorQuando: "menor", otimo: 1.3, bom: 1.5, atencao: 1.8, observacao: "FCA alto indica ração desperdiçada: revisar bandejas, granulometria e oxigênio." },
+  gpdG: { nome: "Ganho de Peso Diário (GPD)", unidade: "g/dia", melhorQuando: "maior", otimo: 0.22, bom: 0.18, atencao: 0.12, observacao: "Comparar com a curva esperada para a semana de cultivo." },
+  produtividadeKgHaCiclo: { nome: "Produtividade por ciclo", unidade: "kg/ha/ciclo", melhorQuando: "maior", otimo: 8000, bom: 5000, atencao: 2500, observacao: "Sempre analisada junto com o calibre final e o custo por kg produzido." },
+  pesoDespescaG: { nome: "Peso médio na despesca", unidade: "g", melhorQuando: "maior", otimo: 14, bom: 11, atencao: 8, observacao: "Peso alvo depende do calibre que o mercado comprador está pagando melhor." }
+};
+
+// ============================================================================
+// 9. PRODUTOS DE MANEJO — FAIXAS DE DOSE USUAIS
+// ATENÇÃO: as faixas abaixo são apenas referências gerais de literatura e
+// variam conforme o princípio ativo, a formulação e o fabricante. A dose
+// correta é SEMPRE a do rótulo do produto e/ou a prescrita pelo técnico
+// responsável. Dose excessiva de oxidantes e cloro causa mortalidade em massa.
+// ============================================================================
+export const PRODUTOS_MANEJO_DOSES = [
+  { produto: "Cal clorada (hipoclorito de cálcio 65%)", uso: "Desinfecção de viveiro vazio e da água de abastecimento", doseReferencia: "10 a 20 g/m³ (100 a 200 kg/ha)", cuidado: "Só usar com viveiro SEM camarão. Neutralizar o cloro residual antes do povoamento e confirmar com teste." },
+  { produto: "Melaço de cana", uso: "Controle de nitrogênio / bioflocos", doseReferencia: "10 a 30 kg/ha por semana, fracionado", cuidado: "Aplicar pela manhã e com aeração ligada; o consumo de carbono reduz o oxigênio da água." },
+  { produto: "Probióticos (Bacillus spp.)", uso: "Controle de matéria orgânica e nitrogênio", doseReferencia: "0,5 a 2 g/m³ (5 a 20 kg/ha)", cuidado: "Ativar em água aerada antes de aplicar. Não misturar com desinfetantes." },
+  { produto: "Vitamina C (ácido ascórbico estabilizado)", uso: "Suplementação em ração (estresse, muda, transporte)", doseReferencia: "2 a 5 g/kg de ração", cuidado: "Aplicar com aglutinante/óleo para não lixiviar na água." },
+  { produto: "Sal grosso (NaCl)", uso: "Elevar cloretos e reduzir toxicidade do nitrito", doseReferencia: "Conforme análise: relação cloreto:nitrito de 6:1 ou mais", cuidado: "Calcular com base na análise de água, não por estimativa visual." },
+  { produto: "Zeólita", uso: "Adsorção de amônia em situações de emergência", doseReferencia: "100 a 300 kg/ha", cuidado: "Ação paliativa: não substitui renovação, aeração nem o controle da ração." }
+];
+
+// ============================================================================
+// 10. CHECKLIST DO PERÍODO ENTRE CICLOS (preparo de viveiro)
+// ============================================================================
+export const CHECKLIST_ENTRE_CICLOS = [
+  { etapa: "Despesca e drenagem total", prazoDias: "Dia 0", descricao: "Despescar, drenar completamente e registrar os índices finais do ciclo (FCA, sobrevivência, calibre)." },
+  { etapa: "Secagem do fundo", prazoDias: "10 a 15 dias", descricao: "Secar até o lodo abrir rachaduras de 2 a 5 cm. A oxidação ao sol elimina sulfetos e matéria orgânica redutora." },
+  { etapa: "Remoção do lodo preto", prazoDias: "Após a secagem", descricao: "Remover a camada de lodo preto acumulada (especialmente no centro e nas zonas de arraçoamento)." },
+  { etapa: "Análise de solo", prazoDias: "Antes da calagem", descricao: "Coletar amostras compostas do fundo e medir pH e matéria orgânica para dimensionar a calagem." },
+  { etapa: "Calagem do fundo", prazoDias: "15 a 30 dias antes do povoamento", descricao: "Aplicar calcário conforme análise e incorporar de 10 a 15 cm com gradagem leve." },
+  { etapa: "Enchimento com filtragem", prazoDias: "10 a 15 dias antes", descricao: "Encher com água filtrada em tela fina para barrar peixes, ovos e crustáceos invasores (risco de IHHNV e competidores)." },
+  { etapa: "Fertilização para bloom", prazoDias: "7 a 10 dias antes", descricao: "Estimular fitoplâncton para garantir alimento natural e estabilidade de oxigênio. Mirar transparência de 30 a 45 cm." },
+  { etapa: "Análise de água pré-povoamento", prazoDias: "3 a 5 dias antes", descricao: "Medir alcalinidade, pH, salinidade, Ca, Mg, K, Na e nitrogênio. Corrigir o balanço iônico ANTES de povoar." },
+  { etapa: "Aclimatação das PLs", prazoDias: "Dia do povoamento", descricao: "Equalizar temperatura e salinidade de forma gradual (2 a 3 horas). Diferença de salinidade acima de 5 ppt exige aclimatação lenta." },
+  { etapa: "Povoamento", prazoDias: "Preferência início da manhã ou noite", descricao: "Evitar povoar em pico de muda ou com oxigênio baixo. Distribuir as PLs nas bordas, contra o vento." }
+];

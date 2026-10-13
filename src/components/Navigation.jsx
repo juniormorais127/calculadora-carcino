@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, Layers, Activity, Droplets, Calculator, Settings } from "lucide-react";
+import { LayoutDashboard, Layers, Activity, Droplets, Calculator, ShieldAlert, Settings } from "lucide-react";
 
 export default function Navigation({ activeTab, setActiveTab }) {
   const tabs = [
@@ -8,6 +8,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
     { id: "biometria", label: "Biometria", icon: Activity },
     { id: "agua", label: "Água", icon: Droplets },
     { id: "calculadoras", label: "Cálculos", icon: Calculator },
+    { id: "sanidade", label: "Sanidade & BPM", icon: ShieldAlert },
     { id: "backup", label: "Ajustes", icon: Settings },
   ];
 
@@ -21,6 +22,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
           return (
             <button
               key={tab.id}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 isActive
@@ -44,8 +46,9 @@ export default function Navigation({ activeTab, setActiveTab }) {
             return (
               <button
                 key={tab.id}
+              aria-current={isActive ? "page" : undefined}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center min-h-11 min-w-0 flex-1 py-1 px-1 rounded-xl transition-all ${
                   isActive
                     ? "text-emerald-400 scale-105 font-bold"
                     : "text-slate-400 hover:text-slate-300 font-normal"

@@ -7,6 +7,7 @@ import BiometriaView from "./components/BiometriaView.jsx";
 import QualidadeAguaView from "./components/QualidadeAguaView.jsx";
 import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
+import SanidadeView from "./components/SanidadeView.jsx";
 import { db, seedInitialDataIfEmpty } from "./services/db.js";
 
 export default function App() {
@@ -16,12 +17,14 @@ export default function App() {
   const [qualidadeAgua, setQualidadeAgua] = useState([]);
   const [farmProfile, setFarmProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Modais acionados do Dashboard
   const [openModalBiometria, setOpenModalBiometria] = useState(false);
   const [openModalAgua, setOpenModalAgua] = useState(false);
 
   const loadData = async () => {
+    setError("");
     try {
       await seedInitialDataIfEmpty();
       const allViveiros = await db.viveiros.toArray();
@@ -35,6 +38,7 @@ export default function App() {
       setFarmProfile(config || null);
     } catch (err) {
       console.error("Erro ao carregar dados do Dexie:", err);
+      setError("Não foi possível acessar o armazenamento local. Verifique as permissões do navegador e tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,12 @@ export default function App() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-16 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {loading ? (
+        {error ? (
+          <div role="alert" className="my-8 rounded-xl border border-rose-800 bg-rose-950/40 p-5">
+            <p>{error}</p>
+            <button onClick={loadData} className="mt-4 rounded-lg bg-slate-700 px-4 py-3 font-semibold">Tentar novamente</button>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-3">
             <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-sm font-semibold text-slate-400">Carregando banco de dados local...</p>
@@ -109,6 +118,10 @@ export default function App() {
                 biometrias={biometrias}
                 qualidadeAgua={qualidadeAgua}
               />
+            )}
+
+            {activeTab === "sanidade" && (
+              <SanidadeView />
             )}
 
             {activeTab === "backup" && (
