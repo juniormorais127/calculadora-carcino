@@ -8,6 +8,7 @@ import QualidadeAguaView from "./components/QualidadeAguaView.jsx";
 import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
 import SanidadeView from "./components/SanidadeView.jsx";
+import MercadoView from "./components/MercadoView.jsx";
 import { db, initializeDatabase } from "./services/db.js";
 
 export default function App() {
@@ -128,11 +129,18 @@ export default function App() {
                 viveiros={viveiros}
                 biometrias={biometrias}
                 qualidadeAgua={qualidadeAgua}
+                onNavigate={handleNavigate}
               />
             )}
 
             {activeTab === "sanidade" && (
-              <SanidadeView />
+              <SanidadeView onNavigate={handleNavigate} />
+            )}
+
+            {activeTab === "mercado" && (
+              <MercadoView
+                onVoltarCalculos={() => handleNavigate("calculadoras")}
+              />
             )}
 
             {activeTab === "backup" && (

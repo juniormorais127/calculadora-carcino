@@ -11,12 +11,15 @@ import {
   ChevronDown, 
   ChevronUp,
   FileCheck2,
-  BookOpen
+  BookOpen,
+  Sprout,
+  Store
 } from "lucide-react";
 import { DOENCAS_CAMARAO, BOAS_PRATICAS_ABCC } from "../data/carcinoData.js";
+import { DADOS_PROBIOTICOS_SOLO } from "../data/probioticosSolo.js";
 import { loadChecklist, saveChecklist } from "../services/checklistService.js";
 
-export default function SanidadeView() {
+export default function SanidadeView({ onNavigate }) {
   const [activeSubTab, setActiveSubTab] = useState("doencas"); // doencas, bpm, inovacoes
   const [buscaSintoma, setBuscaSintoma] = useState("");
   const [expandedDoencaId, setExpandedDoencaId] = useState("wssv");
@@ -116,6 +119,18 @@ export default function SanidadeView() {
             >
               <Sparkles className="w-4 h-4" />
               <span>Novidades & Futuro</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSubTab("probioticos")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === "probioticos"
+                  ? "bg-teal-700 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Sprout className="w-4 h-4" />
+              <span>Probióticos de Solo & H2S</span>
             </button>
           </div>
         </div>
@@ -379,6 +394,119 @@ export default function SanidadeView() {
               <div>• Menor acúmulo de lodo negro anaeróbio;</div>
               <div>• Estabilização natural da amônia e do nitrito;</div>
               <div>• Melhora no Fator de Conversão Alimentar (FCA).</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* SUB-ABA 4: BIORREMEDIAÇÃO DE SOLO & PROBIÓTICOS (H2S & LODO)   */}
+      {/* ============================================================== */}
+      {activeSubTab === "probioticos" && (
+        <div className="space-y-5">
+          {/* Banner de Apresentação */}
+          <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-teal-500/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-2 max-w-2xl">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/40 px-2.5 py-0.5 rounded-full inline-block">
+                  Manejo Sanitário do Sedimento
+                </span>
+                <h3 className="text-lg sm:text-xl font-black text-white">
+                  {DADOS_PROBIOTICOS_SOLO.visaoGeral.titulo}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  {DADOS_PROBIOTICOS_SOLO.visaoGeral.resumo}
+                </p>
+              </div>
+
+              {onNavigate && (
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => onNavigate("calculadoras")}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs"
+                  >
+                    Calcular Doses no Viveiro
+                  </button>
+                  <button
+                    onClick={() => onNavigate("mercado")}
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    <span>Onde Comprar Probióticos</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Grid com Cepas Bacterianas */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-teal-700" />
+              Consórcios Bacterianos Essenciais para Solo:
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {DADOS_PROBIOTICOS_SOLO.cepasBacterianas.map((cepa, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h5 className="text-base font-bold text-slate-900">{cepa.nome}</h5>
+                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                        {cepa.tipo}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">{cepa.funcao}</p>
+                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
+                    <div><strong>Enzimas ativas:</strong> {cepa.enzimas}</div>
+                    <div><strong>Condição ótima:</strong> {cepa.condicaoIdeal}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Protocolo de Ativação / Biofermentação */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-600" />
+              {DADOS_PROBIOTICOS_SOLO.protocoloAtivacaoBiofermentacao.titulo}
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {DADOS_PROBIOTICOS_SOLO.protocoloAtivacaoBiofermentacao.ingredientes.map((ing, i) => (
+                <div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <span className="text-xs font-bold text-slate-800 block">{ing.item}</span>
+                  <span className="text-xs text-emerald-700 font-semibold">{ing.proporcao}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-700">
+              <span className="font-bold text-slate-900 block mb-1">Passo a Passo de Aplicação no Campo:</span>
+              {DADOS_PROBIOTICOS_SOLO.protocoloAtivacaoBiofermentacao.passos.map((p, idx) => (
+                <p key={idx} className="leading-relaxed">{p}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Tabela de Toxicidade do H2S e Potencial Redox */}
+          <div className="bg-white border border-rose-200 rounded-3xl p-5 shadow-xs space-y-3">
+            <div className="flex items-center gap-2 text-rose-700 font-bold text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Gás Sulfídrico (H2S) e Escala de Potencial Redox (ORP)</span>
+            </div>
+            <p className="text-xs text-slate-700 leading-relaxed">
+              {DADOS_PROBIOTICOS_SOLO.impactoRedoxEH2S.gasSulfidrico.explicacao}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+              {DADOS_PROBIOTICOS_SOLO.impactoRedoxEH2S.potencialRedox.faixas.map((f, i) => (
+                <div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center">
+                  <span className="text-xs font-black text-slate-900 block">{f.faixa}</span>
+                  <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">{f.status}</span>
+                  <p className="text-[10px] text-slate-500 mt-1 leading-tight">{f.descricao}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

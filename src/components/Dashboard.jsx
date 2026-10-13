@@ -9,8 +9,12 @@ import {
   Droplets,
   Calendar,
   ChevronRight,
-  Fish
+  Fish,
+  Store,
+  Sprout,
+  Megaphone
 } from "lucide-react";
+import BannerPatrocinador from "./BannerPatrocinador.jsx";
 
 export default function Dashboard({ 
   viveiros = [], 
@@ -140,6 +144,9 @@ export default function Dashboard({
         </div>
       </div>
 
+      {/* Banner de Patrocinadores e Fabricantes Homologados */}
+      <BannerPatrocinador onNavigateMercado={() => onNavigate("mercado")} />
+
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Viveiros Ativos */}
@@ -211,6 +218,49 @@ export default function Dashboard({
             <div className="text-xs text-slate-600 mt-0.5">
               Últimas biometrias
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Atalhos Rápidos: Mercado / Vendedores e Probióticos de Solo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div 
+          onClick={() => onNavigate("mercado")}
+          className="bg-white border border-slate-200 hover:border-emerald-500/50 rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
+        >
+          <div className="space-y-1 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block">
+              Guia Comercial
+            </span>
+            <h4 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+              Representantes Locais por Estado
+            </h4>
+            <p className="text-xs text-slate-600 line-clamp-2">
+              Contatos de WhatsApp de vendedores de rações (ADM, Guabi, AquaNutri), probióticos e corretivos.
+            </p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-700 flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+            <Store className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate("calculadoras")}
+          className="bg-white border border-slate-200 hover:border-amber-500/50 rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
+        >
+          <div className="space-y-1 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full inline-block">
+              Manejo do Fundo
+            </span>
+            <h4 className="text-sm font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+              Biorremediação & Probióticos de Solo
+            </h4>
+            <p className="text-xs text-slate-600 line-clamp-2">
+              Calcule doses de Bacillus e protocolo de ativação com melaço para combater lodo negro e H2S.
+            </p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 flex-shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-all">
+            <Sprout className="w-5 h-5" />
           </div>
         </div>
       </div>

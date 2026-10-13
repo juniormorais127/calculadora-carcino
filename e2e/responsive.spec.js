@@ -29,7 +29,7 @@ for (const size of sizes) {
     await page.getByRole('button', { name: 'Carregar Dados de Exemplo' }).click();
     await nav.getByRole('button', { name: 'Viveiros', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Viveiro 01 - Engorda Principal' })).toBeVisible();
-    for (const name of ['Painel', 'Viveiros', 'Biometria', 'Água', 'Cálculos', 'Sanidade & BPM', 'Ajustes']) {
+    for (const name of ['Painel', 'Viveiros', 'Biometria', 'Água', 'Cálculos', 'Sanidade & BPM', 'Onde Comprar', 'Ajustes']) {
       await nav.getByRole('button', { name, exact: true }).click();
       await expectNoOverflow(page);
       if (['Viveiros', 'Biometria', 'Água'].includes(name)) {

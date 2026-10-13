@@ -15,13 +15,20 @@ import {
   Atom,
   Wind,
   Leaf,
-  ChevronRight
+  ChevronRight,
+  Store,
+  ShoppingBag,
+  BadgeCheck
 } from "lucide-react";
 import CalcCalibre from "./calculadoras/CalcCalibre.jsx";
 import CalcCrescimento from "./calculadoras/CalcCrescimento.jsx";
 import CalcIonico from "./calculadoras/CalcIonico.jsx";
 import CalcAeracao from "./calculadoras/CalcAeracao.jsx";
 import CalcBioflocos from "./calculadoras/CalcBioflocos.jsx";
+import BannerPatrocinador from "./BannerPatrocinador.jsx";
+import { FABRICANTES_RACAO } from "../data/fabricantesRacao.js";
+import { calcularManejoProbioticoSolo } from "../services/probioticoService.js";
+import { DADOS_PROBIOTICOS_SOLO } from "../data/probioticosSolo.js";
 import {
   CampoNumero,
   CampoSelect,
@@ -56,7 +63,7 @@ const CALCULADORAS = [
   { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", icon: Leaf, cor: "violet" },
 ];
 
-export default function CalculadorasHub({ viveiros = [], biometrias = [], qualidadeAgua = [] }) {
+export default function CalculadorasHub({ viveiros = [], biometrias = [], qualidadeAgua = [], onNavigate }) {
   const [subTab, setSubTab] = useState("racao");
   const [selectedViveiroId, setSelectedViveiroId] = useState("");
 
@@ -110,6 +117,8 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   const [racaoBandejaAjuste, setRacaoBandejaAjuste] = useState(0);
   const [racaoTratos, setRacaoTratos] = useState(3);
   const [modoAutomaticoRacao, setModoAutomaticoRacao] = useState(true);
+  const [fabricanteRacaoId, setFabricanteRacaoId] = useState("generico");
+  const [faseRacaoManual, setFaseRacaoManual] = useState("auto"); // "auto", "juvenil", "engorda"
 
   // Sincronizar inputs quando o viveiro mudar no modo automático
   useEffect(() => {
@@ -141,6 +150,11 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   // Estados da Calculadora de Solo
   const [soloAreaM2, setSoloAreaM2] = useState(10000);
   const [soloPh, setSoloPh] = useState(5.8);
+  const [subModoSolo, setSubModoSolo] = useState("calagem"); // "calagem" | "probioticos"
+  const [probFinalidade, setProbFinalidade] = useState("manutencao"); // "manutencao", "choque", "preparo"
+  const [probNivelLodo, setProbNivelLodo] = useState("moderado"); // "leve", "moderado", "severo"
+  const [probTemH2S, setProbTemH2S] = useState(false);
+  const [probAtivado, setProbAtivado] = useState(true);
 
   useEffect(() => {
     if (viveiroAtual?.areaM2) {
@@ -158,6 +172,13 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   const [povoDensidade, setPovoDensidade] = useState(12);
   const [povoSobrevivencia, setPovoSobrevivencia] = useState(80);
   const [povoPesoAlvo, setPovoPesoAlvo] = useState(13.5);
+
+  // Dados do Fabricante de Ração e Fase selecionada
+  const fabricanteAtual = FABRICANTES_RACAO.find(f => f.id === fabricanteRacaoId) || null;
+  const faseAtiva = faseRacaoManual === "auto" 
+    ? (racaoPesoMedio <= 3.2 ? "juvenil" : "engorda") 
+    : faseRacaoManual;
+  const dadosFaseAtual = fabricanteAtual ? fabricanteAtual.fases[faseAtiva] : null;
 
   // Executar cálculos
   const resRacao = calculateDailyFeed({
@@ -177,6 +198,14 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   });
 
   const resSolo = calculateSoilLiming(soloAreaM2, soloPh);
+
+  const resProbiotico = calcularManejoProbioticoSolo({
+    areaM2: soloAreaM2,
+    finalidade: probFinalidade,
+    nivelLodo: probNivelLodo,
+    modoAtivado: probAtivado,
+    temCheiroH2S: probTemH2S
+  });
 
   const resAmonia = calculateToxicAmmonia(amoniaNat, amoniaPh, amoniaTemp);
 
@@ -398,6 +427,72 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                       ))}
                     </div>
                   </div>
+
+                  {/* Seletor de Fabricante de Ração e Fases (Juvenil / Engorda) */}
+                  <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <ShoppingBag className="w-3.5 h-3.5 text-amber-600" />
+                          Marca / Fabricante da Ração:
+                        </span>
+                        <span className="text-[10px] text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                          Ajuda Técnica
+                        </span>
+                      </label>
+                      <select
+                        value={fabricanteRacaoId}
+                        onChange={(e) => {
+                          setFabricanteRacaoId(e.target.value);
+                          setFaseRacaoManual("auto");
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-slate-900 font-bold text-xs focus:border-amber-500 focus:outline-none"
+                      >
+                        <option value="generico">Padrão Zootécnico (Curva Geral)</option>
+                        <option value="adm">ADM Nutrição Animal (Camanutri & Density)</option>
+                        <option value="guabi">Guabi Aqua (Linha Poti / Poti Guaçu)</option>
+                        <option value="aquanutri">AquaNutri Nutrição Especializada</option>
+                      </select>
+                    </div>
+
+                    {fabricanteAtual && (
+                      <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-700">Fase Nutricional:</span>
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-md">
+                            {faseRacaoManual === "auto" ? `Auto (${racaoPesoMedio}g)` : "Manual"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFaseRacaoManual("juvenil")}
+                            className={`py-2 px-2.5 rounded-xl text-xs font-black transition-all ${
+                              faseAtiva === "juvenil"
+                                ? "bg-amber-500 text-slate-950 shadow-xs ring-2 ring-amber-500/30"
+                                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                            }`}
+                          >
+                            Juvenil (0.2g a 3.2g)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFaseRacaoManual("engorda")}
+                            className={`py-2 px-2.5 rounded-xl text-xs font-black transition-all ${
+                              faseAtiva === "engorda"
+                                ? "bg-amber-500 text-slate-950 shadow-xs ring-2 ring-amber-500/30"
+                                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                            }`}
+                          >
+                            Engorda (&gt; 3.2g)
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-medium pt-0.5">
+                          Linha: <strong className="text-slate-800">{dadosFaseAtual?.nomeLinha}</strong> ({dadosFaseAtual?.pbPercent}% PB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -488,6 +583,82 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                   texto="Ração que sobra no fundo não alimenta camarão; consome oxigênio e vira amônia tóxica. Priorize o ajuste das bandejas de 2h a 2h30 após a distribuição."
                   cor="amber"
                 />
+
+                {/* Card de Ficha Técnica, Níveis de Garantia e Ajuda Técnica do Fabricante */}
+                {fabricanteAtual && dadosFaseAtual && (
+                  <div className="bg-white border-2 border-amber-500/40 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                            {fabricanteAtual.logoText}
+                          </span>
+                          <span className="text-xs font-bold text-slate-700">
+                            Ficha Técnica & Garantia
+                          </span>
+                        </div>
+                        <h4 className="text-base font-bold text-slate-900 mt-1">
+                          {dadosFaseAtual.nomeLinha} ({dadosFaseAtual.fase})
+                        </h4>
+                      </div>
+
+                      {onNavigate && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigate("mercado")}
+                          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs self-start sm:self-auto"
+                        >
+                          <Store className="w-3.5 h-3.5" />
+                          <span>Comprar {fabricanteAtual.logoText} no seu Estado</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Grid com Níveis Nutricionais de Garantia */}
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">
+                        Níveis de Garantia Oficiais (por kg de ração):
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                        <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-2.5">
+                          <span className="text-[10px] font-bold text-slate-500 block">Proteína (PB)</span>
+                          <span className="text-base font-black text-amber-900">{dadosFaseAtual.pbPercent}%</span>
+                          <span className="text-[9px] text-slate-500 block">mínimo</span>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                          <span className="text-[10px] font-bold text-slate-500 block">Extrato Etéreo</span>
+                          <span className="text-base font-black text-slate-800">{dadosFaseAtual.eePercent}%</span>
+                          <span className="text-[9px] text-slate-500 block">gordura mín.</span>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                          <span className="text-[10px] font-bold text-slate-500 block">Fibra Bruta</span>
+                          <span className="text-base font-black text-slate-800">{dadosFaseAtual.fbPercent}%</span>
+                          <span className="text-[9px] text-slate-500 block">máximo</span>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                          <span className="text-[10px] font-bold text-slate-500 block">Granulometria</span>
+                          <span className="text-xs font-black text-slate-800 mt-1 block truncate">{dadosFaseAtual.pelletMm}</span>
+                          <span className="text-[9px] text-slate-500 block">tamanho pellet</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ajuda Técnica Oficial para Ajuste de Ração */}
+                    <div className="bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/80 rounded-2xl p-3.5 text-xs space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+                        <BadgeCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span>Ajuda Técnica de Manejo ({fabricanteAtual.nome}):</span>
+                      </div>
+                      <p className="text-slate-700 leading-relaxed text-[11px]">
+                        {dadosFaseAtual.ajudaTecnica}
+                      </p>
+                      <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500">
+                        <span>Frequência sugerida: <strong>{dadosFaseAtual.tratosSugeridos}</strong></span>
+                        <span>Faixa ideal: <strong>{dadosFaseAtual.pesoMinG}g a {dadosFaseAtual.pesoMaxG}g</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -640,94 +811,347 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
         )}
 
         {/* ============================================================== */}
-        {/* ABA 3: CALAGEM E PREPARO DE SOLO DO FUNDO                      */}
+        {/* ABA 3: MANEJO DE SOLO DO FUNDO (CALAGEM & PROBIÓTICOS)         */}
         {/* ============================================================== */}
         {subTab === "solo" && (
           <div className="space-y-4">
-            {/* Resumo Rápido no Topo */}
-            <div className="bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
-              <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
-                  Calcário Dolomítico Necessário
-                </span>
-                <div className="text-xl sm:text-2xl font-black text-emerald-900 leading-tight">
-                  {resSolo.doseTotalKg.toLocaleString()} <span className="text-xs font-bold text-slate-700">kg</span>
-                </div>
-                <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
-                  Área: {(soloAreaM2 / 10000).toFixed(2)} ha ({soloAreaM2.toLocaleString()} m²)
-                </span>
-              </div>
-              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-500/20 self-start sm:self-auto">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                  Dose por Hectare
-                </span>
-                <span className="text-base sm:text-lg font-black text-slate-900">
-                  {resSolo.doseKgPorHa} <span className="text-xs font-bold text-emerald-700">kg/ha</span>
-                </span>
-              </div>
+            {/* Seletor de Manejo: Calagem Dolomítica vs Biorremediação com Probióticos */}
+            <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+              <button
+                type="button"
+                aria-label="Calagem Dolomítica"
+                onClick={() => setSubModoSolo("calagem")}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all ${
+                  subModoSolo === "calagem"
+                    ? "bg-white text-emerald-800 shadow-xs border border-emerald-500/30 ring-2 ring-emerald-500/20"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                🌾 Calagem Dolomítica (Calcário)
+              </button>
+              <button
+                type="button"
+                aria-label="Biorremediação com Probióticos"
+                onClick={() => setSubModoSolo("probioticos")}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all ${
+                  subModoSolo === "probioticos"
+                    ? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                🦠 Biorremediação com Probióticos (Lodo & H2S)
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
-                <TituloEntrada
-                  icone={Sprout}
-                  titulo="Dados do Solo Seco (Pós-Despesca)"
-                  cor="emerald"
-                />
-
-                <div className="space-y-3.5">
-                  <CampoNumero
-                    label="1. Área do Viveiro"
-                    valor={soloAreaM2}
-                    onChange={setSoloAreaM2}
-                    step="1000"
-                    min="500"
-                    sufixo="m²"
-                    cor="emerald"
-                    ajuda={`Equivale a ${(soloAreaM2 / 10000).toFixed(2)} hectares.`}
-                  />
-
-                  <CampoNumero
-                    label="2. pH do Solo do Fundo"
-                    valor={soloPh}
-                    onChange={setSoloPh}
-                    step="0.1"
-                    min="3.5"
-                    cor="emerald"
-                    ajuda="Medição feita em amostra do solo seco do fundo."
-                  />
+            {/* MODO 1: CALAGEM DOLOMÍTICA TRADICIONAL */}
+            {subModoSolo === "calagem" && (
+              <>
+                {/* Resumo Rápido no Topo */}
+                <div className="bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
+                      Calcário Dolomítico Necessário
+                    </span>
+                    <div className="text-xl sm:text-2xl font-black text-emerald-900 leading-tight">
+                      {resSolo.doseTotalKg.toLocaleString()} <span className="text-xs font-bold text-slate-700">kg</span>
+                    </div>
+                    <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                      Área: {(soloAreaM2 / 10000).toFixed(2)} ha ({soloAreaM2.toLocaleString()} m²)
+                    </span>
+                  </div>
+                  <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-500/20 self-start sm:self-auto">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Dose por Hectare
+                    </span>
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      {resSolo.doseKgPorHa} <span className="text-xs font-bold text-emerald-700">kg/ha</span>
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="lg:col-span-7 space-y-4">
-                <CartaoSaida titulo="Recomendação de Calagem de Fundo" cor="emerald">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <CartaoResultado
-                      titulo="Calcário Dolomítico Total"
-                      valor={resSolo.doseTotalKg.toLocaleString()}
-                      unidade="kg"
-                      detalhe={`Dose recomendada: ${resSolo.doseKgPorHa} kg/ha (${((resSolo.doseKgPorHa)/1000).toFixed(1)} t/ha)`}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                  <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                    <TituloEntrada
+                      icone={Sprout}
+                      titulo="Dados do Solo Seco (Pós-Despesca)"
                       cor="emerald"
                     />
 
-                    <CartaoResultado
-                      titulo="Tempo de Dessecação (Sol)"
-                      valor="10 a 15"
-                      unidade="dias"
-                      detalhe="Até abrir rachaduras de 2 a 5 cm no lodo"
-                      cor="emerald"
-                    />
+                    <div className="space-y-3.5">
+                      <CampoNumero
+                        label="1. Área do Viveiro"
+                        valor={soloAreaM2}
+                        onChange={setSoloAreaM2}
+                        step="1000"
+                        min="500"
+                        sufixo="m²"
+                        cor="emerald"
+                        ajuda={`Equivale a ${(soloAreaM2 / 10000).toFixed(2)} hectares.`}
+                      />
+
+                      <CampoNumero
+                        label="2. pH do Solo do Fundo"
+                        valor={soloPh}
+                        onChange={setSoloPh}
+                        step="0.1"
+                        min="3.5"
+                        cor="emerald"
+                        ajuda="Medição feita em amostra do solo seco do fundo."
+                      />
+                    </div>
                   </div>
 
-                  <PainelInterno titulo="Manejo de Preparação" cor="emerald">
-                    <p>{resSolo.recomendacao}</p>
-                    <p className="text-slate-600 text-[11px] mt-1">
-                      Distribua o calcário uniformemente e faça leve gradagem (10 cm) para neutralizar a camada redutora de sulfetos.
-                    </p>
-                  </PainelInterno>
-                </CartaoSaida>
-              </div>
-            </div>
+                  <div className="lg:col-span-7 space-y-4">
+                    <CartaoSaida titulo="Recomendação de Calagem de Fundo" cor="emerald">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <CartaoResultado
+                          titulo="Calcário Dolomítico Total"
+                          valor={resSolo.doseTotalKg.toLocaleString()}
+                          unidade="kg"
+                          detalhe={`Dose recomendada: ${resSolo.doseKgPorHa} kg/ha (${((resSolo.doseKgPorHa)/1000).toFixed(1)} t/ha)`}
+                          cor="emerald"
+                        />
+
+                        <CartaoResultado
+                          titulo="Tempo de Dessecação (Sol)"
+                          valor="10 a 15"
+                          unidade="dias"
+                          detalhe="Até abrir rachaduras de 2 a 5 cm no lodo"
+                          cor="emerald"
+                        />
+                      </div>
+
+                      <PainelInterno titulo="Manejo de Preparação" cor="emerald">
+                        <p>{resSolo.recomendacao}</p>
+                        <p className="text-slate-600 text-[11px] mt-1">
+                          Distribua o calcário uniformemente e faça leve gradagem (10 cm) para neutralizar a camada redutora de sulfetos.
+                        </p>
+                      </PainelInterno>
+                    </CartaoSaida>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* MODO 2: BIORREMEDIAÇÃO COM PROBIÓTICOS (LODO & H2S) */}
+            {subModoSolo === "probioticos" && (
+              <>
+                {/* Resumo Rápido no Topo */}
+                <div className="bg-gradient-to-r from-emerald-600/20 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
+                      Dose de Probiótico ({resProbiotico.frequencia})
+                    </span>
+                    <div className="text-xl sm:text-2xl font-black text-emerald-950 leading-tight">
+                      {resProbiotico.doseDiariaKg} <span className="text-xs font-bold text-slate-700">kg/dia</span>
+                    </div>
+                    <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                      Taxa: {resProbiotico.doseBaseKgHa} kg/ha ({resProbiotico.areaHa} ha de viveiro)
+                    </span>
+                  </div>
+
+                  <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-500/20 self-start sm:self-auto">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Ativação (Melaço)
+                    </span>
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      {resProbiotico.melacoKg > 0 ? `${resProbiotico.melacoKg} kg` : "Direto em pó"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                  {/* Coluna Esquerda: Parâmetros do Sedimento e Probiótico */}
+                  <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                    <TituloEntrada
+                      icone={Sprout}
+                      titulo="Parâmetros de Biorremediação"
+                      cor="emerald"
+                    />
+
+                    <div className="space-y-3.5">
+                      <CampoNumero
+                        label="1. Área do Viveiro"
+                        valor={soloAreaM2}
+                        onChange={setSoloAreaM2}
+                        step="1000"
+                        min="500"
+                        sufixo="m²"
+                        cor="emerald"
+                        ajuda={`Equivale a ${(soloAreaM2 / 10000).toFixed(2)} hectares.`}
+                      />
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                          2. Finalidade da Aplicação:
+                        </label>
+                        <select
+                          value={probFinalidade}
+                          onChange={(e) => setProbFinalidade(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="manutencao">Manutenção Preventiva Semanal (Rotina)</option>
+                          <option value="choque">Tratamento de Choque (Lodo Negro / Crítico)</option>
+                          <option value="preparo">Preparo entre Safras (Primeira Lâmina d'água)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                          3. Nível de Lodo Acumulado no Fundo:
+                        </label>
+                        <select
+                          value={probNivelLodo}
+                          onChange={(e) => setProbNivelLodo(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="leve">Leve (Pequenas manchas claras)</option>
+                          <option value="moderado">Moderado (Acúmulo nos alimentadores)</option>
+                          <option value="severo">Severo (Camada espessa de lodo preto)</option>
+                        </select>
+                      </div>
+
+                      {/* Odor de Ovo Podre (H2S) */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between gap-3">
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">
+                            Presença de Cheiro de Ovo Podre (H2S)?
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            Sinal grave de bactérias redutoras de sulfato
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProbTemH2S(!probTemH2S)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                            probTemH2S
+                              ? "bg-rose-600 text-white shadow-xs"
+                              : "bg-white text-slate-700 border border-slate-200"
+                          }`}
+                        >
+                          {probTemH2S ? "SIM (H2S)" : "NÃO"}
+                        </button>
+                      </div>
+
+                      {/* Método de Aplicação: Ativado vs Direto */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                          Método de Aplicação:
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProbAtivado(true)}
+                            className={`py-2 px-2.5 rounded-xl text-xs font-black transition-all ${
+                              probAtivado
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "bg-slate-50 text-slate-700 border border-slate-200"
+                            }`}
+                          >
+                            Biofermentado (Ativado)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProbAtivado(false)}
+                            className={`py-2 px-2.5 rounded-xl text-xs font-black transition-all ${
+                              !probAtivado
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "bg-slate-50 text-slate-700 border border-slate-200"
+                            }`}
+                          >
+                            Pó Hidratado Direto
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coluna Direita: Resultados, Protocolo e Cepas */}
+                  <div className="lg:col-span-7 space-y-4">
+                    <CartaoSaida titulo="Protocolo de Biorremediação do Fundo" cor="emerald">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <CartaoResultado
+                          titulo="Dose de Probiótico / Dia"
+                          valor={resProbiotico.doseDiariaKg}
+                          unidade="kg/dia"
+                          detalhe={`Taxa: ${resProbiotico.doseBaseKgHa} kg/ha (${resProbiotico.frequencia})`}
+                          cor="emerald"
+                        />
+
+                        {resProbiotico.modoAtivado ? (
+                          <CartaoResultado
+                            titulo="Melaço para Biofermentação"
+                            valor={resProbiotico.melacoKg}
+                            unidade="kg"
+                            detalhe={`Diluir em ${resProbiotico.aguaAtivacaoL} L de água doce aerada por ${resProbiotico.tempoAeracaoHoras}h`}
+                            cor="emerald"
+                          />
+                        ) : (
+                          <CartaoResultado
+                            titulo="Modo de Aplicação"
+                            valor="Direto"
+                            unidade="Pó hidratado"
+                            detalhe="Hidratar em baldes com água do próprio viveiro por 30 min"
+                            cor="emerald"
+                          />
+                        )}
+                      </div>
+
+                      <PainelInterno titulo="Instruções Práticas de Campo" cor="emerald">
+                        <p>{resProbiotico.recomendacaoManejo}</p>
+                        <p className="text-slate-600 text-[11px] mt-1.5">
+                          <b>Horário ideal:</b> Aplicar entre 08h00 e 10h00 da manhã, com aeradores ligados para distribuir as bactérias heterotróficas uniformemente sobre o sedimento.
+                        </p>
+                      </PainelInterno>
+
+                      <ListaAvisos avisos={resProbiotico.avisos} cor="emerald" />
+                    </CartaoSaida>
+
+                    {/* Guia de Cepas e Mecanismos Bioquímicos */}
+                    <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <BadgeCheck className="w-4 h-4 text-emerald-600" />
+                        Ação das Cepas no Lodo e Controle de H2S:
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <span className="font-black text-emerald-800 block">Bacillus subtilis</span>
+                          <span className="text-[11px] text-slate-600">Produz proteases para degradar restos de ração e fezes. Bloqueia Vibrio por competição.</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <span className="font-black text-emerald-800 block">Bacillus licheniformis</span>
+                          <span className="text-[11px] text-slate-600">Ativo no lodo denso com baixo oxigênio, decompondo matéria orgânica profunda.</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <span className="font-black text-teal-800 block">Rhodopseudomonas (Fototróficas)</span>
+                          <span className="text-[11px] text-slate-600">Oxida quimicamente o gás sulfídrico (H2S), transformando-o em sulfato inócuo.</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          <span className="font-black text-cyan-800 block">Consórcio Nitrificante</span>
+                          <span className="text-[11px] text-slate-600">Oxida a amônia liberada pela decomposição do lodo em nitrito e depois nitrato.</span>
+                        </div>
+                      </div>
+
+                      {/* Escala Redox de Referência */}
+                      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Potencial Redox ideal: <strong>&gt; +50 mV</strong> (Fundo oxidado)</span>
+                        {onNavigate && (
+                          <button
+                            type="button"
+                            onClick={() => onNavigate("mercado")}
+                            className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                          >
+                            <Store className="w-3.5 h-3.5" />
+                            <span>Vendedores de Probióticos</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
