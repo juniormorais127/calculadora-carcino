@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   Layers, 
   Weight, 
@@ -15,6 +15,7 @@ import {
   Megaphone
 } from "lucide-react";
 import BannerPatrocinador from "./BannerPatrocinador.jsx";
+import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function Dashboard({ 
   viveiros = [], 
@@ -23,8 +24,30 @@ export default function Dashboard({
   onNavigate,
   onOpenNewBiometria,
   onOpenNewAgua,
-  onOpenNewViveiro
+  onOpenNewViveiro,
+  onIniciarCadastroComIntencao,
+  onCarregarExemplos
 }) {
+  const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
+  const [tipoAviso, setTipoAviso] = useState("biometria");
+
+  const handleCliqueBiometria = () => {
+    if (viveiros.length === 0) {
+      setTipoAviso("biometria");
+      setModalAvisoAberto(true);
+    } else {
+      onOpenNewBiometria?.();
+    }
+  };
+
+  const handleCliqueAgua = () => {
+    if (viveiros.length === 0) {
+      setTipoAviso("agua");
+      setModalAvisoAberto(true);
+    } else {
+      onOpenNewAgua?.();
+    }
+  };
   // Viveiros ativos
   const viveirosAtivos = viveiros.filter(v => v.status === "ativo");
 
@@ -124,18 +147,16 @@ export default function Dashboard({
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={onOpenNewBiometria}
-              disabled={viveiros.length === 0}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm  transition-all active:scale-95"
+              onClick={handleCliqueBiometria}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Biometria</span>
             </button>
 
             <button
-              onClick={onOpenNewAgua}
-              disabled={viveiros.length === 0}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-sm  transition-all active:scale-95"
+              onClick={handleCliqueAgua}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <Droplets className="w-4 h-4" />
               <span>+ Qualidade Água</span>
@@ -321,13 +342,23 @@ export default function Dashboard({
             <p className="text-xs text-slate-600 max-w-sm mx-auto">
               Cadastre seu primeiro viveiro com a área, data de povoamento e quantidade de pós-larvas para automatizar os cálculos.
             </p>
-            <button
-              onClick={onOpenNewViveiro}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Cadastrar primeiro viveiro
-            </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+              <button
+                onClick={onOpenNewViveiro}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 active:scale-95 transition-all shadow-sm"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Cadastrar primeiro viveiro
+              </button>
+              {onCarregarExemplos && (
+                <button
+                  onClick={onCarregarExemplos}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold active:scale-95 transition-all border border-slate-200"
+                >
+                  Carregar dados de exemplo
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -405,6 +436,21 @@ export default function Dashboard({
           </div>
         )}
       </div>
+
+      {/* Modal de Aviso de Viveiro Obrigatório */}
+      <ModalAvisoViveiroObrigatorio
+        isOpen={modalAvisoAberto}
+        tipo={tipoAviso}
+        onClose={() => setModalAvisoAberto(false)}
+        onCadastrarViveiro={() => {
+          setModalAvisoAberto(false);
+          onIniciarCadastroComIntencao?.(tipoAviso);
+        }}
+        onCarregarExemplos={onCarregarExemplos ? async () => {
+          setModalAvisoAberto(false);
+          await onCarregarExemplos();
+        } : null}
+      />
     </div>
   );
 }

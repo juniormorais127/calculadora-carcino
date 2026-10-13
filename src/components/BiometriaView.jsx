@@ -1,20 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Activity, Plus, TrendingUp, Calendar, Trash2, ArrowUpRight, Scale } from "lucide-react";
 import { db } from "../services/db.js";
 import { calculateBiomass, getFeedingRateInfo } from "../services/calculatorService.js";
+import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function BiometriaView({ 
   viveiros = [], 
   biometrias = [], 
   onReload,
   isModalOpenExternal = false,
-  onCloseExternalModal = null
+  onCloseExternalModal = null,
+  novoViveiroCriadoId = null,
+  onSolicitarCadastroViveiro = null
 }) {
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );
 
-  const [isModalOpen, setIsModalOpen] = useState(isModalOpenExternal);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
 
   // Inputs do modal
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
@@ -33,7 +37,29 @@ export default function BiometriaView({
     ? biometriasViveiro[biometriasViveiro.length - 1] 
     : null;
 
+  useEffect(() => {
+    if (isModalOpenExternal) {
+      if (viveiros.length > 0) {
+        handleOpenModal();
+      } else {
+        setModalAvisoAberto(true);
+      }
+    }
+  }, [isModalOpenExternal, viveiros.length]);
+
+  useEffect(() => {
+    if (novoViveiroCriadoId) {
+      setSelectedViveiroId(String(novoViveiroCriadoId));
+    } else if (viveiros.length > 0 && (!selectedViveiroId || !viveiros.some(v => String(v.id) === String(selectedViveiroId)))) {
+      setSelectedViveiroId(String(viveiros[0].id));
+    }
+  }, [viveiros, novoViveiroCriadoId]);
+
   const handleOpenModal = () => {
+    if (viveiros.length === 0) {
+      setModalAvisoAberto(true);
+      return;
+    }
     setData(new Date().toISOString().split("T")[0]);
     setPesoMedioG(ultimaBiometria ? Number((ultimaBiometria.pesoMedioG + 1.2).toFixed(1)) : 5.0);
     setSobrevivenciaEstimada(ultimaBiometria ? ultimaBiometria.sobrevivenciaEstimada : 85);
@@ -125,106 +151,131 @@ export default function BiometriaView({
         </div>
       </div>
 
-      {/* KPI Cards do Viveiro Selecionado */}
-      {viveiroAtual && ultimaBiometria && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Peso Atual</span>
-            <div className="text-2xl font-semibold text-emerald-700 mt-1">
-              {ultimaBiometria.pesoMedioG} <span className="text-xs text-slate-900">g</span>
-            </div>
-            <span className="text-[10px] text-slate-600">Em {ultimaBiometria.data}</span>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Biomassa Estimada</span>
-            <div className="text-2xl font-semibold text-slate-900 mt-1">
-              {Math.round(ultimaBiometria.biomassaKg)} <span className="text-xs text-slate-600">kg</span>
-            </div>
-            <span className="text-[10px] text-emerald-700 font-semibold">
-              {(ultimaBiometria.biomassaKg / 1000).toFixed(2)} toneladas
-            </span>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Ganho Semanal</span>
-            <div className="text-2xl font-semibold text-teal-700 mt-1 flex items-center gap-1">
-              {ultimaBiometria.ganhoSemanalG > 0 ? `+${ultimaBiometria.ganhoSemanalG}` : ultimaBiometria.ganhoSemanalG} 
-              <span className="text-xs text-slate-900">g/sem</span>
-            </div>
-            <span className="text-[10px] text-slate-600">
-              GPD: {ultimaBiometria.ganhoDiarioG} g/dia
-            </span>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Sobrevivência</span>
-            <div className="text-2xl font-semibold text-cyan-700 mt-1">
-              {ultimaBiometria.sobrevivenciaEstimada}%
-            </div>
-            <span className="text-[10px] text-slate-600">
-              ~{ultimaBiometria.camaroesEstimados?.toLocaleString()} camarões
-            </span>
-          </div>
+      {viveiros.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+          <Activity className="w-10 h-10 text-emerald-600 mx-auto" />
+          <h3 className="text-base font-bold text-slate-900">Nenhum viveiro cadastrado</h3>
+          <p className="text-xs text-slate-600 max-w-md mx-auto">
+            Para lançar pesagens de biometria e acompanhar biomassa, taxa de arraçoamento e curva de crescimento, cadastre primeiro o viveiro da sua fazenda.
+          </p>
+          <button
+            onClick={() => {
+              if (onSolicitarCadastroViveiro) {
+                onSolicitarCadastroViveiro("biometria");
+              } else {
+                setModalAvisoAberto(true);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Cadastrar Primeiro Viveiro</span>
+          </button>
         </div>
+      ) : (
+        <>
+          {/* KPI Cards do Viveiro Selecionado */}
+          {viveiroAtual && ultimaBiometria && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Peso Atual</span>
+                <div className="text-2xl font-semibold text-emerald-700 mt-1">
+                  {ultimaBiometria.pesoMedioG} <span className="text-xs text-slate-900">g</span>
+                </div>
+                <span className="text-[10px] text-slate-600">Em {ultimaBiometria.data}</span>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Biomassa Estimada</span>
+                <div className="text-2xl font-semibold text-slate-900 mt-1">
+                  {Math.round(ultimaBiometria.biomassaKg)} <span className="text-xs text-slate-600">kg</span>
+                </div>
+                <span className="text-[10px] text-emerald-700 font-semibold">
+                  {(ultimaBiometria.biomassaKg / 1000).toFixed(2)} toneladas
+                </span>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Ganho Semanal</span>
+                <div className="text-2xl font-semibold text-teal-700 mt-1 flex items-center gap-1">
+                  {ultimaBiometria.ganhoSemanalG > 0 ? `+${ultimaBiometria.ganhoSemanalG}` : ultimaBiometria.ganhoSemanalG} 
+                  <span className="text-xs text-slate-900">g/sem</span>
+                </div>
+                <span className="text-[10px] text-slate-600">
+                  GPD: {ultimaBiometria.ganhoDiarioG} g/dia
+                </span>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Sobrevivência</span>
+                <div className="text-2xl font-semibold text-cyan-700 mt-1">
+                  {ultimaBiometria.sobrevivenciaEstimada}%
+                </div>
+                <span className="text-[10px] text-slate-600">
+                  ~{ultimaBiometria.camaroesEstimados?.toLocaleString()} camarões
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Histórico e Tabela */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-emerald-700" />
+                Histórico de Pesagens - {viveiroAtual?.nome || "Selecione um viveiro"}
+              </span>
+              <span className="text-xs text-slate-600 font-normal">
+                {biometriasViveiro.length} registros
+              </span>
+            </h3>
+
+            {biometriasViveiro.length === 0 ? (
+              <div className="text-center py-8 text-slate-600 text-xs">
+                Nenhuma biometria cadastrada para este viveiro. Clique em "+ Nova Biometria" para registrar a pesagem semanal.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Data</th>
+                      <th className="py-2.5 px-3">Peso Médio</th>
+                      <th className="py-2.5 px-3">Ganho Semanal</th>
+                      <th className="py-2.5 px-3">Biomassa Est.</th>
+                      <th className="py-2.5 px-3">Sobrevivência</th>
+                      <th className="py-2.5 px-3">Observações</th>
+                      <th className="py-2.5 px-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 text-slate-800">
+                    {biometriasViveiro.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-100 transition-colors">
+                        <td className="py-3 px-3 font-semibold text-slate-900">{b.data}</td>
+                        <td className="py-3 px-3 font-semibold text-emerald-700 text-sm">{b.pesoMedioG} g</td>
+                        <td className="py-3 px-3 text-teal-700 font-bold">
+                          {b.ganhoSemanalG ? `+${b.ganhoSemanalG} g` : "--"}
+                        </td>
+                        <td className="py-3 px-3 font-semibold">{b.biomassaKg ? `${Math.round(b.biomassaKg)} kg` : "--"}</td>
+                        <td className="py-3 px-3">{b.sobrevivenciaEstimada}%</td>
+                        <td className="py-3 px-3 text-slate-600 italic max-w-xs truncate">{b.notas || "--"}</td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => handleDelete(b.id)}
+                            className="text-rose-700 hover:text-rose-700 p-1 rounded hover:bg-white"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
-
-      {/* Histórico e Tabela */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-emerald-700" />
-            Histórico de Pesagens - {viveiroAtual?.nome || "Selecione um viveiro"}
-          </span>
-          <span className="text-xs text-slate-600 font-normal">
-            {biometriasViveiro.length} registros
-          </span>
-        </h3>
-
-        {biometriasViveiro.length === 0 ? (
-          <div className="text-center py-8 text-slate-600 text-xs">
-            Nenhuma biometria cadastrada para este viveiro. Clique em "+ Nova Biometria" para registrar a pesagem semanal.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3">Data</th>
-                  <th className="py-2.5 px-3">Peso Médio</th>
-                  <th className="py-2.5 px-3">Ganho Semanal</th>
-                  <th className="py-2.5 px-3">Biomassa Est.</th>
-                  <th className="py-2.5 px-3">Sobrevivência</th>
-                  <th className="py-2.5 px-3">Observações</th>
-                  <th className="py-2.5 px-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-800">
-                {biometriasViveiro.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-100 transition-colors">
-                    <td className="py-3 px-3 font-semibold text-slate-900">{b.data}</td>
-                    <td className="py-3 px-3 font-semibold text-emerald-700 text-sm">{b.pesoMedioG} g</td>
-                    <td className="py-3 px-3 text-teal-700 font-bold">
-                      {b.ganhoSemanalG ? `+${b.ganhoSemanalG} g` : "--"}
-                    </td>
-                    <td className="py-3 px-3 font-semibold">{b.biomassaKg ? `${Math.round(b.biomassaKg)} kg` : "--"}</td>
-                    <td className="py-3 px-3">{b.sobrevivenciaEstimada}%</td>
-                    <td className="py-3 px-3 text-slate-600 italic max-w-xs truncate">{b.notas || "--"}</td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => handleDelete(b.id)}
-                        className="text-rose-700 hover:text-rose-700 p-1 rounded hover:bg-white"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
 
       {/* Modal de Nova Biometria */}
       {(isModalOpen || isModalOpenExternal) && (
@@ -321,6 +372,17 @@ export default function BiometriaView({
           </div>
         </div>
       )}
+
+      {/* Modal de Aviso quando não há viveiros */}
+      <ModalAvisoViveiroObrigatorio
+        isOpen={modalAvisoAberto}
+        tipo="biometria"
+        onClose={() => setModalAvisoAberto(false)}
+        onCadastrarViveiro={() => {
+          setModalAvisoAberto(false);
+          onSolicitarCadastroViveiro?.("biometria");
+        }}
+      />
     </div>
   );
 }

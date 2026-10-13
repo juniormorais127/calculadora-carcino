@@ -9,7 +9,8 @@ import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
 import SanidadeView from "./components/SanidadeView.jsx";
 import MercadoView from "./components/MercadoView.jsx";
-import { db, initializeDatabase } from "./services/db.js";
+import { db, initializeDatabase, seedInitialDataIfEmpty } from "./services/db.js";
+import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -24,6 +25,11 @@ export default function App() {
   const [openModalBiometria, setOpenModalBiometria] = useState(false);
   const [openModalAgua, setOpenModalAgua] = useState(false);
   const [openModalViveiro, setOpenModalViveiro] = useState(false);
+
+  // Fluxo guiado: quando o usuário clica em biometria/água sem ter viveiros
+  const [intencaoPosViveiro, setIntencaoPosViveiro] = useState(null); // "biometria" | "agua" | null
+  const [novoViveiroCriadoId, setNovoViveiroCriadoId] = useState(null);
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
 
   const loadData = async () => {
     setError("");
@@ -50,9 +56,56 @@ export default function App() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (feedbackBanner) {
+      const timer = setTimeout(() => {
+        setFeedbackBanner(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedbackBanner]);
+
   const handleNavigate = (tab) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleIniciarCadastroComIntencao = (tipo) => {
+    setIntencaoPosViveiro(tipo);
+    setActiveTab("viveiros");
+    setOpenModalViveiro(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCarregarExemplos = async () => {
+    await seedInitialDataIfEmpty({ force: true });
+    await loadData();
+    setFeedbackBanner({
+      tipo: "sucesso",
+      texto: "Dados de exemplo carregados com sucesso! Você já pode acompanhar viveiros, biometrias e calculadoras."
+    });
+  };
+
+  const handleViveiroCriado = (novoId) => {
+    if (intencaoPosViveiro === "biometria") {
+      setIntencaoPosViveiro(null);
+      setNovoViveiroCriadoId(novoId);
+      setActiveTab("biometria");
+      setOpenModalBiometria(true);
+      setFeedbackBanner({
+        tipo: "sucesso",
+        texto: "Viveiro cadastrado com sucesso! Preencha agora os dados da primeira pesagem/biometria."
+      });
+    } else if (intencaoPosViveiro === "agua") {
+      setIntencaoPosViveiro(null);
+      setNovoViveiroCriadoId(novoId);
+      setActiveTab("agua");
+      setOpenModalAgua(true);
+      setFeedbackBanner({
+        tipo: "sucesso",
+        texto: "Viveiro cadastrado com sucesso! Preencha agora a medição dos parâmetros de qualidade da água."
+      });
+    }
   };
 
   return (
@@ -61,6 +114,26 @@ export default function App() {
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-16 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
+
+        {feedbackBanner && (
+          <div 
+            role="status" 
+            aria-live="polite"
+            className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 shadow-sm flex items-center justify-between gap-3 text-xs sm:text-sm text-emerald-900 animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            <div className="flex items-center gap-2.5 font-medium">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <span>{feedbackBanner.texto}</span>
+            </div>
+            <button
+              onClick={() => setFeedbackBanner(null)}
+              aria-label="Fechar notificação"
+              className="p-1 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {error ? (
           <div role="alert" className="my-8 rounded-xl border border-rose-100 bg-rose-50 p-5">
@@ -92,6 +165,8 @@ export default function App() {
                   handleNavigate("viveiros");
                   setOpenModalViveiro(true);
                 }}
+                onIniciarCadastroComIntencao={handleIniciarCadastroComIntencao}
+                onCarregarExemplos={handleCarregarExemplos}
               />
             )}
 
@@ -101,6 +176,8 @@ export default function App() {
                 onReload={loadData} 
                 isModalOpenExternal={openModalViveiro}
                 onCloseExternalModal={() => setOpenModalViveiro(false)}
+                onViveiroCriado={handleViveiroCriado}
+                intencaoPosViveiro={intencaoPosViveiro}
               />
             )}
 
@@ -111,6 +188,8 @@ export default function App() {
                 onReload={loadData}
                 isModalOpenExternal={openModalBiometria}
                 onCloseExternalModal={() => setOpenModalBiometria(false)}
+                novoViveiroCriadoId={novoViveiroCriadoId}
+                onSolicitarCadastroViveiro={handleIniciarCadastroComIntencao}
               />
             )}
 
@@ -121,6 +200,8 @@ export default function App() {
                 onReload={loadData}
                 isModalOpenExternal={openModalAgua}
                 onCloseExternalModal={() => setOpenModalAgua(false)}
+                novoViveiroCriadoId={novoViveiroCriadoId}
+                onSolicitarCadastroViveiro={handleIniciarCadastroComIntencao}
               />
             )}
 

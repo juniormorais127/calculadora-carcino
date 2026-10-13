@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Layers, Plus, Trash2, Edit3, Calendar, Droplets, Maximize2 } from "lucide-react";
 import { db, deleteViveiro } from "../services/db.js";
 
-export default function ViveirosList({ viveiros = [], onReload, isModalOpenExternal = false, onCloseExternalModal }) {
+export default function ViveirosList({ 
+  viveiros = [], 
+  onReload, 
+  isModalOpenExternal = false, 
+  onCloseExternalModal,
+  onViveiroCriado,
+  intencaoPosViveiro = null
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingViveiro, setEditingViveiro] = useState(null);
 
@@ -67,15 +74,23 @@ export default function ViveirosList({ viveiros = [], onReload, isModalOpenExter
       updatedAt: new Date().toISOString()
     };
 
+    let novoId = null;
+    const isNovo = !editingViveiro;
+
     if (editingViveiro) {
       await db.viveiros.update(editingViveiro.id, dados);
+      novoId = editingViveiro.id;
     } else {
       dados.createdAt = new Date().toISOString();
-      await db.viveiros.add(dados);
+      novoId = await db.viveiros.add(dados);
     }
 
     handleClose();
-    onReload();
+    await onReload?.();
+
+    if (isNovo && onViveiroCriado) {
+      onViveiroCriado(novoId);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -185,6 +200,18 @@ export default function ViveirosList({ viveiros = [], onReload, isModalOpenExter
               {editingViveiro ? "Editar Viveiro" : "Cadastrar Novo Viveiro"}
             </h3>
 
+            {intencaoPosViveiro && !editingViveiro && (
+              <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3 text-xs text-emerald-800 flex items-start gap-2.5">
+                <span className="font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide flex-shrink-0 mt-0.5">
+                  Passo 1 de 2
+                </span>
+                <span>
+                  Cadastre as dimensões deste viveiro. Assim que salvar, abriremos diretamente a tela de{" "}
+                  <strong>{intencaoPosViveiro === "biometria" ? "Biometria" : "Qualidade da Água"}</strong> para você lançar seus dados!
+                </span>
+              </div>
+            )}
+
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Nome / Identificação:</label>
@@ -283,9 +310,13 @@ export default function ViveirosList({ viveiros = [], onReload, isModalOpenExter
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm "
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all"
                 >
-                  Salvar Viveiro
+                  {intencaoPosViveiro && !editingViveiro ? (
+                    `Salvar e Ir para ${intencaoPosViveiro === "biometria" ? "Biometria" : "Qualidade da Água"}`
+                  ) : (
+                    editingViveiro ? "Salvar Alterações" : "Salvar Viveiro"
+                  )}
                 </button>
               </div>
             </form>

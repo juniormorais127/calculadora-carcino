@@ -1,21 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Droplets, Plus, AlertTriangle, CheckCircle, Trash2, Calendar, Clock, Sparkles } from "lucide-react";
 import { db } from "../services/db.js";
 import { calculateToxicAmmonia } from "../services/calculatorService.js";
 import { PARAMETROS_QUALIDADE_AGUA } from "../data/carcinoData.js";
+import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function QualidadeAguaView({ 
   viveiros = [], 
   qualidadeAgua = [], 
   onReload,
   isModalOpenExternal = false,
-  onCloseExternalModal = null
+  onCloseExternalModal = null,
+  novoViveiroCriadoId = null,
+  onSolicitarCadastroViveiro = null
 }) {
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );
 
-  const [isModalOpen, setIsModalOpen] = useState(isModalOpenExternal);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
 
   // Estados do Modal
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
@@ -38,7 +42,29 @@ export default function QualidadeAguaView({
 
   const ultimoRegistro = registrosViveiro.length > 0 ? registrosViveiro[0] : null;
 
+  useEffect(() => {
+    if (isModalOpenExternal) {
+      if (viveiros.length > 0) {
+        handleOpenModal();
+      } else {
+        setModalAvisoAberto(true);
+      }
+    }
+  }, [isModalOpenExternal, viveiros.length]);
+
+  useEffect(() => {
+    if (novoViveiroCriadoId) {
+      setSelectedViveiroId(String(novoViveiroCriadoId));
+    } else if (viveiros.length > 0 && (!selectedViveiroId || !viveiros.some(v => String(v.id) === String(selectedViveiroId)))) {
+      setSelectedViveiroId(String(viveiros[0].id));
+    }
+  }, [viveiros, novoViveiroCriadoId]);
+
   const handleOpenModal = () => {
+    if (viveiros.length === 0) {
+      setModalAvisoAberto(true);
+      return;
+    }
     setData(new Date().toISOString().split("T")[0]);
     setIsModalOpen(true);
   };
@@ -121,8 +147,31 @@ export default function QualidadeAguaView({
         </div>
       </div>
 
-      {/* Cartões de Parâmetros Atuais do Viveiro Selecionado */}
-      {ultimoRegistro ? (
+      {viveiros.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+          <Droplets className="w-10 h-10 text-cyan-600 mx-auto" />
+          <h3 className="text-base font-bold text-slate-900">Nenhum viveiro cadastrado</h3>
+          <p className="text-xs text-slate-600 max-w-md mx-auto">
+            Para monitorar oxigênio, pH, temperatura, salinidade e amônia tóxica, cadastre primeiro o viveiro correspondente da sua fazenda.
+          </p>
+          <button
+            onClick={() => {
+              if (onSolicitarCadastroViveiro) {
+                onSolicitarCadastroViveiro("agua");
+              } else {
+                setModalAvisoAberto(true);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold text-xs shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Cadastrar Primeiro Viveiro</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Cartões de Parâmetros Atuais do Viveiro Selecionado */}
+          {ultimoRegistro ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Oxigênio */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4">
@@ -247,6 +296,8 @@ export default function QualidadeAguaView({
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Modal de Nova Medição */}
       {(isModalOpen || isModalOpenExternal) && (
@@ -430,6 +481,17 @@ export default function QualidadeAguaView({
           </div>
         </div>
       )}
+
+      {/* Modal de Aviso quando não há viveiros */}
+      <ModalAvisoViveiroObrigatorio
+        isOpen={modalAvisoAberto}
+        tipo="agua"
+        onClose={() => setModalAvisoAberto(false)}
+        onCadastrarViveiro={() => {
+          setModalAvisoAberto(false);
+          onSolicitarCadastroViveiro?.("agua");
+        }}
+      />
     </div>
   );
 }
