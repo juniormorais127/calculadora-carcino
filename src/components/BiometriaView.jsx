@@ -228,8 +228,8 @@ export default function BiometriaView({
 
       {/* Modal de Nova Biometria */}
       {(isModalOpen || isModalOpenExternal) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 backdrop-blur-sm">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-sm max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-xl max-h-[90dvh] overflow-y-auto my-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Scale className="w-5 h-5 text-emerald-700" />
               Lançar Biometria Semanal

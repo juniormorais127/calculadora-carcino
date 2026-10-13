@@ -96,29 +96,66 @@ function corDaPaleta(cor) {
   return CORES[CORES_STATUS[cor] || cor] || CORES.emerald;
 }
 
-/** Campo numérico com rótulo, ajuda e sufixo de unidade. */
+/** Campo numérico com controles táteis (- / +) otimizados para celular, rótulo, ajuda e sufixo. */
 export function CampoNumero({ label, valor, onChange, step = "1", min = "0", disabled = false, ajuda, sufixo, cor = "emerald" }) {
   const c = corDaPaleta(cor);
+  const stepNum = parseFloat(step) || 1;
+
+  const decrementar = () => {
+    if (disabled) return;
+    const minVal = parseFloat(min) || 0;
+    const atual = Number(valor || 0);
+    const novo = Math.max(minVal, Number((atual - stepNum).toFixed(2)));
+    onChange(novo);
+  };
+
+  const incrementar = () => {
+    if (disabled) return;
+    const atual = Number(valor || 0);
+    const novo = Number((atual + stepNum).toFixed(2));
+    onChange(novo);
+  };
+
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-700 block mb-1">{label}</label>
-      <div className="relative">
-        <input
-          type="number"
-          step={step}
-          min={min}
+      <label className="text-xs font-bold text-slate-700 block mb-1.5">{label}</label>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <button
+          type="button"
           disabled={disabled}
-          value={valor}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:outline-none disabled:opacity-60 ${sufixo ? "pr-16" : ""} ${c.foco}`}
-        />
-        {sufixo && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500">
-            {sufixo}
-          </span>
-        )}
+          onClick={decrementar}
+          aria-label={`Diminuir ${label}`}
+          className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 font-black text-lg flex items-center justify-center shadow-xs active:scale-95 transition-all disabled:opacity-40 select-none"
+        >
+          -
+        </button>
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="number"
+            step={step}
+            min={min}
+            disabled={disabled}
+            value={valor}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className={`w-full min-w-0 bg-white border border-slate-200 rounded-2xl px-2 sm:px-3.5 py-2.5 text-slate-900 font-extrabold text-base text-center shadow-xs focus:ring-2 focus:ring-emerald-500/20 focus:outline-none disabled:opacity-60 ${sufixo ? "pr-10 sm:pr-12" : ""} ${c.foco}`}
+          />
+          {sufixo && (
+            <span className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-[10px] sm:text-[11px] font-bold text-slate-400 pointer-events-none">
+              {sufixo}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={incrementar}
+          aria-label={`Aumentar ${label}`}
+          className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 font-black text-lg flex items-center justify-center shadow-xs active:scale-95 transition-all disabled:opacity-40 select-none"
+        >
+          +
+        </button>
       </div>
-      {ajuda && <p className="text-[11px] text-slate-600 mt-0.5">{ajuda}</p>}
+      {ajuda && <p className="text-[11px] text-slate-500 mt-1">{ajuda}</p>}
     </div>
   );
 }
@@ -167,11 +204,11 @@ export function FaixaAutomatica({ cor = "emerald", rotulo, itens = [] }) {
   const c = corDaPaleta(cor);
   return (
     <div className={`rounded-2xl p-3 text-xs border ${c.suave}`}>
-      <span className="font-bold">{rotulo}</span>
+      <span className="font-bold block truncate">{rotulo}</span>
       {itens.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mt-2 text-[11px] text-slate-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2 text-[11px] text-slate-700">
           {itens.map((i) => (
-            <div key={i.rotulo}>{i.rotulo}: <b>{i.valor}</b></div>
+            <div key={i.rotulo} className="truncate">{i.rotulo}: <b>{i.valor}</b></div>
           ))}
         </div>
       )}

@@ -250,8 +250,8 @@ export default function QualidadeAguaView({
 
       {/* Modal de Nova Medição */}
       {(isModalOpen || isModalOpenExternal) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 backdrop-blur-sm">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-sm max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-xl max-h-[90dvh] overflow-y-auto my-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Droplets className="w-5 h-5 text-cyan-700" />
               Lançar Medição de Qualidade de Água
@@ -259,7 +259,7 @@ export default function QualidadeAguaView({
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Transparência:</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Viveiro:</label>
                 <select
                   value={selectedViveiroId}
                   onChange={(e) => setSelectedViveiroId(e.target.value)}
@@ -273,7 +273,7 @@ export default function QualidadeAguaView({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Transparência:</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Data da Coleta:</label>
                   <input
                     type="date"
                     required
@@ -324,7 +324,7 @@ export default function QualidadeAguaView({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Transparência:</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">pH da Água:</label>
                   <input
                     type="number"
                     step="0.1"
@@ -350,7 +350,7 @@ export default function QualidadeAguaView({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Transparência:</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Alcalinidade:</label>
                   <input
                     type="number"
                     step="5"
@@ -376,7 +376,7 @@ export default function QualidadeAguaView({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Transparência:</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Nitrito (NO2):</label>
                   <input
                     type="number"
                     step="0.05"

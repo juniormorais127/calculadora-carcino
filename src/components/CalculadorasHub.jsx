@@ -8,20 +8,31 @@ import {
   Info,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
   Sparkles,
   RefreshCw,
   Scale,
   TrendingUp,
   Atom,
   Wind,
-  Leaf
+  Leaf,
+  ChevronRight
 } from "lucide-react";
 import CalcCalibre from "./calculadoras/CalcCalibre.jsx";
 import CalcCrescimento from "./calculadoras/CalcCrescimento.jsx";
 import CalcIonico from "./calculadoras/CalcIonico.jsx";
 import CalcAeracao from "./calculadoras/CalcAeracao.jsx";
 import CalcBioflocos from "./calculadoras/CalcBioflocos.jsx";
+import {
+  CampoNumero,
+  CampoSelect,
+  TituloEntrada,
+  FaixaAutomatica,
+  CartaoResultado,
+  CartaoSaida,
+  PainelInterno,
+  ListaAvisos,
+  DicaTecnica
+} from "./calculadoras/CalculadoraUI.jsx";
 import { 
   calculateDailyFeed, 
   calculateWaterCorrection, 
@@ -32,8 +43,21 @@ import {
 } from "../services/calculatorService.js";
 import { AJUSTE_BANDEJAS_ALIMENTACAO } from "../data/carcinoData.js";
 
+const CALCULADORAS = [
+  { id: "racao", label: "Alimentação / Ração", shortLabel: "Ração", icon: Utensils, cor: "amber" },
+  { id: "agua", label: "Tratamento de Água", shortLabel: "Água", icon: Droplets, cor: "cyan" },
+  { id: "solo", label: "Calagem de Solo", shortLabel: "Solo", icon: Sprout, cor: "emerald" },
+  { id: "amonia", label: "Amônia Tóxica (NH3)", shortLabel: "Amônia", icon: FlaskConical, cor: "rose" },
+  { id: "povoamento", label: "Povoamento & Metas", shortLabel: "Povoamento", icon: Sparkles, cor: "indigo" },
+  { id: "calibre", label: "Calibre & Despesca", shortLabel: "Calibre", icon: Scale, cor: "lime" },
+  { id: "crescimento", label: "Crescimento & Índices", shortLabel: "Crescimento", icon: TrendingUp, cor: "emerald" },
+  { id: "ionico", label: "Balanço Iônico", shortLabel: "Íons", icon: Atom, cor: "cyan" },
+  { id: "aeracao", label: "Aeração & Sistema", shortLabel: "Aeração", icon: Wind, cor: "indigo" },
+  { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", icon: Leaf, cor: "violet" },
+];
+
 export default function CalculadorasHub({ viveiros = [], biometrias = [], qualidadeAgua = [] }) {
-  const [subTab, setSubTab] = useState("racao"); // racao, agua, solo, amonia, povoamento
+  const [subTab, setSubTab] = useState("racao");
   const [selectedViveiroId, setSelectedViveiroId] = useState("");
 
   // Mapas com os últimos dados
@@ -65,7 +89,20 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
     ? biometrias.filter(b => String(b.viveiroId) === String(viveiroAtual.id))
     : [];
 
-  // Estados dos inputs da Calculadora de Ração
+  // Função para trocar de calculadora e rolar suavemente para a área de edição na tela
+  const mudarCalculadora = (novaTab) => {
+    setSubTab(novaTab);
+    setTimeout(() => {
+      const el = document.getElementById("painel-calculadora-ativo");
+      if (el) {
+        const yOffset = -20;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+      }
+    }, 40);
+  };
+
+  // Estados da Calculadora de Ração
   const [racaoBiomassa, setRacaoBiomassa] = useState(1000);
   const [racaoPesoMedio, setRacaoPesoMedio] = useState(10.0);
   const [racaoTemp, setRacaoTemp] = useState(29.0);
@@ -150,865 +187,807 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
     sobrevivenciaEsperadaPercent: povoSobrevivencia
   });
 
+  const calAtualInfo = CALCULADORAS.find(c => c.id === subTab) || CALCULADORAS[0];
+
   return (
-    <div className="space-y-6 pb-20 md:pb-8">
-      {/* Header & Seletor de Abas */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 flex items-center gap-2">
-              <Calculator className="w-6 h-6 text-emerald-700" />
-              Calculadoras Especializadas de Carcinicultura
+    <div className="space-y-5 pb-20 md:pb-8">
+      {/* Header & Seletor de Ferramentas */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2">
+              <Calculator className="w-6 h-6 text-emerald-700 flex-shrink-0" />
+              <span>Calculadoras Zootécnicas</span>
             </h2>
-            <p className="text-sm text-slate-700 mt-1">
-              Fórmulas zootécnicas automatizadas. Escolha o assunto desejado abaixo:
+            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+              Escolha uma opção para abrir os dados diretamente na tela:
             </p>
           </div>
 
-          {/* Seletor Global de Viveiro para Automação */}
-          {viveiros.length > 0 && (
-            <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200">
-              <span className="text-xs font-semibold text-slate-600 pl-2">Viveiro:</span>
-              <select
-                value={selectedViveiroId}
-                onChange={(e) => setSelectedViveiroId(e.target.value)}
-                className="bg-white text-slate-900 font-bold text-xs rounded-xl px-3 py-1.5 border border-slate-300 focus:outline-none focus:border-emerald-500"
-              >
-                {viveiros.map(v => (
-                  <option key={v.id} value={v.id}>{v.nome}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="w-full sm:w-auto min-w-0">
+            {/* Seletor Global de Viveiro para Automação */}
+            {viveiros.length > 0 && (
+              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 min-w-0">
+                <span className="text-xs font-bold text-slate-600 pl-2 whitespace-nowrap">Viveiro:</span>
+                <select
+                  value={selectedViveiroId}
+                  onChange={(e) => setSelectedViveiroId(e.target.value)}
+                  className="flex-1 min-w-0 max-w-[200px] sm:max-w-xs bg-white text-slate-900 font-bold text-xs rounded-xl px-3 py-1.5 border border-slate-300 focus:outline-none focus:border-emerald-500 shadow-2xs truncate"
+                >
+                  {viveiros.map(v => (
+                    <option key={v.id} value={v.id}>{v.nome}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Sub-Tabs de Assuntos Direcionados */}
-        <div className="flex flex-wrap items-center gap-2 pt-4 mt-3 border-t border-slate-200">
-          <button
-            onClick={() => setSubTab("racao")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "racao" 
-                ? "bg-amber-500 text-slate-950 shadow-sm " 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
+        {/* Dropdown Rápido para Mobile */}
+        <div className="sm:hidden mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 min-w-0">
+          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Opção ativa:</span>
+          <select
+            value={subTab}
+            onChange={(e) => mudarCalculadora(e.target.value)}
+            className="flex-1 min-w-0 bg-slate-50 text-slate-900 font-black text-xs rounded-xl px-3 py-2 border border-slate-200 focus:outline-none focus:border-emerald-500 truncate"
           >
-            <Utensils className="w-4 h-4" />
-            <span>Alimentação / Ração</span>
-          </button>
+            {CALCULADORAS.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </div>
 
-          <button
-            onClick={() => setSubTab("agua")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "agua" 
-                ? "bg-cyan-500 text-slate-950 shadow-sm " 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Droplets className="w-4 h-4" />
-            <span>Tratamento de Água</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("solo")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "solo" 
-                ? "bg-emerald-500 text-slate-950 shadow-sm " 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Sprout className="w-4 h-4" />
-            <span>Calagem de Solo</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("amonia")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "amonia" 
-                ? "bg-rose-500 text-slate-900 shadow-sm " 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <FlaskConical className="w-4 h-4" />
-            <span>Amônia Tóxica (NH3)</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("povoamento")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "povoamento" 
-                ? "bg-indigo-500 text-slate-900 shadow-sm " 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Povoamento & Metas</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("calibre")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "calibre"
-                ? "bg-lime-500 text-slate-950 shadow-sm "
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-            <span>Calibre & Despesca</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("crescimento")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "crescimento"
-                ? "bg-emerald-600 text-white shadow-sm "
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Crescimento & Índices</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("ionico")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "ionico"
-                ? "bg-cyan-500 text-slate-950 shadow-sm "
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Atom className="w-4 h-4" />
-            <span>Balanço Iônico</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("aeracao")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "aeracao"
-                ? "bg-indigo-600 text-white shadow-sm "
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Wind className="w-4 h-4" />
-            <span>Aeração & Sistema</span>
-          </button>
-
-          <button
-            onClick={() => setSubTab("bioflocos")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-              subTab === "bioflocos"
-                ? "bg-violet-600 text-white shadow-sm "
-                : "bg-slate-50 text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Leaf className="w-4 h-4" />
-            <span>Bioflocos (C:N)</span>
-          </button>
+        {/* Carrossel de Abas / Pílulas Horizontais (Mobile desliza com dedo; Desktop quebra em chips) */}
+        <div className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth snap-x flex gap-2 pt-3 mt-2 sm:mt-3 border-t sm:border-t-0 border-slate-100 sm:border-transparent sm:flex-wrap">
+          {CALCULADORAS.map((calc) => {
+            const Icone = calc.icon;
+            const isAtivo = subTab === calc.id;
+            return (
+              <button
+                key={calc.id}
+                onClick={() => mudarCalculadora(calc.id)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all snap-start flex-shrink-0 active:scale-95 shadow-2xs ${
+                  isAtivo
+                    ? "bg-slate-900 text-white shadow-sm ring-2 ring-emerald-500/30"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80"
+                }`}
+              >
+                <Icone className={`w-4 h-4 ${isAtivo ? "text-emerald-400" : "text-slate-500"}`} />
+                <span>{calc.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* ABA 1: ALIMENTAÇÃO E ARRAÇOAMENTO                              */}
+      {/* PAINEL DA CALCULADORA ATIVA (Com âncora suave para celular)   */}
       {/* ============================================================== */}
-      {subTab === "racao" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Card Esquerdo: O que o produtor fornece */}
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-amber-700" />
-                O que fornecer para calcular:
-              </h3>
-              {viveiroAtual && (
-                <button
-                  onClick={() => setModoAutomaticoRacao(!modoAutomaticoRacao)}
-                  className={`text-[11px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 transition-all ${
-                    modoAutomaticoRacao 
-                      ? "bg-amber-500/20 text-amber-700 border border-amber-500/40" 
-                : "bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  <RefreshCw className={`w-3 h-3 ${modoAutomaticoRacao ? "animate-spin" : ""}`} />
-                  {modoAutomaticoRacao ? "Auto (do Viveiro)" : "Manual"}
-                </button>
-              )}
+      <div id="painel-calculadora-ativo" className="scroll-mt-4">
+        {/* ============================================================== */}
+        {/* ABA 1: ALIMENTAÇÃO E ARRAÇOAMENTO                              */}
+        {/* ============================================================== */}
+        {subTab === "racao" && (
+          <div className="space-y-4">
+            {/* Resumo Rápido no Topo (Visível de imediato no celular) */}
+            <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border border-amber-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block">
+                  Ração Diária Calculada
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-amber-900 leading-tight">
+                  {resRacao.racaoFinalKg} <span className="text-xs font-bold text-slate-700">kg/dia</span>
+                </div>
+                <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                  Taxa base: {resRacao.taxaPercentual}% ({resRacao.faseCultivo})
+                </span>
+              </div>
+              <div className="text-right sm:text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-amber-500/20 self-start sm:self-auto">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Por Trato ({resRacao.numeroTratos}x)
+                </span>
+                <span className="text-base sm:text-lg font-black text-slate-900">
+                  {resRacao.racaoPorTratoKg} <span className="text-xs font-bold text-amber-700">kg</span>
+                </span>
+              </div>
             </div>
 
-            {modoAutomaticoRacao && viveiroAtual && (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-xs text-amber-700">
-                <span className="font-bold">Dados automáticos de:</span> {viveiroAtual.nome}
-                <div className="grid grid-cols-2 gap-2 mt-2 text-[11px] text-slate-700">
-                  <div>Biomassa: <b>{bioAtual?.biomassaKg || "0"} kg</b></div>
-                  <div>Peso Médio: <b>{bioAtual?.pesoMedioG || "0"} g</b></div>
-                  <div>Temp. Água: <b>{aguaAtual?.temperatura || "29"} °C</b></div>
-                  <div>Oxigênio: <b>{aguaAtual?.oxigenio || "5.0"} mg/L</b></div>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  1. Biomassa Total Estimada (kg):
-                </label>
-                <input
-                  type="number"
-                  disabled={modoAutomaticoRacao && !!bioAtual}
-                  value={racaoBiomassa}
-                  onChange={(e) => setRacaoBiomassa(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-amber-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Peso total de todos os camarões vivos no viveiro.
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  2. Peso Médio Atual do Camarão (gramas):
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={modoAutomaticoRacao && !!bioAtual}
-                  value={racaoPesoMedio}
-                  onChange={(e) => setRacaoPesoMedio(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-amber-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Determina a taxa percentual de arraçoamento ({resRacao.taxaPercentual}% para {racaoPesoMedio}g).
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Temperatura (°C):
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={racaoTemp}
-                    onChange={(e) => setRacaoTemp(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Oxigênio (mg/L):
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={racaoO2}
-                    onChange={(e) => setRacaoO2(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Ajuste de Manejo por Bandejas (Comedouros):
-                </label>
-                <select
-                  value={racaoBandejaAjuste}
-                  onChange={(e) => setRacaoBandejaAjuste(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-semibold text-xs focus:border-amber-500 focus:outline-none"
-                >
-                  {AJUSTE_BANDEJAS_ALIMENTACAO.map((item, idx) => (
-                    <option key={idx} value={item.ajustePercentual}>
-                      {item.status} ({item.ajustePercentual > 0 ? `+${item.ajustePercentual}%` : `${item.ajustePercentual}%`})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Número de Tratos (refeições) por dia:
-                </label>
-                <div className="flex gap-2">
-                  {[2, 3, 4, 5].map((n) => (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Card Esquerdo: Inputs */}
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Utensils className="w-5 h-5 text-amber-700" />
+                    O que fornecer para calcular:
+                  </h3>
+                  {viveiroAtual && (
                     <button
-                      key={n}
-                      type="button"
-                      onClick={() => setRacaoTratos(n)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                        racaoTratos === n 
-                          ? "bg-amber-500 text-slate-950 font-semibold shadow-sm" 
-                : "bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200"
+                      onClick={() => setModoAutomaticoRacao(!modoAutomaticoRacao)}
+                      className={`text-[11px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 transition-all ${
+                        modoAutomaticoRacao 
+                          ? "bg-amber-500/20 text-amber-700 border border-amber-500/40" 
+                          : "bg-slate-100 text-slate-700"
                       }`}
                     >
-                      {n}x / dia
+                      <RefreshCw className={`w-3 h-3 ${modoAutomaticoRacao ? "animate-spin" : ""}`} />
+                      {modoAutomaticoRacao ? "Auto (do Viveiro)" : "Manual"}
                     </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card Direito: Resultados Zootécnicos Transformados */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-gradient-to-br from-amber-50 via-slate-50 to-slate-50 border border-amber-600/40 rounded-3xl p-6 shadow-sm relative overflow-hidden">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
-                Resultado Automatizado da Ração
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-amber-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Ração Total Diária</div>
-                  <div className="text-3xl font-semibold text-amber-700 mt-1">
-                    {resRacao.racaoFinalKg} <span className="text-base text-slate-900 font-bold">kg/dia</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Taxa base: {resRacao.taxaPercentual}% da biomassa ({resRacao.faseCultivo})
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-amber-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Quantidade por Trato</div>
-                  <div className="text-3xl font-semibold text-slate-900 mt-1">
-                    {resRacao.racaoPorTratoKg} <span className="text-base text-amber-700 font-bold">kg</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Dividido em {resRacao.numeroTratos} horários iguais
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabela de Horários Sugeridos */}
-              <div className="mt-4 bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                  Programação Sugerida de Horários
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  {resRacao.numeroTratos === 2 && (
-                    <>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">07:30</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">16:30</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                    </>
-                  )}
-                  {resRacao.numeroTratos === 3 && (
-                    <>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">07:00 (1º)</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">11:30 (2º)</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">16:30 (3º)</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                    </>
-                  )}
-                  {resRacao.numeroTratos >= 4 && (
-                    <>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">06:30</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">10:30</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">14:30</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-xl">
-                        <div className="text-[11px] text-slate-600 font-bold">18:00</div>
-                        <div className="text-sm font-semibold text-amber-700">{resRacao.racaoPorTratoKg} kg</div>
-                      </div>
-                    </>
                   )}
                 </div>
-              </div>
 
-              {/* Alertas e Avisos de Manejo */}
-              {resRacao.avisos.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {resRacao.avisos.map((aviso, idx) => (
-                    <div key={idx} className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-700 text-xs">
-                      <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                      <span>{aviso}</span>
+                {modoAutomaticoRacao && viveiroAtual && (
+                  <FaixaAutomatica
+                    cor="amber"
+                    rotulo={`Dados automáticos de: ${viveiroAtual.nome}`}
+                    itens={[
+                      { rotulo: "Biomassa", valor: `${bioAtual?.biomassaKg || "0"} kg` },
+                      { rotulo: "Peso Médio", valor: `${bioAtual?.pesoMedioG || "0"} g` },
+                      { rotulo: "Temp. Água", valor: `${aguaAtual?.temperatura || "29"} °C` },
+                      { rotulo: "Oxigênio", valor: `${aguaAtual?.oxigenio || "5.0"} mg/L` },
+                    ]}
+                  />
+                )}
+
+                <div className="space-y-3.5">
+                  <CampoNumero
+                    label="1. Biomassa Total Estimada"
+                    valor={racaoBiomassa}
+                    onChange={setRacaoBiomassa}
+                    step="50"
+                    min="1"
+                    sufixo="kg"
+                    cor="amber"
+                    disabled={modoAutomaticoRacao && !!bioAtual}
+                    ajuda="Peso total estimado de todos os camarões vivos no viveiro."
+                  />
+
+                  <CampoNumero
+                    label="2. Peso Médio Atual do Camarão"
+                    valor={racaoPesoMedio}
+                    onChange={setRacaoPesoMedio}
+                    step="0.5"
+                    min="0.1"
+                    sufixo="g"
+                    cor="amber"
+                    disabled={modoAutomaticoRacao && !!bioAtual}
+                    ajuda={`Define a taxa zootécnica (${resRacao.taxaPercentual}% para ${racaoPesoMedio}g).`}
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <CampoNumero
+                      label="Temp. Água"
+                      valor={racaoTemp}
+                      onChange={setRacaoTemp}
+                      step="0.5"
+                      min="15"
+                      sufixo="°C"
+                      cor="amber"
+                    />
+                    <CampoNumero
+                      label="Oxigênio"
+                      valor={racaoO2}
+                      onChange={setRacaoO2}
+                      step="0.2"
+                      min="0.5"
+                      sufixo="mg/L"
+                      cor="amber"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                      Ajuste de Manejo por Bandejas (Comedouros):
+                    </label>
+                    <select
+                      value={racaoBandejaAjuste}
+                      onChange={(e) => setRacaoBandejaAjuste(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-3 text-slate-900 font-bold text-xs focus:border-amber-500 focus:outline-none"
+                    >
+                      {AJUSTE_BANDEJAS_ALIMENTACAO.map((item, idx) => (
+                        <option key={idx} value={item.ajustePercentual}>
+                          {item.status} ({item.ajustePercentual > 0 ? `+${item.ajustePercentual}%` : `${item.ajustePercentual}%`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                      Número de Tratos (refeições) por dia:
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                      {[2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setRacaoTratos(n)}
+                          className={`py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black transition-all active:scale-95 text-center truncate ${
+                            racaoTratos === n 
+                              ? "bg-amber-500 text-slate-950 shadow-xs ring-2 ring-amber-500/30" 
+                              : "bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200"
+                          }`}
+                        >
+                          {n}x / dia
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Dica Técnica para o Produtor */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-700 flex items-start gap-3">
-              <Info className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900">Regra de Ouro da Carcinicultura:</span>
-                {" "}Ração que sobra no fundo do viveiro não alimenta camarão; consome oxigênio e vira amônia tóxica. Sempre priorize o ajuste das bandejas de 2h a 2h30 após a distribuição.
+              {/* Card Direito: Resultados */}
+              <div className="lg:col-span-7 space-y-4">
+                <CartaoSaida titulo="Resultado Automatizado da Ração" cor="amber">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CartaoResultado
+                      titulo="Ração Total Diária"
+                      valor={resRacao.racaoFinalKg}
+                      unidade="kg/dia"
+                      detalhe={`Taxa base: ${resRacao.taxaPercentual}% da biomassa (${resRacao.faseCultivo})`}
+                      cor="amber"
+                    />
+
+                    <CartaoResultado
+                      titulo="Quantidade por Trato"
+                      valor={resRacao.racaoPorTratoKg}
+                      unidade="kg"
+                      detalhe={`Dividido em ${resRacao.numeroTratos} horários iguais`}
+                      cor="amber"
+                    />
+                  </div>
+
+                  {/* Programação Sugerida de Horários */}
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-wide mb-2.5">
+                      Programação Sugerida de Horários
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      {resRacao.numeroTratos === 2 && (
+                        <>
+                          <div className="p-2.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[11px] text-slate-500 font-bold">07:30 (1º)</div>
+                            <div className="text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[11px] text-slate-500 font-bold">16:30 (2º)</div>
+                            <div className="text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                        </>
+                      )}
+                      {resRacao.numeroTratos === 3 && (
+                        <>
+                          <div className="p-2.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[11px] text-slate-500 font-bold">07:00 (1º)</div>
+                            <div className="text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[11px] text-slate-500 font-bold">11:30 (2º)</div>
+                            <div className="text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[11px] text-slate-500 font-bold">16:30 (3º)</div>
+                            <div className="text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                        </>
+                      )}
+                      {resRacao.numeroTratos >= 4 && (
+                        <>
+                          <div className="p-2 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[10px] text-slate-500 font-bold">06:30 (1º)</div>
+                            <div className="text-xs sm:text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[10px] text-slate-500 font-bold">10:30 (2º)</div>
+                            <div className="text-xs sm:text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[10px] text-slate-500 font-bold">14:30 (3º)</div>
+                            <div className="text-xs sm:text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                          <div className="p-2 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="text-[10px] text-slate-500 font-bold">18:00 (4º)</div>
+                            <div className="text-xs sm:text-sm font-black text-amber-700 mt-0.5">{resRacao.racaoPorTratoKg} kg</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Alertas e Avisos de Manejo */}
+                  <ListaAvisos avisos={resRacao.avisos} cor="amber" />
+                </CartaoSaida>
+
+                <DicaTecnica
+                  titulo="Regra de Ouro da Carcinicultura:"
+                  texto="Ração que sobra no fundo não alimenta camarão; consome oxigênio e vira amônia tóxica. Priorize o ajuste das bandejas de 2h a 2h30 após a distribuição."
+                  cor="amber"
+                />
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ============================================================== */}
-      {/* ABA 2: TRATAMENTO DE ÁGUA (ALCALINIDADE & pH)                  */}
-      {/* ============================================================== */}
-      {subTab === "agua" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Droplets className="w-5 h-5 text-cyan-700" />
-                O que fornecer para a correção:
-              </h3>
-              {viveiroAtual && (
-                <button
-                  onClick={() => setModoAutomaticoAgua(!modoAutomaticoAgua)}
-                  className={`text-[11px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${
-                    modoAutomaticoAgua 
-                      ? "bg-cyan-500/20 text-cyan-700 border border-cyan-500/40" 
-                : "bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  <RefreshCw className={`w-3 h-3 ${modoAutomaticoAgua ? "animate-spin" : ""}`} />
-                  {modoAutomaticoAgua ? "Auto (do Viveiro)" : "Manual"}
-                </button>
-              )}
+        {/* ============================================================== */}
+        {/* ABA 2: TRATAMENTO DE ÁGUA (ALCALINIDADE & pH)                  */}
+        {/* ============================================================== */}
+        {subTab === "agua" && (
+          <div className="space-y-4">
+            {/* Resumo Rápido no Topo */}
+            <div className="bg-gradient-to-r from-cyan-500/15 via-cyan-500/10 to-transparent border border-cyan-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 block">
+                  Correção de Alcalinidade
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-cyan-900 leading-tight">
+                  {resAgua.bicarbonatoKg} <span className="text-xs font-bold text-slate-700">kg NaHCO3</span>
+                </div>
+                <span className="text-[11px] text-emerald-700 font-bold block mt-0.5 truncate">
+                  Opção segura (não altera pH)
+                </span>
+              </div>
+              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-cyan-500/20 self-start sm:self-auto">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Dose Máx / Dia
+                </span>
+                <span className="text-base sm:text-lg font-black text-slate-900">
+                  {resAgua.doseMaximaDiariaKg} <span className="text-xs font-bold text-cyan-700">kg/dia</span>
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  1. Volume de Água do Viveiro (m³):
-                </label>
-                <input
-                  type="number"
-                  value={aguaVolumeM3}
-                  onChange={(e) => setAguaVolumeM3(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-cyan-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Calculado: Área (m²) × Profundidade média (m). Ex: 10.000m² × 1.2m = 12.000 m³.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Droplets className="w-5 h-5 text-cyan-700" />
+                    O que fornecer para a correção:
+                  </h3>
+                  {viveiroAtual && (
+                    <button
+                      onClick={() => setModoAutomaticoAgua(!modoAutomaticoAgua)}
+                      className={`text-[11px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${
+                        modoAutomaticoAgua 
+                          ? "bg-cyan-500/20 text-cyan-700 border border-cyan-500/40" 
+                          : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      <RefreshCw className={`w-3 h-3 ${modoAutomaticoAgua ? "animate-spin" : ""}`} />
+                      {modoAutomaticoAgua ? "Auto (do Viveiro)" : "Manual"}
+                    </button>
+                  )}
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    2. Alcalinidade Atual:
-                  </label>
-                  <input
-                    type="number"
-                    value={aguaAlcalinidadeAtual}
-                    onChange={(e) => setAguaAlcalinidadeAtual(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-cyan-500 focus:outline-none"
+                {modoAutomaticoAgua && viveiroAtual && (
+                  <FaixaAutomatica
+                    cor="cyan"
+                    rotulo={`Dados do viveiro: ${viveiroAtual.nome}`}
+                    itens={[
+                      { rotulo: "Volume", valor: `${viveiroAtual.volumeM3 || aguaVolumeM3} m³` },
+                      { rotulo: "Alcalinidade", valor: `${aguaAtual?.alcalinidade || aguaAlcalinidadeAtual} mg/L` },
+                      { rotulo: "pH", valor: `${aguaAtual?.ph || aguaPh}` },
+                    ]}
                   />
-                  <span className="text-[10px] text-slate-600">mg/L de CaCO3</span>
-                </div>
+                )}
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    3. Alcalinidade Meta:
-                  </label>
-                  <input
-                    type="number"
-                    value={aguaAlcalinidadeMeta}
-                    onChange={(e) => setAguaAlcalinidadeMeta(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-cyan-500 focus:outline-none"
+                <div className="space-y-3.5">
+                  <CampoNumero
+                    label="1. Volume de Água do Viveiro"
+                    valor={aguaVolumeM3}
+                    onChange={setAguaVolumeM3}
+                    step="500"
+                    min="100"
+                    sufixo="m³"
+                    cor="cyan"
+                    ajuda="Calculado: Área (m²) × Profundidade média (m)."
                   />
-                  <span className="text-[10px] text-slate-600">Padrão: 120-150 mg/L</span>
-                </div>
-              </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  4. pH Atual da Água:
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={aguaPh}
-                  onChange={(e) => setAguaPh(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-cyan-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Decide a segurança entre Bicarbonato de Sódio vs. Cal Hidratada.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-gradient-to-br from-cyan-50 via-slate-50 to-slate-50 border border-cyan-600/40 rounded-3xl p-6 shadow-sm space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-cyan-700">
-                Prescrição de Correção de Alcalinidade
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-cyan-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Bicarbonato de Sódio (NaHCO3)</div>
-                  <div className="text-3xl font-semibold text-cyan-700 mt-1">
-                    {resAgua.bicarbonatoKg} <span className="text-base text-slate-900 font-bold">kg</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <CampoNumero
+                      label="Alcalinidade Atual"
+                      valor={aguaAlcalinidadeAtual}
+                      onChange={setAguaAlcalinidadeAtual}
+                      step="5"
+                      min="10"
+                      sufixo="mg/L"
+                      cor="cyan"
+                    />
+                    <CampoNumero
+                      label="Alcalinidade Meta"
+                      valor={aguaAlcalinidadeMeta}
+                      onChange={setAguaAlcalinidadeMeta}
+                      step="5"
+                      min="50"
+                      sufixo="mg/L"
+                      cor="cyan"
+                      ajuda="Padrão: 120-150 mg/L"
+                    />
                   </div>
-                  <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Opção Mais Segura (Não dispara o pH)
-                  </div>
-                </div>
 
-                <div className="bg-slate-50 p-4 rounded-2xl border border-cyan-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Cal Hidratada (Ca(OH)2)</div>
-                  <div className="text-3xl font-semibold text-slate-700 mt-1">
-                    {resAgua.calHidratadaKg} <span className="text-base text-slate-600 font-bold">kg</span>
-                  </div>
-                  <div className={`text-[11px] mt-1 font-semibold ${aguaPh >= 8.2 ? "text-rose-700" : "text-amber-700"}`}>
-                    {aguaPh >= 8.2 ? "NÃO RECOMENDADO com pH ≥ 8.2" : "Usar com cautela em leite de cal"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Recomendação Técnica */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-800 space-y-2">
-                <div className="font-bold text-cyan-700">Diagnóstico de Manejo:</div>
-                <p>{resAgua.recomendacao}</p>
-                <p className="text-slate-600 text-[11px]">
-                  <b>Dose máxima fracionada sugerida:</b> até {resAgua.doseMaximaDiariaKg} kg/dia para não causar estresse osmótico no lote.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-700 flex items-start gap-3">
-              <Info className="w-5 h-5 text-cyan-700 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900">Por que a alcalinidade importa?</span>
-                {" "}O camarão precisa absorver íons bicarbonato e cálcio da água durante a muda (*ecdise*). Se a alcalinidade estiver abaixo de 100 mg/L, o exoesqueleto fica mole e ocorrem deformações e canibalismo.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* ABA 3: CALAGEM E PREPARO DE SOLO DO FUNDO                      */}
-      {/* ============================================================== */}
-      {subTab === "solo" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200">
-              <Sprout className="w-5 h-5 text-emerald-700" />
-              Dados do Solo Seco (Pós-Despesca):
-            </h3>
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  1. Área do Viveiro (m²):
-                </label>
-                <input
-                  type="number"
-                  value={soloAreaM2}
-                  onChange={(e) => setSoloAreaM2(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Equivale a {(soloAreaM2 / 10000).toFixed(2)} hectares.
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  2. pH do Solo do Fundo:
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={soloPh}
-                  onChange={(e) => setSoloPh(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Medição feita em amostra do solo seco ou com peagômetro de solo.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-gradient-to-br from-emerald-50 via-slate-50 to-slate-50 border border-emerald-600/40 rounded-3xl p-6 shadow-sm space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                Recomendação de Calagem de Fundo
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-emerald-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Calcário Dolomítico Total</div>
-                  <div className="text-3xl font-semibold text-emerald-700 mt-1">
-                    {resSolo.doseTotalKg.toLocaleString()} <span className="text-base text-slate-900 font-bold">kg</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Dose recomendada: {resSolo.doseKgPorHa} kg/ha ({((resSolo.doseKgPorHa)/1000).toFixed(1)} t/ha)
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-emerald-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Tempo de Dessecação (Sol)</div>
-                  <div className="text-3xl font-semibold text-slate-900 mt-1">
-                    10 a 15 <span className="text-base text-emerald-700 font-bold">dias</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Até abrir rachaduras de 2 a 5 cm no lodo
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-800 space-y-2">
-                <div className="font-bold text-emerald-700">Manejo de Preparação:</div>
-                <p>{resSolo.recomendacao}</p>
-                <p className="text-slate-600 text-[11px]">
-                  Distribua o calcário uniformemente e faça uma leve gradagem (10 cm) para neutralizar a camada redutora de sulfetos do fundo.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* ABA 4: AMÔNIA TÓXICA NÃO-IONIZADA (NH3)                         */}
-      {/* ============================================================== */}
-      {subTab === "amonia" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200">
-              <FlaskConical className="w-5 h-5 text-rose-700" />
-              Parâmetros para Calcular a Fração Tóxica:
-            </h3>
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Amônia Total (NAT) do teste colorimétrico (mg/L):
-                </label>
-                <input
-                  type="number"
-                  step="0.05"
-                  value={amoniaNat}
-                  onChange={(e) => setAmoniaNat(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-rose-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  pH da Água:
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={amoniaPh}
-                  onChange={(e) => setAmoniaPh(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-rose-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Quanto maior o pH, maior a proporção da amônia tóxica NH3.
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Temperatura (°C):
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={amoniaTemp}
-                  onChange={(e) => setAmoniaTemp(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-rose-500 focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-gradient-to-br from-rose-50 via-slate-50 to-slate-50 border border-rose-600/40 rounded-3xl p-6 shadow-sm space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-700">
-                Amônia Não-Ionizada Real (NH3 Gasosa)
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-rose-500/20">
-                  <div className="text-xs text-slate-600 font-medium">NH3 Tóxica Real</div>
-                  <div className="text-3xl font-semibold text-rose-700 mt-1">
-                    {resAmonia.nh3} <span className="text-base text-slate-900 font-bold">mg/L</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    {resAmonia.porcentagemToxica}% da amônia total é tóxica
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-rose-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Status de Risco</div>
-                  <div className="text-2xl font-semibold text-slate-900 mt-1">
-                    {resAmonia.status}
-                  </div>
-                  <div className="text-[11px] text-rose-700 mt-1 font-semibold">
-                    Limite máximo tolerável: 0.05 mg/L
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-800 space-y-1">
-                <div className="font-bold text-rose-700">Ação Recomendada:</div>
-                <p>{resAmonia.orientacao}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* ABA 5: POVOAMENTO & METAS                                      */}
-      {/* ============================================================== */}
-      {subTab === "povoamento" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200">
-              <Sparkles className="w-5 h-5 text-indigo-700" />
-              Planejamento do Ciclo:
-            </h3>
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Área do Viveiro (m²):
-                </label>
-                <input
-                  type="number"
-                  value={povoAreaM2}
-                  onChange={(e) => setPovoAreaM2(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-indigo-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Densidade (cam/m²):
-                  </label>
-                  <input
-                    type="number"
-                    value={povoDensidade}
-                    onChange={(e) => setPovoDensidade(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Sobrevivência (%):
-                  </label>
-                  <input
-                    type="number"
-                    value={povoSobrevivencia}
-                    onChange={(e) => setPovoSobrevivencia(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-indigo-500 focus:outline-none"
+                  <CampoNumero
+                    label="4. pH Atual da Água"
+                    valor={aguaPh}
+                    onChange={setAguaPh}
+                    step="0.1"
+                    min="6.0"
+                    cor="cyan"
+                    ajuda="Decide a segurança entre Bicarbonato vs. Cal Hidratada."
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Peso Médio Final Alvo (g):
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={povoPesoAlvo}
-                  onChange={(e) => setPovoPesoAlvo(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:border-indigo-500 focus:outline-none"
+              <div className="lg:col-span-7 space-y-4">
+                <CartaoSaida titulo="Prescrição de Correção de Alcalinidade" cor="cyan">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CartaoResultado
+                      titulo="Bicarbonato de Sódio (NaHCO3)"
+                      valor={resAgua.bicarbonatoKg}
+                      unidade="kg"
+                      detalhe="Opção Mais Segura (Não dispara o pH)"
+                      cor="cyan"
+                    />
+
+                    <CartaoResultado
+                      titulo="Cal Hidratada (Ca(OH)2)"
+                      valor={resAgua.calHidratadaKg}
+                      unidade="kg"
+                      detalhe={aguaPh >= 8.2 ? "NÃO RECOMENDADO com pH ≥ 8.2" : "Usar com cautela em leite de cal"}
+                      cor="cyan"
+                    />
+                  </div>
+
+                  <PainelInterno titulo="Diagnóstico de Manejo" cor="cyan">
+                    <p>{resAgua.recomendacao}</p>
+                    <p className="text-slate-600 text-[11px] mt-1">
+                      <b>Dose máxima fracionada sugerida:</b> até {resAgua.doseMaximaDiariaKg} kg/dia para evitar choque osmótico.
+                    </p>
+                  </PainelInterno>
+                </CartaoSaida>
+
+                <DicaTecnica
+                  titulo="Por que a alcalinidade importa?"
+                  texto="O camarão precisa absorver íons bicarbonato e cálcio durante a muda (ecdise). Abaixo de 100 mg/L, ocorrem carapaças moles e canibalismo."
+                  cor="cyan"
                 />
               </div>
             </div>
           </div>
+        )}
 
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-gradient-to-br from-indigo-50 via-slate-50 to-slate-50 border border-indigo-600/40 rounded-3xl p-6 shadow-sm space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                Projeção de Pós-Larvas e Colheita
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
-                  <div className="text-xs text-slate-600 font-medium">PLs Necessárias para Compra</div>
-                  <div className="text-3xl font-semibold text-indigo-700 mt-1">
-                    {resPovo.totalPLs.toLocaleString()} <span className="text-base text-slate-900 font-bold">PLs</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Estimativa para povoar {povoAreaM2.toLocaleString()} m²
-                  </div>
+        {/* ============================================================== */}
+        {/* ABA 3: CALAGEM E PREPARO DE SOLO DO FUNDO                      */}
+        {/* ============================================================== */}
+        {subTab === "solo" && (
+          <div className="space-y-4">
+            {/* Resumo Rápido no Topo */}
+            <div className="bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
+                  Calcário Dolomítico Necessário
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-emerald-900 leading-tight">
+                  {resSolo.doseTotalKg.toLocaleString()} <span className="text-xs font-bold text-slate-700">kg</span>
                 </div>
+                <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                  Área: {(soloAreaM2 / 10000).toFixed(2)} ha ({soloAreaM2.toLocaleString()} m²)
+                </span>
+              </div>
+              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-500/20 self-start sm:self-auto">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Dose por Hectare
+                </span>
+                <span className="text-base sm:text-lg font-black text-slate-900">
+                  {resSolo.doseKgPorHa} <span className="text-xs font-bold text-emerald-700">kg/ha</span>
+                </span>
+              </div>
+            </div>
 
-                <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
-                  <div className="text-xs text-slate-600 font-medium">Biomassa Prevista na Despesca</div>
-                  <div className="text-3xl font-semibold text-slate-900 mt-1">
-                    {resPovo.biomassaEsperadaKg.toLocaleString()} <span className="text-base text-indigo-700 font-bold">kg</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-1">
-                    Produtividade: {resPovo.produtividadeKgHa} kg/ha
-                  </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <TituloEntrada
+                  icone={Sprout}
+                  titulo="Dados do Solo Seco (Pós-Despesca)"
+                  cor="emerald"
+                />
+
+                <div className="space-y-3.5">
+                  <CampoNumero
+                    label="1. Área do Viveiro"
+                    valor={soloAreaM2}
+                    onChange={setSoloAreaM2}
+                    step="1000"
+                    min="500"
+                    sufixo="m²"
+                    cor="emerald"
+                    ajuda={`Equivale a ${(soloAreaM2 / 10000).toFixed(2)} hectares.`}
+                  />
+
+                  <CampoNumero
+                    label="2. pH do Solo do Fundo"
+                    valor={soloPh}
+                    onChange={setSoloPh}
+                    step="0.1"
+                    min="3.5"
+                    cor="emerald"
+                    ajuda="Medição feita em amostra do solo seco do fundo."
+                  />
                 </div>
+              </div>
+
+              <div className="lg:col-span-7 space-y-4">
+                <CartaoSaida titulo="Recomendação de Calagem de Fundo" cor="emerald">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CartaoResultado
+                      titulo="Calcário Dolomítico Total"
+                      valor={resSolo.doseTotalKg.toLocaleString()}
+                      unidade="kg"
+                      detalhe={`Dose recomendada: ${resSolo.doseKgPorHa} kg/ha (${((resSolo.doseKgPorHa)/1000).toFixed(1)} t/ha)`}
+                      cor="emerald"
+                    />
+
+                    <CartaoResultado
+                      titulo="Tempo de Dessecação (Sol)"
+                      valor="10 a 15"
+                      unidade="dias"
+                      detalhe="Até abrir rachaduras de 2 a 5 cm no lodo"
+                      cor="emerald"
+                    />
+                  </div>
+
+                  <PainelInterno titulo="Manejo de Preparação" cor="emerald">
+                    <p>{resSolo.recomendacao}</p>
+                    <p className="text-slate-600 text-[11px] mt-1">
+                      Distribua o calcário uniformemente e faça leve gradagem (10 cm) para neutralizar a camada redutora de sulfetos.
+                    </p>
+                  </PainelInterno>
+                </CartaoSaida>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ============================================================== */}
-      {/* ABA 6: CALIBRE COMERCIAL & DESPESCA                            */}
-      {/* ============================================================== */}
-      {subTab === "calibre" && (
-        <CalcCalibre
-          viveiroAtual={viveiroAtual}
-          bioAtual={bioAtual}
-          biometriasDoViveiro={biometriasDoViveiro}
-        />
-      )}
+        {/* ============================================================== */}
+        {/* ABA 4: AMÔNIA TÓXICA NÃO-IONIZADA (NH3)                         */}
+        {/* ============================================================== */}
+        {subTab === "amonia" && (
+          <div className="space-y-4">
+            {/* Resumo Rápido no Topo */}
+            <div className="bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent border border-rose-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 block">
+                  Fração Tóxica Real (NH3 Gasosa)
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-rose-900 leading-tight">
+                  {resAmonia.nh3} <span className="text-xs font-bold text-slate-700">mg/L</span>
+                </div>
+                <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                  {resAmonia.porcentagemToxica}% da amônia total é letal
+                </span>
+              </div>
+              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-rose-500/20 self-start sm:self-auto">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Status de Risco
+                </span>
+                <span className={`text-sm sm:text-base font-black ${resAmonia.nh3 < 0.05 ? "text-emerald-700" : "text-rose-700"}`}>
+                  {resAmonia.status}
+                </span>
+              </div>
+            </div>
 
-      {/* ============================================================== */}
-      {/* ABA 7: CRESCIMENTO & ÍNDICES ZOOTÉCNICOS                        */}
-      {/* ============================================================== */}
-      {subTab === "crescimento" && (
-        <CalcCrescimento viveiroAtual={viveiroAtual} bioAtual={bioAtual} />
-      )}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <TituloEntrada
+                  icone={FlaskConical}
+                  titulo="Parâmetros para Fração Tóxica"
+                  cor="rose"
+                />
 
-      {/* ============================================================== */}
-      {/* ABA 8: BALANÇO IÔNICO (ÁGUA DE BAIXA SALINIDADE)               */}
-      {/* ============================================================== */}
-      {subTab === "ionico" && (
-        <CalcIonico viveiroAtual={viveiroAtual} aguaAtual={aguaAtual} />
-      )}
+                <div className="space-y-3.5">
+                  <CampoNumero
+                    label="Amônia Total (NAT) do teste"
+                    valor={amoniaNat}
+                    onChange={setAmoniaNat}
+                    step="0.1"
+                    min="0"
+                    sufixo="mg/L"
+                    cor="rose"
+                    ajuda="Medido com kit colorimétrico comercial."
+                  />
 
-      {/* ============================================================== */}
-      {/* ABA 9: AERAÇÃO & SISTEMA DE CULTIVO                            */}
-      {/* ============================================================== */}
-      {subTab === "aeracao" && (
-        <CalcAeracao viveiroAtual={viveiroAtual} />
-      )}
+                  <CampoNumero
+                    label="pH da Água no Horário"
+                    valor={amoniaPh}
+                    onChange={setAmoniaPh}
+                    step="0.1"
+                    min="6.0"
+                    cor="rose"
+                    ajuda="Quanto mais alto o pH, maior a proporção tóxica de NH3."
+                  />
 
-      {/* ============================================================== */}
-      {/* ABA 10: BIOFLOCOS E RELAÇÃO C:N                                */}
-      {/* ============================================================== */}
-      {subTab === "bioflocos" && (
-        <CalcBioflocos viveiroAtual={viveiroAtual} bioAtual={bioAtual} aguaAtual={aguaAtual} />
-      )}
+                  <CampoNumero
+                    label="Temperatura da Água"
+                    valor={amoniaTemp}
+                    onChange={setAmoniaTemp}
+                    step="0.5"
+                    min="15"
+                    sufixo="°C"
+                    cor="rose"
+                  />
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 space-y-4">
+                <CartaoSaida titulo="Amônia Não-Ionizada Real (NH3 Gasosa)" cor="rose">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CartaoResultado
+                      titulo="NH3 Tóxica Real"
+                      valor={resAmonia.nh3}
+                      unidade="mg/L"
+                      detalhe={`${resAmonia.porcentagemToxica}% da amônia total é tóxica`}
+                      cor="rose"
+                    />
+
+                    <CartaoResultado
+                      titulo="Status de Risco"
+                      valor={resAmonia.status}
+                      detalhe="Limite máximo tolerável: 0.05 mg/L"
+                      cor="rose"
+                    />
+                  </div>
+
+                  <PainelInterno titulo="Ação Recomendada" cor="rose">
+                    <p>{resAmonia.orientacao}</p>
+                  </PainelInterno>
+                </CartaoSaida>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 5: POVOAMENTO & METAS                                      */}
+        {/* ============================================================== */}
+        {subTab === "povoamento" && (
+          <div className="space-y-4">
+            {/* Resumo Rápido no Topo */}
+            <div className="bg-gradient-to-r from-indigo-500/15 via-indigo-500/10 to-transparent border border-indigo-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
+                  Pós-Larvas para Compra
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-indigo-900 leading-tight">
+                  {resPovo.totalPLs.toLocaleString()} <span className="text-xs font-bold text-slate-700">PLs</span>
+                </div>
+                <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
+                  Para área de {povoAreaM2.toLocaleString()} m² ({povoDensidade} cam/m²)
+                </span>
+              </div>
+              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-indigo-500/20 self-start sm:self-auto">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Biomassa Prevista
+                </span>
+                <span className="text-base sm:text-lg font-black text-slate-900">
+                  {resPovo.biomassaEsperadaKg.toLocaleString()} <span className="text-xs font-bold text-indigo-700">kg</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+                <TituloEntrada
+                  icone={Sparkles}
+                  titulo="Planejamento do Ciclo"
+                  cor="indigo"
+                />
+
+                <div className="space-y-3.5">
+                  <CampoNumero
+                    label="Área do Viveiro"
+                    valor={povoAreaM2}
+                    onChange={setPovoAreaM2}
+                    step="1000"
+                    min="500"
+                    sufixo="m²"
+                    cor="indigo"
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <CampoNumero
+                      label="Densidade Alvo"
+                      valor={povoDensidade}
+                      onChange={setPovoDensidade}
+                      step="1"
+                      min="1"
+                      sufixo="cam/m²"
+                      cor="indigo"
+                    />
+                    <CampoNumero
+                      label="Sobrevivência"
+                      valor={povoSobrevivencia}
+                      onChange={setPovoSobrevivencia}
+                      step="5"
+                      min="10"
+                      sufixo="%"
+                      cor="indigo"
+                    />
+                  </div>
+
+                  <CampoNumero
+                    label="Peso Médio Final Alvo"
+                    valor={povoPesoAlvo}
+                    onChange={setPovoPesoAlvo}
+                    step="0.5"
+                    min="5"
+                    sufixo="g"
+                    cor="indigo"
+                    ajuda="Peso comercial planejado para a despesca."
+                  />
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 space-y-4">
+                <CartaoSaida titulo="Projeção de Pós-Larvas e Colheita" cor="indigo">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CartaoResultado
+                      titulo="PLs Necessárias para Compra"
+                      valor={resPovo.totalPLs.toLocaleString()}
+                      unidade="PLs"
+                      detalhe={`Estimativa para povoar ${povoAreaM2.toLocaleString()} m²`}
+                      cor="indigo"
+                    />
+
+                    <CartaoResultado
+                      titulo="Biomassa Prevista na Despesca"
+                      valor={resPovo.biomassaEsperadaKg.toLocaleString()}
+                      unidade="kg"
+                      detalhe={`Produtividade estimada: ${resPovo.produtividadeKgHa} kg/ha`}
+                      cor="indigo"
+                    />
+                  </div>
+                </CartaoSaida>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 6: CALIBRE COMERCIAL & DESPESCA                            */}
+        {/* ============================================================== */}
+        {subTab === "calibre" && (
+          <CalcCalibre
+            viveiroAtual={viveiroAtual}
+            bioAtual={bioAtual}
+            biometriasDoViveiro={biometriasDoViveiro}
+          />
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 7: CRESCIMENTO & ÍNDICES ZOOTÉCNICOS                        */}
+        {/* ============================================================== */}
+        {subTab === "crescimento" && (
+          <CalcCrescimento viveiroAtual={viveiroAtual} bioAtual={bioAtual} />
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 8: BALANÇO IÔNICO (ÁGUA DE BAIXA SALINIDADE)               */}
+        {/* ============================================================== */}
+        {subTab === "ionico" && (
+          <CalcIonico viveiroAtual={viveiroAtual} aguaAtual={aguaAtual} />
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 9: AERAÇÃO & SISTEMA DE CULTIVO                            */}
+        {/* ============================================================== */}
+        {subTab === "aeracao" && (
+          <CalcAeracao viveiroAtual={viveiroAtual} />
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 10: BIOFLOCOS E RELAÇÃO C:N                                */}
+        {/* ============================================================== */}
+        {subTab === "bioflocos" && (
+          <CalcBioflocos viveiroAtual={viveiroAtual} bioAtual={bioAtual} aguaAtual={aguaAtual} />
+        )}
+      </div>
     </div>
   );
 }

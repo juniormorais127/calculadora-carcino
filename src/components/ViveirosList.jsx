@@ -178,8 +178,8 @@ export default function ViveirosList({ viveiros = [], onReload, isModalOpenExter
 
       {/* Modal de Criação / Edição */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 backdrop-blur-sm">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-sm max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-xl max-h-[90dvh] overflow-y-auto my-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Layers className="w-5 h-5 text-emerald-700" />
               {editingViveiro ? "Editar Viveiro" : "Cadastrar Novo Viveiro"}
@@ -250,7 +250,7 @@ export default function ViveirosList({ viveiros = [], onReload, isModalOpenExter
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Observações:</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Status do Viveiro:</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}

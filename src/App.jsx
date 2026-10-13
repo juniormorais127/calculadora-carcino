@@ -49,12 +49,17 @@ export default function App() {
     loadData();
   }, []);
 
+  const handleNavigate = (tab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Header farmProfile={farmProfile} />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-16 md:pb-6">
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
 
         {error ? (
           <div role="alert" className="my-8 rounded-xl border border-rose-100 bg-rose-50 p-5">
@@ -73,17 +78,17 @@ export default function App() {
                 viveiros={viveiros}
                 biometrias={biometrias}
                 qualidadeAgua={qualidadeAgua}
-                onNavigate={(tab) => setActiveTab(tab)}
+                onNavigate={handleNavigate}
                 onOpenNewBiometria={() => {
-                  setActiveTab("biometria");
+                  handleNavigate("biometria");
                   setOpenModalBiometria(true);
                 }}
                 onOpenNewAgua={() => {
-                  setActiveTab("agua");
+                  handleNavigate("agua");
                   setOpenModalAgua(true);
                 }}
                 onOpenNewViveiro={() => {
-                  setActiveTab("viveiros");
+                  handleNavigate("viveiros");
                   setOpenModalViveiro(true);
                 }}
               />
