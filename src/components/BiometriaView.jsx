@@ -319,7 +319,11 @@ export default function BiometriaView({
                     step="0.01"
                     required
                     value={pesoMedioG}
-                    onChange={(e) => setPesoMedioG(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setPesoMedioG(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-600">Ex: 11.85 g</span>
@@ -336,7 +340,11 @@ export default function BiometriaView({
                   max="100"
                   required
                   value={sobrevivenciaEstimada}
-                  onChange={(e) => setSobrevivenciaEstimada(Number(e.target.value))}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setSobrevivenciaEstimada(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
                 />
                 <span className="text-[10px] text-slate-600">Padrão da carcinicultura brasileira: 75% a 88%</span>

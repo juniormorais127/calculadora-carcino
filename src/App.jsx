@@ -110,7 +110,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Header farmProfile={farmProfile} />
+      <Header
+        farmProfile={farmProfile}
+        telaAtual={activeTab}
+        resumoRegistros={`${viveiros.length} viveiro(s) · ${biometrias.length} biometria(s) · ${qualidadeAgua.length} medição(ões) de água`}
+      />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
