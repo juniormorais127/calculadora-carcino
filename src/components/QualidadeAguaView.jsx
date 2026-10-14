@@ -484,7 +484,11 @@ export default function QualidadeAguaView({
                     step="0.1"
                     required
                     value={oxigenio}
-                    onChange={(e) => setOxigenio(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setOxigenio(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -496,7 +500,11 @@ export default function QualidadeAguaView({
                     step="0.5"
                     required
                     value={temperatura}
-                    onChange={(e) => setTemperatura(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setTemperatura(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -508,7 +516,11 @@ export default function QualidadeAguaView({
                     step="0.1"
                     required
                     value={ph}
-                    onChange={(e) => setPh(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setPh(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -520,7 +532,11 @@ export default function QualidadeAguaView({
                     step="1"
                     required
                     value={salinidade}
-                    onChange={(e) => setSalinidade(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setSalinidade(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -534,7 +550,11 @@ export default function QualidadeAguaView({
                     step="5"
                     required
                     value={alcalinidade}
-                    onChange={(e) => setAlcalinidade(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setAlcalinidade(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">mg/L CaCO3</span>
@@ -547,7 +567,11 @@ export default function QualidadeAguaView({
                     step="0.05"
                     required
                     value={amoniaTotal}
-                    onChange={(e) => setAmoniaTotal(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setAmoniaTotal(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">mg/L NAT</span>
@@ -560,7 +584,11 @@ export default function QualidadeAguaView({
                     step="0.05"
                     aria-label="Nitrito em base nitrogênio"
                     value={nitrito}
-                    onChange={(e) => setNitrito(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setNitrito(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">
@@ -576,7 +604,11 @@ export default function QualidadeAguaView({
                     aria-label="Ferro total"
                     placeholder="só para água de poço"
                     value={ferro}
-                    onChange={(e) => setFerro(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setFerro(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">mg/L — deixe vazio se não mediu</span>
@@ -590,7 +622,11 @@ export default function QualidadeAguaView({
                     aria-label="Manganês"
                     placeholder="só para água de poço"
                     value={manganes}
-                    onChange={(e) => setManganes(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setManganes(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">mg/L — deixe vazio se não mediu</span>
@@ -602,7 +638,11 @@ export default function QualidadeAguaView({
                     type="number"
                     step="1"
                     value={transparencia}
-                    onChange={(e) => setTransparencia(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setTransparencia(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
                   <span className="text-[9px] text-slate-600">cm (Secchi)</span>

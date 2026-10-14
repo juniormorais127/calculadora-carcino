@@ -36,10 +36,10 @@ function gpdObservado(biometriasDoViveiro, pesoAtual, diasCultivo) {
 export default function CalcCalibre({ viveiroAtual, bioAtual, biometriasDoViveiro = [] }) {
   const [pesoMedio, setPesoMedio] = useState(11.9);
   const [pesoAlvo, setPesoAlvo] = useState(14);
-  const [racaoAcumulada, setRacaoAcumulada] = useState(0);
-  const [precoRacao, setPrecoRacao] = useState(0);
-  const [outrosCustos, setOutrosCustos] = useState(0);
-  const [biomassaFinal, setBiomassaFinal] = useState(0);
+  const [racaoAcumulada, setRacaoAcumulada] = useState("");
+  const [precoRacao, setPrecoRacao] = useState("");
+  const [outrosCustos, setOutrosCustos] = useState("");
+  const [biomassaFinal, setBiomassaFinal] = useState("");
 
   // Alimenta os campos com o que já existe no banco local
   useEffect(() => {

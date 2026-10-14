@@ -116,6 +116,17 @@ export function CampoNumero({ label, valor, onChange, step = "1", min = "0", dis
     onChange(novo);
   };
 
+  const handleInputChange = (e) => {
+    const raw = e.target.value;
+    if (raw === "") {
+      onChange("");
+      return;
+    }
+    // Remove qualquer 0 à esquerda se o usuário digitar outros dígitos depois (ex: "05" -> "5", "007" -> "7", mas mantém "0" e "0.5")
+    const limpo = raw.replace(/^0+(?=\d)/, "");
+    onChange(limpo);
+  };
+
   return (
     <div>
       <label className="text-xs font-bold text-slate-700 block mb-1.5">{label}</label>
@@ -135,8 +146,9 @@ export function CampoNumero({ label, valor, onChange, step = "1", min = "0", dis
             step={step}
             min={min}
             disabled={disabled}
-            value={valor}
-            onChange={(e) => onChange(Number(e.target.value))}
+            value={valor ?? ""}
+            onFocus={(e) => e.target.select()}
+            onChange={handleInputChange}
             className={`w-full min-w-0 bg-white border border-slate-200 rounded-2xl px-2 sm:px-3.5 py-2.5 text-slate-900 font-extrabold text-base text-center shadow-xs focus:ring-2 focus:ring-emerald-500/20 focus:outline-none disabled:opacity-60 ${sufixo ? "pr-10 sm:pr-12" : ""} ${c.foco}`}
           />
           {sufixo && (
@@ -268,17 +280,35 @@ export function BadgeStatus({ status, cor = "emerald" }) {
   );
 }
 
+// Gravidade do aviso (vem do serviço) -> famílias da paleta. Diferente de
+// CORES_STATUS, aqui o rótulo descreve a urgência do recado, não uma medição.
+const CORES_TIPO_AVISO = {
+  critico: "rose",
+  alerta: "amber",
+  sucesso: "emerald",
+  info: "cyan"
+};
+
+/**
+ * Lista de avisos de manejo.
+ * Aceita tanto texto puro (calculatorService, agroService, CalcCalibre) quanto o
+ * objeto { tipo, texto } do probioticoService — o tipo, quando existe, define a cor
+ * do aviso; caso contrário vale a cor base do cartão.
+ */
 export function ListaAvisos({ avisos = [], cor = "amber" }) {
-  const c = corDaPaleta(cor);
   if (avisos.length === 0) return null;
   return (
     <div className="space-y-2">
-      {avisos.map((aviso, idx) => (
-        <div key={idx} className={`flex items-start gap-2 p-2.5 rounded-xl border text-xs ${c.aviso}`}>
-          <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${c.texto}`} />
-          <span>{aviso}</span>
-        </div>
-      ))}
+      {avisos.map((aviso, idx) => {
+        const texto = typeof aviso === "string" ? aviso : (aviso?.texto ?? "");
+        const c = corDaPaleta(CORES_TIPO_AVISO[aviso?.tipo] || cor);
+        return (
+          <div key={idx} className={`flex items-start gap-2 p-2.5 rounded-xl border text-xs ${c.aviso}`}>
+            <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${c.texto}`} />
+            <span>{texto}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

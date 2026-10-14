@@ -238,7 +238,11 @@ export default function ViveirosList({
                     type="number"
                     required
                     value={areaM2}
-                    onChange={(e) => setAreaM2(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setAreaM2(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-600">10.000 m² = 1 ha</span>
@@ -251,7 +255,11 @@ export default function ViveirosList({
                     step="0.1"
                     required
                     value={profundidadeM}
-                    onChange={(e) => setProfundidadeM(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setProfundidadeM(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-600">Padrão: 1.0 a 1.4 m</span>
@@ -276,7 +284,11 @@ export default function ViveirosList({
                     type="number"
                     required
                     value={qtdPovoada}
-                    onChange={(e) => setQtdPovoada(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setQtdPovoada(raw === "" ? "" : raw.replace(/^0+(?=\d)/, ""));
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
