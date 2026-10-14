@@ -14,6 +14,7 @@ import {
   HelpCircle,
   MessageSquare
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { CONTATO_SUPORTE, TIPOS_RETORNO, LIMITE_ANEXOS, TAMANHO_MAX_ANEXO_MB, TIPOS_ARQUIVO_ACEITOS } from "../data/contatoSuporte.js";
 import {
   canalConfigurado,
@@ -66,9 +67,14 @@ export default function AjudaSuporte({ telaAtual, resumoRegistros }) {
 
   useEffect(() => {
     if (!aberto) return undefined;
+    const scrollAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const aoTeclar = (e) => { if (e.key === "Escape") fechar(); };
     window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
+    return () => {
+      document.body.style.overflow = scrollAnterior;
+      window.removeEventListener("keydown", aoTeclar);
+    };
   }, [aberto]);
 
   const adicionarAnexos = (lista) => {
@@ -175,14 +181,18 @@ export default function AjudaSuporte({ telaAtual, resumoRegistros }) {
         <span className="hidden sm:inline">Ajuda</span>
       </button>
 
-      {aberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="titulo-ajuda"
-            className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-xl max-h-[92dvh] overflow-y-auto my-auto"
-          >
+      {aberto && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150"
+          onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}
+        >
+          <div className="min-h-full flex items-center justify-center py-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="titulo-ajuda"
+              className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl relative my-auto animate-in zoom-in-95 duration-150"
+            >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <h3 id="titulo-ajuda" className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -408,6 +418,8 @@ export default function AjudaSuporte({ telaAtual, resumoRegistros }) {
             </p>
           </div>
         </div>
+      </div>,
+        document.body
       )}
     </>
   );
