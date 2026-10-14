@@ -39,7 +39,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
       </nav>
 
       {/* Mobile Bottom Fixed Nav */}
-      <nav aria-label="Navegação principal" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-50 backdrop-blur-lg border-t border-slate-200 px-0.5 py-1 pb-safe">
+      <nav aria-label="Navegação principal" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-50/95 backdrop-blur-lg border-t border-slate-200 px-1 py-1.5 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -50,16 +50,18 @@ export default function Navigation({ activeTab, setActiveTab }) {
                 aria-current={isActive ? "page" : undefined}
                 aria-label={tab.label}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center min-h-11 min-w-0 flex-1 py-1 px-0.5 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center min-h-[52px] min-w-0 flex-1 py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
                   isActive
                     ? "text-emerald-700 font-bold"
-                    : "text-slate-600 hover:text-slate-700 font-normal"
+                    : "text-slate-600 hover:text-slate-800 font-normal"
                 }`}
               >
-                <div className={`p-1 rounded-lg ${isActive ? "bg-emerald-500/15" : ""}`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-emerald-500/15 text-emerald-700" : "text-slate-600"}`}>
+                  <Icon className="w-5 h-5" strokeWidth={isActive ? 2.25 : 2} />
                 </div>
-                <span className="text-[9px] tracking-tight mt-0.5 truncate max-w-full">{tab.mobileLabel || tab.label}</span>
+                <span className={`text-[10px] tracking-tight mt-0.5 truncate max-w-full ${isActive ? "font-bold text-emerald-800" : "font-medium text-slate-600"}`}>
+                  {tab.mobileLabel || tab.label}
+                </span>
               </button>
             );
           })}
