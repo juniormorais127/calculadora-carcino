@@ -32,13 +32,18 @@ export default function QualidadeAguaView({
   const [amoniaTotal, setAmoniaTotal] = useState(0.3);
   const [nitrito, setNitrito] = useState(0.1);
   const [transparencia, setTransparencia] = useState(35);
+  // Ferro e manganês são opcionais: só fazem sentido em água de poço. Vazio = não medido.
+  const [ferro, setFerro] = useState("");
+  const [manganes, setManganes] = useState("");
   const [notas, setNotas] = useState("");
 
   const viveiroAtual = viveiros.find(v => String(v.id) === String(selectedViveiroId));
 
   const registrosViveiro = qualidadeAgua
     .filter(q => String(q.viveiroId) === String(selectedViveiroId))
-    .sort((a, b) => new Date(b.data) - new Date(a.data));
+    // Desempate por id: duas medições no mesmo dia (manhã e tarde) precisam
+    // manter a mais recente como referência, e não a primeira cadastrada
+    .sort((a, b) => new Date(b.data) - new Date(a.data) || (Number(b.id) || 0) - (Number(a.id) || 0));
 
   const ultimoRegistro = registrosViveiro.length > 0 ? registrosViveiro[0] : null;
 
@@ -73,9 +78,14 @@ export default function QualidadeAguaView({
     avaliacaoPorRegistro[q.id] = {
       oxigenio: avaliarParametro("oxigenio", q.oxigenio),
       alcalinidade: avaliarParametro("alcalinidade", q.alcalinidade),
-      nitrito: avaliarParametro("nitrito", q.nitrito, { salinidadePpt: q.salinidade })
+      nitrito: avaliarParametro("nitrito", q.nitrito, { salinidadePpt: q.salinidade }),
+      ferro: avaliarParametro("ferro", q.ferro),
+      manganes: avaliarParametro("manganes", q.manganes)
     };
   });
+
+  // Colunas de metais só entram na tabela se algum registro as tiver
+  const temMetais = registrosViveiro.some(q => q.ferro !== undefined || q.manganes !== undefined);
 
   useEffect(() => {
     if (isModalOpenExternal) {
@@ -113,7 +123,7 @@ export default function QualidadeAguaView({
     e.preventDefault();
     if (!viveiroAtual) return;
 
-    await db.qualidadeAgua.add({
+    const medicao = {
       viveiroId: viveiroAtual.id,
       data,
       horario,
@@ -127,7 +137,14 @@ export default function QualidadeAguaView({
       transparencia: Number(transparencia),
       notas,
       createdAt: new Date().toISOString()
-    });
+    };
+
+    // Só grava os metais quando foram medidos: gravar zero seria afirmar
+    // "não há ferro", o que é diferente de "não medi".
+    if (ferro !== "" && Number.isFinite(Number(ferro))) medicao.ferro = Number(ferro);
+    if (manganes !== "" && Number.isFinite(Number(manganes))) medicao.manganes = Number(manganes);
+
+    await db.qualidadeAgua.add(medicao);
 
     handleClose();
     onReload();
@@ -274,6 +291,31 @@ export default function QualidadeAguaView({
                 NAT total: {ultimoRegistro.amoniaTotal} mg/L
               </span>
             </div>
+
+            {/* Metais: só aparecem quando foram medidos (água de poço) */}
+            {porChave.ferro && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Ferro total (Fe)</span>
+                <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("ferro")]}`}>
+                  {ultimoRegistro.ferro} <span className="text-xs text-slate-900">mg/L</span>
+                </div>
+                <span className="text-[10px] text-slate-600">
+                  {rotuloDe("ferro")} · ideal {idealDe("ferro")}
+                </span>
+              </div>
+            )}
+
+            {porChave.manganes && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-4">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase">Manganês (Mn)</span>
+                <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("manganes")]}`}>
+                  {ultimoRegistro.manganes} <span className="text-xs text-slate-900">mg/L</span>
+                </div>
+                <span className="text-[10px] text-slate-600">
+                  {rotuloDe("manganes")} · ideal {idealDe("manganes")}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Contexto de manejo: condição esperada do sistema, não falha */}
@@ -318,6 +360,8 @@ export default function QualidadeAguaView({
                   <th className="py-2.5 px-3">Alcalinidade</th>
                   <th className="py-2.5 px-3">Amônia (NAT)</th>
                   <th className="py-2.5 px-3">Nitrito (N-NO2)</th>
+                  {temMetais && <th className="py-2.5 px-3">Ferro (mg/L)</th>}
+                  {temMetais && <th className="py-2.5 px-3">Manganês (mg/L)</th>}
                   <th className="py-2.5 px-3">Secchi (cm)</th>
                   <th className="py-2.5 px-3">Obs.</th>
                   <th className="py-2.5 px-3 text-right">Ação</th>
@@ -350,6 +394,16 @@ export default function QualidadeAguaView({
                     >
                       {q.nitrito ?? "--"}
                     </td>
+                    {temMetais && (
+                      <td className={`py-3 px-3 font-semibold ${CORES_NIVEL[avaliacaoPorRegistro[q.id]?.ferro.nivel] || ""}`}>
+                        {q.ferro ?? "--"}
+                      </td>
+                    )}
+                    {temMetais && (
+                      <td className={`py-3 px-3 font-semibold ${CORES_NIVEL[avaliacaoPorRegistro[q.id]?.manganes.nivel] || ""}`}>
+                        {q.manganes ?? "--"}
+                      </td>
+                    )}
                     <td className="py-3 px-3">{q.transparencia || "--"} cm</td>
                     <td className="py-3 px-3 text-slate-600 max-w-[160px] truncate" title={q.notas || ""}>
                       {q.notas || "--"}
@@ -500,15 +554,46 @@ export default function QualidadeAguaView({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Nitrito (NO2):</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Nitrito (N-NO2):</label>
                   <input
                     type="number"
                     step="0.05"
+                    aria-label="Nitrito em base nitrogênio"
                     value={nitrito}
                     onChange={(e) => setNitrito(Number(e.target.value))}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
                   />
-                  <span className="text-[9px] text-slate-600">mg/L</span>
+                  <span className="text-[9px] text-slate-600">
+                    mg/L na base nitrogênio. Se o kit lê NO2-, multiplique por 3,28.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Ferro total (opcional):</label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    aria-label="Ferro total"
+                    placeholder="só para água de poço"
+                    value={ferro}
+                    onChange={(e) => setFerro(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
+                  />
+                  <span className="text-[9px] text-slate-600">mg/L — deixe vazio se não mediu</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Manganês (opcional):</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    aria-label="Manganês"
+                    placeholder="só para água de poço"
+                    value={manganes}
+                    onChange={(e) => setManganes(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold text-sm focus:border-cyan-500 focus:outline-none"
+                  />
+                  <span className="text-[9px] text-slate-600">mg/L — deixe vazio se não mediu</span>
                 </div>
 
                 <div>

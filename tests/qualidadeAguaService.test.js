@@ -140,6 +140,48 @@ test("salinidade baixa é contexto, não falha", async (t) => {
   });
 });
 
+test("ferro e manganês de água de poço", async (t) => {
+  await t.test("ferro: 0,1 ótimo; 0,5 atenção; 1,5 crítico; 3 emergencial", () => {
+    assert.equal(avaliarParametro("ferro", 0.1).nivel, NIVEIS.OTIMO);
+    assert.equal(avaliarParametro("ferro", 0.5).nivel, NIVEIS.ATENCAO);
+    assert.equal(avaliarParametro("ferro", 1.5).nivel, NIVEIS.CRITICO);
+    assert.equal(avaliarParametro("ferro", 3).nivel, NIVEIS.EMERGENCIAL);
+  });
+
+  await t.test("manganês tem faixa mais apertada que o ferro", () => {
+    assert.equal(avaliarParametro("manganes", 0.03).nivel, NIVEIS.OTIMO);
+    assert.equal(avaliarParametro("manganes", 0.1).nivel, NIVEIS.ATENCAO);
+    assert.equal(avaliarParametro("manganes", 0.3).nivel, NIVEIS.CRITICO);
+    assert.equal(avaliarParametro("manganes", 1).nivel, NIVEIS.EMERGENCIAL);
+  });
+
+  await t.test("a orientação de tratamento vem no texto de impacto", () => {
+    assert.match(avaliarParametro("ferro", 3).impacto, /sedimentação/i);
+    assert.match(avaliarParametro("manganes", 1).impacto, /pH 9/i);
+  });
+
+  await t.test("medição sem metais não os inventa", () => {
+    const r = avaliarQualidadeAgua({
+      oxigenio: 5, temperatura: 29, ph: 8, salinidade: 20,
+      alcalinidade: 140, amoniaTotal: 0.2, nitrito: 0.5, transparencia: 35
+    });
+    assert.equal(r.resultados.length, 8);
+    assert.equal(r.resultados.some(x => x.chave === "ferro"), false);
+    assert.equal(r.resultados.some(x => x.chave === "manganes"), false);
+  });
+
+  await t.test("poço com ferro alto entra nos alertas do painel", () => {
+    const r = avaliarQualidadeAgua({
+      oxigenio: 5, temperatura: 29, ph: 8, salinidade: 2,
+      alcalinidade: 140, amoniaTotal: 0.2, nitrito: 0.2, transparencia: 35,
+      ferro: 2.5, manganes: 0.4
+    });
+    const chaves = r.alertas.map(a => a.chave).sort();
+    assert.deepEqual(chaves, ["ferro", "manganes"]);
+    assert.equal(r.nivelGeral, NIVEIS.EMERGENCIAL);
+  });
+});
+
 test("avaliação da medição completa", async (t) => {
   const medicaoBoa = {
     oxigenio: 5.0,

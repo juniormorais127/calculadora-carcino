@@ -56,20 +56,25 @@ export default function Dashboard({
   let pesoMedioGlobalSoma = 0;
   let contagemBiometriasRecentes = 0;
 
+  // Mais recente por data e, quando o dia empata (medição da manhã e da tarde),
+  // pela última cadastrada — senão a referência do viveiro ficava sendo a antiga
+  const ehMaisRecente = (candidato, atual) => {
+    if (!atual) return true;
+    const diferencaDeData = new Date(candidato.data) - new Date(atual.data);
+    if (diferencaDeData !== 0) return diferencaDeData > 0;
+    return (Number(candidato.id) || 0) > (Number(atual.id) || 0);
+  };
+
   // Mapa com a última biometria de cada viveiro
   const ultimaBiometriaPorViveiro = {};
   biometrias.forEach(b => {
-    if (!ultimaBiometriaPorViveiro[b.viveiroId] || new Date(b.data) > new Date(ultimaBiometriaPorViveiro[b.viveiroId].data)) {
-      ultimaBiometriaPorViveiro[b.viveiroId] = b;
-    }
+    if (ehMaisRecente(b, ultimaBiometriaPorViveiro[b.viveiroId])) ultimaBiometriaPorViveiro[b.viveiroId] = b;
   });
 
   // Mapa com a última medição de água de cada viveiro
   const ultimaAguaPorViveiro = {};
   qualidadeAgua.forEach(q => {
-    if (!ultimaAguaPorViveiro[q.viveiroId] || new Date(q.data) > new Date(ultimaAguaPorViveiro[q.viveiroId].data)) {
-      ultimaAguaPorViveiro[q.viveiroId] = q;
-    }
+    if (ehMaisRecente(q, ultimaAguaPorViveiro[q.viveiroId])) ultimaAguaPorViveiro[q.viveiroId] = q;
   });
 
   // Alertas críticos

@@ -105,6 +105,29 @@ export const PARAMETROS_QUALIDADE_AGUA = {
     alertaMin: 20.0,
     alertaMax: 60.0,
     impacto: "< 25 cm indica bloom excessivo de fitoplâncton (risco de anoxia noturna). > 50 cm indica água muito clara (proliferação de algas bentônicas/cabelo)."
+  },
+  // Metais de água de poço — o risco menos lembrado e o mais difícil de reverter.
+  // Faixas conservadoras de manejo (referência), medidas na água de abastecimento.
+  // Ferro: já se descreve irritação e necrose branquial de 0,2 a 0,5 mg/L, porque
+  // o Fe2+ do poço profundo oxida e precipita oxi-hidróxido entre as lamelas; a
+  // água de captação costuma ser aceita abaixo de 1 mg/L.
+  // Manganês: o Mn2+ dissolvido é bem mais tóxico que o precipitado, e oxidá-lo é
+  // lento — por simples aeração a taxa é insignificante abaixo de pH 9.
+  ferro: {
+    nome: "Ferro total (Fe)",
+    unidade: "mg/L",
+    otimoMax: 0.2,
+    alertaMax: 1.0,
+    criticoMax: 2.0,
+    impacto: "Água de poço profundo traz Fe2+ solúvel, que oxida e precipita nas brânquias: atrapalha a respiração, a excreção de amônia e a osmorregulação — o mesmo sistema já sobrecarregado em baixa salinidade, e as PLs sofrem mais que os juvenis. Antes de encher: aerar forte, reter 1 a 2 dias em tanque de sedimentação e filtrar em areia. Acima de 5 mg/L só aeração com filtragem resolve; abaixo de 2 mg/L, cloração seguida de filtragem. Solo avermelhado no viveiro é hidróxido férrico e lixivia ferro para a água."
+  },
+  manganes: {
+    nome: "Manganês (Mn)",
+    unidade: "mg/L",
+    otimoMax: 0.05,
+    alertaMax: 0.2,
+    criticoMax: 0.5,
+    impacto: "Faixa conservadora de referência: água de captação costuma ser aceita abaixo de 0,01 mg/L. O Mn2+ dissolvido é bem mais tóxico que o precipitado, mas oxidá-lo é lento — por simples aeração a taxa é insignificante abaixo de pH 9, e oxidantes fortes exigem pH acima de 8,5. Na prática, resolver na fonte (poço/tanque de tratamento) é mais realista que tratar o viveiro."
   }
 };
 
