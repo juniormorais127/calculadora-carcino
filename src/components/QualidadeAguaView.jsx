@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Droplets, Plus, AlertTriangle, CheckCircle, Trash2, Calendar, Clock, Sparkles } from "lucide-react";
 import { db } from "../services/db.js";
 import { calculateToxicAmmonia } from "../services/calculatorService.js";
-import { PARAMETROS_QUALIDADE_AGUA } from "../data/carcinoData.js";
+import { avaliarQualidadeAgua, avaliarParametro } from "../services/qualidadeAguaService.js";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function QualidadeAguaView({ 
@@ -41,6 +41,41 @@ export default function QualidadeAguaView({
     .sort((a, b) => new Date(b.data) - new Date(a.data));
 
   const ultimoRegistro = registrosViveiro.length > 0 ? registrosViveiro[0] : null;
+
+  // Avaliação da última medição pelos limiares da tabela de referência
+  // (o nitrito usa o limiar da salinidade da própria medição)
+  const avaliacaoAtual = ultimoRegistro ? avaliarQualidadeAgua(ultimoRegistro) : null;
+  const porChave = {};
+  avaliacaoAtual?.resultados.forEach(r => { porChave[r.chave] = r; });
+
+  const CORES_NIVEL = {
+    otimo: "text-emerald-700",
+    atencao: "text-amber-700",
+    critico: "text-rose-700",
+    emergencial: "text-rose-700",
+    sem_dados: "text-slate-500"
+  };
+  const FUNDO_NIVEL = {
+    otimo: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    atencao: "bg-amber-50 text-amber-700 border-amber-100",
+    critico: "bg-rose-50 text-rose-700 border-rose-100",
+    emergencial: "bg-rose-50 text-rose-700 border-rose-100",
+    sem_dados: "bg-slate-50 text-slate-600 border-slate-200"
+  };
+  const nivelDe = (chave) => porChave[chave]?.nivel || "sem_dados";
+  const rotuloDe = (chave) => porChave[chave]?.rotulo || "Sem dados";
+  const idealDe = (chave) => porChave[chave]?.faixaOtima || "--";
+
+  // Avaliação por linha do histórico: o nitrito de cada registro é julgado pela
+  // salinidade daquele mesmo registro, não pela salinidade atual do viveiro
+  const avaliacaoPorRegistro = {};
+  registrosViveiro.forEach(q => {
+    avaliacaoPorRegistro[q.id] = {
+      oxigenio: avaliarParametro("oxigenio", q.oxigenio),
+      alcalinidade: avaliarParametro("alcalinidade", q.alcalinidade),
+      nitrito: avaliarParametro("nitrito", q.nitrito, { salinidadePpt: q.salinidade })
+    };
+  });
 
   useEffect(() => {
     if (isModalOpenExternal) {
@@ -172,56 +207,81 @@ export default function QualidadeAguaView({
         <>
           {/* Cartões de Parâmetros Atuais do Viveiro Selecionado */}
           {ultimoRegistro ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {/* Oxigênio */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Oxigênio (O2)</span>
-            <div className={`text-2xl font-semibold mt-1 ${
-              ultimoRegistro.oxigenio >= 4.0 ? "text-emerald-700" : (ultimoRegistro.oxigenio >= 3.0 ? "text-amber-700" : "text-rose-700")
-            }`}>
-              {ultimoRegistro.oxigenio} <span className="text-xs text-slate-900">mg/L</span>
-            </div>
-            <span className="text-[10px] text-slate-600">
-              {ultimoRegistro.oxigenio >= 4.0 ? "Ótimo para arraçoamento" : "Atenção aeração"}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-600">
+              Estado geral da última medição:
+            </span>
+            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${FUNDO_NIVEL[avaliacaoAtual?.nivelGeral] || FUNDO_NIVEL.sem_dados}`}>
+              {avaliacaoAtual?.rotuloGeral || "Sem dados"}
             </span>
           </div>
 
-          {/* pH */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">pH</span>
-            <div className={`text-2xl font-semibold mt-1 ${
-              ultimoRegistro.ph >= 7.8 && ultimoRegistro.ph <= 8.5 ? "text-emerald-700" : "text-amber-700"
-            }`}>
-              {ultimoRegistro.ph}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* Oxigênio */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <span className="text-[11px] font-semibold text-slate-600 uppercase">Oxigênio (O2)</span>
+              <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("oxigenio")]}`}>
+                {ultimoRegistro.oxigenio} <span className="text-xs text-slate-900">mg/L</span>
+              </div>
+              <span className="text-[10px] text-slate-600">
+                {rotuloDe("oxigenio")} · ideal {idealDe("oxigenio")}
+              </span>
             </div>
-            <span className="text-[10px] text-slate-600">Faixa ideal: 7.8 a 8.5</span>
+
+            {/* pH */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <span className="text-[11px] font-semibold text-slate-600 uppercase">pH</span>
+              <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("ph")]}`}>
+                {ultimoRegistro.ph}
+              </div>
+              <span className="text-[10px] text-slate-600">
+                {rotuloDe("ph")} · ideal {idealDe("ph")}
+              </span>
+            </div>
+
+            {/* Alcalinidade */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <span className="text-[11px] font-semibold text-slate-600 uppercase">Alcalinidade</span>
+              <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("alcalinidade")]}`}>
+                {ultimoRegistro.alcalinidade} <span className="text-xs text-slate-900">mg/L</span>
+              </div>
+              <span className="text-[10px] text-slate-600">
+                {rotuloDe("alcalinidade")} · ideal {idealDe("alcalinidade")}
+              </span>
+            </div>
+
+            {/* Nitrito — o limite depende da salinidade da medição */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <span className="text-[11px] font-semibold text-slate-600 uppercase">Nitrito (N-NO2)</span>
+              <div className={`text-2xl font-semibold mt-1 ${CORES_NIVEL[nivelDe("nitrito")]}`}>
+                {ultimoRegistro.nitrito ?? "--"} <span className="text-xs text-slate-900">mg/L</span>
+              </div>
+              <span className="text-[10px] text-slate-600">
+                {porChave.nitrito?.aviso ? porChave.nitrito.aviso : `${rotuloDe("nitrito")} · seguro ${idealDe("nitrito")}`}
+              </span>
+            </div>
+
+            {/* Amônia Tóxica NH3 Real */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <span className="text-[11px] font-semibold text-slate-600 uppercase">NH3 Tóxica Real</span>
+              <div className={`text-2xl font-semibold mt-1 ${
+                amoniaToxicaRecente && amoniaToxicaRecente.nh3 < 0.05 ? "text-emerald-700" : "text-rose-700"
+              }`}>
+                {amoniaToxicaRecente?.nh3 || "--"} <span className="text-xs text-slate-900">mg/L</span>
+              </div>
+              <span className="text-[10px] text-slate-600">
+                NAT total: {ultimoRegistro.amoniaTotal} mg/L
+              </span>
+            </div>
           </div>
 
-          {/* Alcalinidade */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">Alcalinidade</span>
-            <div className={`text-2xl font-semibold mt-1 ${
-              ultimoRegistro.alcalinidade >= 120 ? "text-emerald-700" : (ultimoRegistro.alcalinidade >= 90 ? "text-amber-700" : "text-rose-700")
-            }`}>
-              {ultimoRegistro.alcalinidade} <span className="text-xs text-slate-900">mg/L</span>
+          {/* Contexto de manejo: condição esperada do sistema, não falha */}
+          {porChave.salinidade?.contextual && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-[11px] text-amber-700">
+              <b>Salinidade de {ultimoRegistro.salinidade} ppt:</b> {porChave.salinidade.observacaoManejo}
             </div>
-            <span className="text-[10px] text-slate-600">
-              {ultimoRegistro.alcalinidade >= 120 ? "Tamponamento estável" : "Baixa! Corrigir"}
-            </span>
-          </div>
-
-          {/* Amônia Tóxica NH3 Real */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase">NH3 Tóxica Real</span>
-            <div className={`text-2xl font-semibold mt-1 ${
-              amoniaToxicaRecente && amoniaToxicaRecente.nh3 < 0.05 ? "text-emerald-700" : "text-rose-700"
-            }`}>
-              {amoniaToxicaRecente?.nh3 || "--"} <span className="text-xs text-slate-900">mg/L</span>
-            </div>
-            <span className="text-[10px] text-slate-600">
-              NAT total: {ultimoRegistro.amoniaTotal} mg/L
-            </span>
-          </div>
+          )}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-600">
@@ -257,7 +317,9 @@ export default function QualidadeAguaView({
                   <th className="py-2.5 px-3">Salin. (ppt)</th>
                   <th className="py-2.5 px-3">Alcalinidade</th>
                   <th className="py-2.5 px-3">Amônia (NAT)</th>
+                  <th className="py-2.5 px-3">Nitrito (N-NO2)</th>
                   <th className="py-2.5 px-3">Secchi (cm)</th>
+                  <th className="py-2.5 px-3">Obs.</th>
                   <th className="py-2.5 px-3 text-right">Ação</th>
                 </tr>
               </thead>
@@ -268,19 +330,30 @@ export default function QualidadeAguaView({
                       <div>{q.data}</div>
                       <div className="text-[10px] text-slate-600 font-normal">{q.horario}</div>
                     </td>
-                    <td className={`py-3 px-3 font-semibold text-sm ${
-                      q.oxigenio >= 4.0 ? "text-emerald-700" : (q.oxigenio >= 3.0 ? "text-amber-700" : "text-rose-700")
-                    }`}>
+                    <td className={`py-3 px-3 font-semibold text-sm ${CORES_NIVEL[avaliacaoPorRegistro[q.id]?.oxigenio.nivel] || ""}`}>
                       {q.oxigenio}
                     </td>
                     <td className="py-3 px-3">{q.temperatura}°C</td>
                     <td className="py-3 px-3 font-bold text-slate-900">{q.ph}</td>
                     <td className="py-3 px-3">{q.salinidade} ppt</td>
-                    <td className={`py-3 px-3 font-semibold ${q.alcalinidade >= 110 ? "text-emerald-700" : "text-amber-700"}`}>
+                    <td className={`py-3 px-3 font-semibold ${CORES_NIVEL[avaliacaoPorRegistro[q.id]?.alcalinidade.nivel] || ""}`}>
                       {q.alcalinidade}
                     </td>
                     <td className="py-3 px-3">{q.amoniaTotal} mg/L</td>
+                    <td
+                      className={`py-3 px-3 font-semibold ${CORES_NIVEL[avaliacaoPorRegistro[q.id]?.nitrito.nivel] || ""}`}
+                      title={
+                        avaliacaoPorRegistro[q.id]?.nitrito.limiteAplicado
+                          ? `Nesta salinidade (${q.salinidade} ppt) o limite seguro é até ${avaliacaoPorRegistro[q.id].nitrito.limiteAplicado.otimoMax} mg/L de N-NO2`
+                          : "Informe a salinidade para avaliar o nitrito deste registro"
+                      }
+                    >
+                      {q.nitrito ?? "--"}
+                    </td>
                     <td className="py-3 px-3">{q.transparencia || "--"} cm</td>
+                    <td className="py-3 px-3 text-slate-600 max-w-[160px] truncate" title={q.notas || ""}>
+                      {q.notas || "--"}
+                    </td>
                     <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => handleDelete(q.id)}
