@@ -65,6 +65,11 @@ export const PARAMETROS_QUALIDADE_AGUA = {
     alertaMax: 40.0,
     criticoMin: 1.0,
     criticoMax: 48.0,
+    // Abaixo de 5 ppt o app trata como ATENÇÃO DE CONTEXTO, não como falha: em
+    // cultivo de interior com água de poço essa é a condição normal de operação,
+    // e o que decide o resultado é o balanço iônico (aba Balanço Iônico).
+    alertaContextoAbaixo: 5.0,
+    observacaoManejo: "Salinidade baixa é esperada em água de poço. O que manda é o balanço iônico: Na:K perto de 28:1, Mg:Ca entre 2,5:1 e 3,4:1 e K acima de 50 mg/L. Meça a água — o potássio do poço não acompanha a salinidade.",
     impacto: "Vannamei tolera de 0.5 a 45 ppt. Em baixa salinidade (< 5 ppt), o balanço de Na:K (28:1) e Mg:Ca (3:1) é mandatório."
   },
   alcalinidade: {
@@ -87,10 +92,10 @@ export const PARAMETROS_QUALIDADE_AGUA = {
   nitrito: {
     nome: "Nitrito (N-NO2)",
     unidade: "mg/L",
-    otimoMax: 0.2,
-    alertaMax: 0.8,
-    criticoMax: 1.5,
-    impacto: "Metahemoglobina e estresse osmótico. Em águas de salinidade baixa o nitrito é ainda mais tóxico devido à falta de cloreto."
+    // Sem limiar fixo: a toxicidade depende da salinidade da água.
+    // Ver LIMIARES_NITRITO_POR_SALINIDADE logo abaixo.
+    limiaresPorSalinidade: true,
+    impacto: "Metahemoglobina e estresse osmótico. O cloreto compete com o nitrito na brânquia, então em baixa salinidade ele é ordens de grandeza mais tóxico: a 2 ppt a concentração segura é de ~0,3 mg/L, contra ~32 mg/L a 35 ppt. Subir a salinidade só para isso é ineficaz e ainda inibe a nitrificação — o caminho é manejo de nitrogênio."
   },
   transparencia: {
     nome: "Transparência (Secchi)",
@@ -100,8 +105,53 @@ export const PARAMETROS_QUALIDADE_AGUA = {
     alertaMin: 20.0,
     alertaMax: 60.0,
     impacto: "< 25 cm indica bloom excessivo de fitoplâncton (risco de anoxia noturna). > 50 cm indica água muito clara (proliferação de algas bentônicas/cabelo)."
+  },
+  // Metais de água de poço — o risco menos lembrado e o mais difícil de reverter.
+  // Faixas conservadoras de manejo (referência), medidas na água de abastecimento.
+  // Ferro: já se descreve irritação e necrose branquial de 0,2 a 0,5 mg/L, porque
+  // o Fe2+ do poço profundo oxida e precipita oxi-hidróxido entre as lamelas; a
+  // água de captação costuma ser aceita abaixo de 1 mg/L.
+  // Manganês: o Mn2+ dissolvido é bem mais tóxico que o precipitado, e oxidá-lo é
+  // lento — por simples aeração a taxa é insignificante abaixo de pH 9.
+  ferro: {
+    nome: "Ferro total (Fe)",
+    unidade: "mg/L",
+    otimoMax: 0.2,
+    alertaMax: 1.0,
+    criticoMax: 2.0,
+    impacto: "Água de poço profundo traz Fe2+ solúvel, que oxida e precipita nas brânquias: atrapalha a respiração, a excreção de amônia e a osmorregulação — o mesmo sistema já sobrecarregado em baixa salinidade, e as PLs sofrem mais que os juvenis. Antes de encher: aerar forte, reter 1 a 2 dias em tanque de sedimentação e filtrar em areia. Acima de 5 mg/L só aeração com filtragem resolve; abaixo de 2 mg/L, cloração seguida de filtragem. Solo avermelhado no viveiro é hidróxido férrico e lixivia ferro para a água."
+  },
+  manganes: {
+    nome: "Manganês (Mn)",
+    unidade: "mg/L",
+    otimoMax: 0.05,
+    alertaMax: 0.2,
+    criticoMax: 0.5,
+    impacto: "Faixa conservadora de referência: água de captação costuma ser aceita abaixo de 0,01 mg/L. O Mn2+ dissolvido é bem mais tóxico que o precipitado, mas oxidá-lo é lento — por simples aeração a taxa é insignificante abaixo de pH 9, e oxidantes fortes exigem pH acima de 8,5. Na prática, resolver na fonte (poço/tanque de tratamento) é mais realista que tratar o viveiro."
   }
 };
+
+// ============================================================================
+// LIMIARES DE NITRITO POR SALINIDADE (mg/L de N-NO2)
+// O nitrito é ~100x mais tóxico em água doce: o cloreto compete com a absorção
+// de NO2- nas brânquias, então o limite seguro acompanha a salinidade.
+// Âncoras de literatura:
+//  - até 1 ppt ....... seguro ~0,3 mg/L; atenção a partir de 0,6 mg/L (CL50-96h de
+//                      2,5 mg/L a 2 ppt, ou seja, margem muito estreita)
+//  - até 8 ppt ....... máximo 1,0 mg/L e aceitável até 2,0 mg/L (águas oligo/mesohalinas)
+//  - acima de 15 ppt . até 10 mg/L para bom desempenho
+//  - 35 ppt .......... seguro ~32 mg/L (CL50 = 319 mg/L)
+// ATENÇÃO À BASE: se o kit expressa NO2- (e não N-NO2), multiplique a leitura por
+// 3,28 antes de comparar com esta tabela.
+// ============================================================================
+export const LIMIARES_NITRITO_POR_SALINIDADE = [
+  { salinidadeMaxPpt: 1, otimoMax: 0.3, alertaMax: 0.6, criticoMax: 1.0 },
+  { salinidadeMaxPpt: 4, otimoMax: 0.5, alertaMax: 1.0, criticoMax: 2.0 },
+  { salinidadeMaxPpt: 8, otimoMax: 0.8, alertaMax: 1.5, criticoMax: 3.0 },
+  { salinidadeMaxPpt: 15, otimoMax: 2.0, alertaMax: 5.0, criticoMax: 10.0 },
+  { salinidadeMaxPpt: 25, otimoMax: 5.0, alertaMax: 10.0, criticoMax: 20.0 },
+  { salinidadeMaxPpt: 60, otimoMax: 10.0, alertaMax: 20.0, criticoMax: 32.0 }
+];
 
 export const CALAGEM_SOLO_TABELA = [
   { phMax: 5.0, doseKgPorHa: 3500, recomendacao: "Solos fortemente ácidos. Aplicar calcário dolomítico e incorporar 10-15cm." },

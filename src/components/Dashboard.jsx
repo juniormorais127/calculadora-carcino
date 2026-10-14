@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { ShrimpIcon, FeedTrayIcon } from "./icons/CustomAquacultureIcons.jsx";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
+import { calculateDailyFeed, calculateToxicAmmonia } from "../services/calculatorService.js";
+import { avaliarQualidadeAgua, NIVEIS } from "../services/qualidadeAguaService.js";
 
 export default function Dashboard({ 
   viveiros = [], 
@@ -54,62 +56,86 @@ export default function Dashboard({
   let pesoMedioGlobalSoma = 0;
   let contagemBiometriasRecentes = 0;
 
+  // Mais recente por data e, quando o dia empata (medição da manhã e da tarde),
+  // pela última cadastrada — senão a referência do viveiro ficava sendo a antiga
+  const ehMaisRecente = (candidato, atual) => {
+    if (!atual) return true;
+    const diferencaDeData = new Date(candidato.data) - new Date(atual.data);
+    if (diferencaDeData !== 0) return diferencaDeData > 0;
+    return (Number(candidato.id) || 0) > (Number(atual.id) || 0);
+  };
+
   // Mapa com a última biometria de cada viveiro
   const ultimaBiometriaPorViveiro = {};
   biometrias.forEach(b => {
-    if (!ultimaBiometriaPorViveiro[b.viveiroId] || new Date(b.data) > new Date(ultimaBiometriaPorViveiro[b.viveiroId].data)) {
-      ultimaBiometriaPorViveiro[b.viveiroId] = b;
-    }
+    if (ehMaisRecente(b, ultimaBiometriaPorViveiro[b.viveiroId])) ultimaBiometriaPorViveiro[b.viveiroId] = b;
   });
 
   // Mapa com a última medição de água de cada viveiro
   const ultimaAguaPorViveiro = {};
   qualidadeAgua.forEach(q => {
-    if (!ultimaAguaPorViveiro[q.viveiroId] || new Date(q.data) > new Date(ultimaAguaPorViveiro[q.viveiroId].data)) {
-      ultimaAguaPorViveiro[q.viveiroId] = q;
-    }
+    if (ehMaisRecente(q, ultimaAguaPorViveiro[q.viveiroId])) ultimaAguaPorViveiro[q.viveiroId] = q;
   });
 
   // Alertas críticos
   const alertas = [];
 
+  // Ordem de exibição dos alertas: o mais grave primeiro
+  const ORDEM_ALERTA = { emergencial: 0, critico: 1, atencao: 2 };
+
   viveirosAtivos.forEach(v => {
     const bio = ultimaBiometriaPorViveiro[v.id];
+    const agua = ultimaAguaPorViveiro[v.id];
+
     if (bio && bio.biomassaKg) {
       totalBiomassaKg += Number(bio.biomassaKg);
       pesoMedioGlobalSoma += Number(bio.pesoMedioG);
       contagemBiometriasRecentes++;
 
-      // Estimativa de ração diária aproximada (taxa padrão ~3.5%)
-      const taxaAprox = bio.pesoMedioG > 12 ? 0.03 : (bio.pesoMedioG > 7 ? 0.045 : 0.07);
-      totalRacaoHojeKg += Number(bio.biomassaKg) * taxaAprox;
+      // Ração do dia pela MESMA calculadora da aba Cálculos (tabela de
+      // arraçoamento + correções de temperatura e oxigênio). Antes havia aqui
+      // uma aproximação fixa que subestimava a ração acima de 12 g.
+      const racao = calculateDailyFeed({
+        biomassaKg: Number(bio.biomassaKg),
+        pesoMedioG: Number(bio.pesoMedioG),
+        temperaturaC: Number(agua?.temperatura) || 29,
+        oxigenioMgL: Number(agua?.oxigenio) || 5
+      });
+      totalRacaoHojeKg += racao.racaoFinalKg;
     }
 
-    const agua = ultimaAguaPorViveiro[v.id];
     if (agua) {
-      if (agua.oxigenio < 3.5) {
-        alertas.push({
-          tipo: "danger",
-          viveiro: v.nome,
-          mensagem: `Oxigênio Crítico (${agua.oxigenio} mg/L). Risco iminente de anoxia!`
+      // Alertas gerados pela tabela de referência (agora cobre temperatura,
+      // salinidade, amônia e nitrito, além de oxigênio, pH e alcalinidade).
+      // O nitrito é julgado pela salinidade da própria medição.
+      // Itens contextuais (ex.: salinidade baixa em água de poço) não viram alerta.
+      avaliarQualidadeAgua(agua).resultados
+        .filter(r => !r.contextual && [NIVEIS.ATENCAO, NIVEIS.CRITICO, NIVEIS.EMERGENCIAL].includes(r.nivel))
+        .forEach(r => {
+          alertas.push({
+            tipo: r.nivel === NIVEIS.EMERGENCIAL ? "danger" : "warning",
+            nivel: r.nivel,
+            viveiro: v.nome,
+            mensagem: `${r.nome} em nível ${r.rotulo.toLowerCase()}: ${r.valor}${r.unidade ? ` ${r.unidade}` : ""}`,
+            detalhe: r.impacto
+          });
         });
-      }
-      if (agua.alcalinidade < 100) {
+
+      // Amônia tóxica real (NH3): a amônia total sozinha não revela o risco
+      const amoniaToxica = calculateToxicAmmonia(agua.amoniaTotal, agua.ph, agua.temperatura, agua.salinidade);
+      if (amoniaToxica.nh3 >= 0.05) {
         alertas.push({
-          tipo: "warning",
+          tipo: amoniaToxica.nh3 >= 0.10 ? "danger" : "warning",
+          nivel: amoniaToxica.nh3 >= 0.10 ? "emergencial" : "critico",
           viveiro: v.nome,
-          mensagem: `Alcalinidade Baixa (${agua.alcalinidade} mg/L). Corrigir com Bicarbonato.`
-        });
-      }
-      if (agua.ph > 8.8 || agua.ph < 7.2) {
-        alertas.push({
-          tipo: "warning",
-          viveiro: v.nome,
-          mensagem: `pH fora da faixa ideal (${agua.ph}).`
+          mensagem: `Amônia tóxica (NH3) em ${amoniaToxica.nh3} mg/L: ${amoniaToxica.status}`,
+          detalhe: amoniaToxica.orientacao
         });
       }
     }
   });
+
+  alertas.sort((a, b) => (ORDEM_ALERTA[a.nivel] ?? 3) - (ORDEM_ALERTA[b.nivel] ?? 3));
 
   const pesoMedioGeral = contagemBiometriasRecentes > 0 
     ? (pesoMedioGlobalSoma / contagemBiometriasRecentes).toFixed(1) 
@@ -288,27 +314,35 @@ export default function Dashboard({
             <span>Atenção nos Viveiros ({alertas.length})</span>
           </div>
           <div className="space-y-2">
-            {alertas.map((a, i) => (
-              <div 
-                key={i} 
-                className={`text-xs p-2.5 rounded-xl flex items-center justify-between ${
-                  a.tipo === "danger" 
-                    ? "bg-rose-50 text-rose-700 border border-rose-100" 
+            {alertas.slice(0, 6).map((a, i) => (
+              <div
+                key={i}
+                className={`text-xs p-2.5 rounded-xl flex items-start justify-between gap-2 ${
+                  a.tipo === "danger"
+                    ? "bg-rose-50 text-rose-700 border border-rose-100"
                     : "bg-amber-50 text-amber-700 border border-amber-100"
                 }`}
               >
-                <div>
-                  <span className="font-bold underline mr-1.5">{a.viveiro}:</span>
-                  {a.mensagem}
+                <div className="min-w-0">
+                  <div>
+                    <span className="font-bold underline mr-1.5">{a.viveiro}:</span>
+                    {a.mensagem}
+                  </div>
+                  {a.detalhe && <p className="mt-0.5 text-[11px] opacity-80">{a.detalhe}</p>}
                 </div>
-                <button 
+                <button
                   onClick={() => onNavigate("agua")}
-                  className="px-2 py-1 rounded bg-white hover:bg-slate-100 text-slate-900 font-medium text-[11px]"
+                  className="px-2 py-1 rounded bg-white hover:bg-slate-100 text-slate-900 font-medium text-[11px] flex-shrink-0"
                 >
                   Ver Água
                 </button>
               </div>
             ))}
+            {alertas.length > 6 && (
+              <p className="text-[11px] text-slate-600">
+                + {alertas.length - 6} alerta(s) em outros viveiros. Abra a aba Água para o detalhe.
+              </p>
+            )}
           </div>
         </div>
       )}
