@@ -112,7 +112,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Header farmProfile={farmProfile} />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-16 md:pb-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
 
         {feedbackBanner && (
