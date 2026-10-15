@@ -19,7 +19,6 @@ import {
 import { FABRICANTES_RACAO, VENDEDORES_POR_ESTADO, ANUNCIOS_PATROCINADORES } from "../data/fabricantesRacao.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { RANKING_CAMARAO, FONTE_RANKING_CAMARAO, posicaoProducao } from "../data/rankingCamarao.js";
-import { analytics } from "../services/analyticsService.js";
 
 const ESTADOS_CADASTRADOS = new Set(VENDEDORES_POR_ESTADO.map(v => v.estado));
 const ESTADOS = [
@@ -29,7 +28,7 @@ const ESTADOS = [
     .map(sigla => ({ sigla, nome: VENDEDORES_POR_ESTADO.find(v => v.estado === sigla).estadoNome })),
 ];
 
-export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "TODAS", onVoltarCalculos, onOpenStats }) {
+export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "TODAS", onVoltarCalculos }) {
   const [estadoFiltro, setEstadoFiltro] = useState(estadoInicial);
   const [marcaFiltro, setMarcaFiltro] = useState(marcaInicial);
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -105,7 +104,6 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {onOpenStats && <button onClick={onOpenStats} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700">Estatísticas de teste</button>}
             <button
               onClick={() => setModalAnunciarAberto(true)}
               className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-4 py-2.5 rounded-2xl text-xs transition-all shadow-sm active:scale-95"
@@ -346,7 +344,6 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => analytics.contato(v.id, "whatsapp")}
                     className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-xs"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
@@ -355,7 +352,6 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
 
                   <a
                     href={`tel:${v.telefone}`}
-                    onClick={() => analytics.contato(v.id, "telefone")}
                     className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 px-3 rounded-xl text-xs font-bold transition-all"
                   >
                     <Phone className="w-3.5 h-3.5 text-slate-600" />
