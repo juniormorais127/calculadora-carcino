@@ -27,6 +27,7 @@ const ESTADOS = [
   ...[...ESTADOS_CADASTRADOS].filter(sigla => !RANKING_CAMARAO.some(e => e.sigla === sigla))
     .map(sigla => ({ sigla, nome: VENDEDORES_POR_ESTADO.find(v => v.estado === sigla).estadoNome })),
 ];
+const ESTADOS_EM_DESTAQUE = [ESTADOS[0], ...RANKING_CAMARAO.slice(0, 6)];
 
 export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "TODAS", onVoltarCalculos }) {
   const [estadoFiltro, setEstadoFiltro] = useState(estadoInicial);
@@ -184,7 +185,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
             Selecione o Estado (UF):
           </label>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-            {ESTADOS.map((est) => (
+            {ESTADOS_EM_DESTAQUE.map((est) => (
               <button
                 key={est.sigla}
                 title={est.sigla === "TODOS" ? est.nome : est.posicao
@@ -203,9 +204,8 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
             ))}
           </div>
           <p className="mt-2 text-xs text-slate-600">
-            Estados com vendedores cadastrados, em ordem de produção de camarão de cultivo.
+            Os seis maiores produtores de camarão de cultivo, em ordem de produção.
             {" "}<a href={FONTE_RANKING_CAMARAO.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline underline-offset-2">Fonte: IBGE/PPM {FONTE_RANKING_CAMARAO.ano}</a>.
-            {" "}Estados sem produção registrada ficam ao final, sem posição.
           </p>
         </div>
 
