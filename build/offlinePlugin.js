@@ -14,6 +14,7 @@ const CACHE = 'carcino-${version}';
 const BASE = ${JSON.stringify(base)};
 const FILES = ${JSON.stringify(files)};
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(file => BASE + file))));
 });
 self.addEventListener('activate', event => {
