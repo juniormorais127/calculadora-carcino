@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Plus, TrendingUp, Calendar, Trash2, ArrowUpRight, Scale } from "lucide-react";
-import { db } from "../services/db.js";
+import { useDatabase } from "./AccountProvider.jsx";
 import { calculateBiomass, getFeedingRateInfo } from "../services/calculatorService.js";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
@@ -13,6 +13,7 @@ export default function BiometriaView({
   novoViveiroCriadoId = null,
   onSolicitarCadastroViveiro = null
 }) {
+  const db = useDatabase();
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );

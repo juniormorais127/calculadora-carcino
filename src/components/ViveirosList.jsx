@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Layers, Plus, Trash2, Edit3, Calendar, Droplets, Maximize2 } from "lucide-react";
-import { db, deleteViveiro } from "../services/db.js";
+import { deleteViveiro } from "../services/db.js";
+import { useDatabase } from "./AccountProvider.jsx";
 
 export default function ViveirosList({ 
   viveiros = [], 
@@ -10,6 +11,7 @@ export default function ViveirosList({
   onViveiroCriado,
   intencaoPosViveiro = null
 }) {
+  const db = useDatabase();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingViveiro, setEditingViveiro] = useState(null);
 
@@ -95,7 +97,7 @@ export default function ViveirosList({
 
   const handleDelete = async (id) => {
     if (confirm("Deseja realmente excluir este viveiro? Suas medições também serão removidas.")) {
-      await deleteViveiro(id);
+      await deleteViveiro(id, db);
       onReload();
     }
   };

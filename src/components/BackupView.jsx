@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Settings, Download, Upload, Trash2, Smartphone, ShieldCheck, Database, RefreshCw, FileText } from "lucide-react";
-import { db, exportLocalDatabase, importLocalDatabase, seedInitialDataIfEmpty, clearLocalDatabase } from "../services/db.js";
+import { exportLocalDatabase, importLocalDatabase, seedInitialDataIfEmpty, clearLocalDatabase } from "../services/db.js";
+import { useAccount, useDatabase } from "./AccountProvider.jsx";
 import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
 
 export default function BackupView({ 
@@ -10,6 +11,8 @@ export default function BackupView({
   qualidadeAgua = [], 
   onReload 
 }) {
+  const db = useDatabase();
+  const { user } = useAccount() || {};
   const [nomeFazenda, setNomeFazenda] = useState(farmProfile?.nomeFazenda || "Fazenda de Carcinicultura");
   const [produtor, setProdutor] = useState(farmProfile?.produtor || "Produtor Rural");
   const [localizacao, setLocalizacao] = useState(farmProfile?.localizacao || "Litoral");
@@ -84,7 +87,7 @@ export default function BackupView({
   };
 
   const handleExport = async () => {
-    const json = await exportLocalDatabase();
+    const json = await exportLocalDatabase(db);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -99,12 +102,12 @@ export default function BackupView({
     const input = e.target;
     const file = input.files[0];
     if (!file) return;
-    if (!confirm("Restaurar este backup substituirá todos os dados locais. Deseja continuar?")) {
+    if (!confirm(user ? "Restaurar este backup substituirá os registros desta conta e será sincronizado com a nuvem. Deseja continuar?" : "Restaurar este backup substituirá todos os dados locais. Deseja continuar?")) {
       input.value = "";
       return;
     }
     try {
-      await importLocalDatabase(await file.text());
+      await importLocalDatabase(await file.text(), db);
       await onReload();
       setMensagem("Backup restaurado com sucesso no dispositivo!");
     } catch (err) {
@@ -116,15 +119,15 @@ export default function BackupView({
 
   const handleResetDemo = async () => {
     if (confirm("Carregar dados de exemplo? Os exemplos serão carregados apenas se não houver viveiros cadastrados.")) {
-      await seedInitialDataIfEmpty({ force: true });
+      await seedInitialDataIfEmpty({ force: true }, db);
       onReload();
     }
   };
 
   const handleClearAll = async () => {
-    if (confirm("ATENÇÃO: Deseja apagar TODOS os dados locais deste aparelho? Esta ação é irreversível.")) {
-      await clearLocalDatabase();
-      alert("Banco de dados local limpo.");
+    if (confirm(user ? "Apagar TODOS os registros desta conta? A exclusão também será sincronizada com a nuvem. Exporte um backup antes de continuar." : "ATENÇÃO: Deseja apagar TODOS os dados locais deste aparelho? Esta ação é irreversível.")) {
+      await clearLocalDatabase(db);
+      alert(user ? "Registros apagados. Confira o status da sincronização." : "Banco de dados local limpo.");
       onReload();
     }
   };
@@ -134,10 +137,10 @@ export default function BackupView({
       <div>
         <h2 className="text-xl md:text-2xl font-semibold text-slate-900 flex items-center gap-2">
           <Settings className="w-6 h-6 text-slate-600" />
-          Configurações e Banco de Dados Local
+          Configurações e Backup
         </h2>
         <p className="text-xs md:text-sm text-slate-700 mt-1">
-          Gerencie o armazenamento interno deste aparelho e faça backups dos dados da fazenda.
+          {user ? "Gerencie os dados desta conta e exporte cópias dos registros da fazenda." : "Gerencie o armazenamento interno deste aparelho e faça backups dos dados da fazenda."}
         </p>
       </div>
 
@@ -236,7 +239,7 @@ export default function BackupView({
           <ShieldCheck className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
           <div>
             <span className="font-bold text-slate-900">Privacidade e Funcionamento Sem Internet:</span>
-            {" "}Todos os seus registros de viveiros e biometrias ficam armazenados no navegador deste celular (IndexedDB). Depois que a aplicação estiver aberta, os registros podem ser consultados e salvos sem internet. Faça backups periódicos; limpar os dados do navegador remove os registros locais.
+            {" "}{user ? "Você possui uma cópia local independente para este login. Com internet, os registros são sincronizados com sua conta; confira o status antes de sair ou trocar de aparelho. Exporte backups periódicos." : "Todos os seus registros de viveiros e biometrias ficam armazenados no navegador deste celular. Depois que a aplicação estiver aberta, os registros podem ser consultados e salvos sem internet. Entre em uma conta para usar o salvamento na nuvem."}
           </div>
         </div>
 
@@ -273,7 +276,7 @@ export default function BackupView({
           Gerenciar Dados
         </h4>
         <p className="text-xs text-slate-600">
-          Se desejar recarregar os viveiros de demonstração ou limpar todos os registros locais deste aparelho:
+          {user ? "Os exemplos e a exclusão abaixo afetam os registros desta conta e serão sincronizados com a nuvem:" : "Se desejar recarregar os viveiros de demonstração ou limpar todos os registros locais deste aparelho:"}
         </p>
 
         <div className="flex flex-wrap gap-2 pt-1">

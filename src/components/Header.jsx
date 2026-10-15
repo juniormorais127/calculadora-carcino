@@ -2,7 +2,7 @@ import React from "react";
 import { ShrimpMarkIcon } from "./icons/CustomAquacultureIcons.jsx";
 import AjudaSuporte from "./AjudaSuporte.jsx";
 
-export default function Header({ farmProfile, telaAtual, resumoRegistros }) {
+export default function Header({ farmProfile, telaAtual, resumoRegistros, user, onConta }) {
   return (
     <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-emerald-900/40 text-white px-4 py-3 shadow-md">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
@@ -21,6 +21,7 @@ export default function Header({ farmProfile, telaAtual, resumoRegistros }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <button onClick={onConta} className="min-h-11 rounded-xl border border-emerald-400/40 px-3 text-xs font-bold text-emerald-100 hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-white">{user ? "Minha conta" : "Entrar"}</button>
           <AjudaSuporte telaAtual={telaAtual} resumoRegistros={resumoRegistros} />
         </div>
       </div>

@@ -1,0 +1,41 @@
+# Contas e salvamento na nuvem
+
+Projeto: `carcinogestao`, plano Spark. Firestore Standard em `southamerica-east1`.
+Login por e-mail/senha, sem Analytics no aplicativo. O cadastro web público está
+em `src/services/firebase.js`; a proteção real fica nas regras, nunca na API key.
+Domínio autorizado: `juniormorais127.github.io`.
+
+Cada UID possui um banco IndexedDB próprio. A base antiga `CalculadoraCarcinoDB`
+é exclusiva do modo local. O usuário pode importar os registros antigos em uma
+conta vazia, confirmando explicitamente a propriedade. A cópia original permanece.
+Sair desmonta a interface da conta; nenhuma operação pendente muda de UID.
+
+O Firestore guarda snapshots imutáveis, divididos em documentos menores que o
+limite do serviço. O manifesto `users/{uid}/state/current` publica uma versão
+completa por transação e verifica a revisão anterior. As regras negam qualquer
+acesso de outro UID e de visitantes sem autenticação. O aplicativo conserva
+as duas últimas versões publicadas e remove versões antigas após o commit.
+Uma interrupção de rede durante upload/limpeza pode deixar chunks não publicados;
+não afeta os dados publicados, mas pode exigir limpeza administrativa de órfãos.
+
+A sincronização automática ocorre após alterações, ao reconectar e ao voltar
+para a janela. Confirme o status antes de trocar de aparelho. Dados divergentes
+entre aparelhos pausam a sincronização sem sobrescrever. É possível baixar o
+backup local e escolher recuperar a nuvem. Essa recuperação também mantém uma
+cópia anterior no IndexedDB para baixar. Não existe mesclagem automática de conflitos.
+Backups JSON continuam disponíveis em Ajustes. Limpar/restaurar dados conectado
+afeta a conta e sincroniza com a nuvem; o texto de confirmação informa isso.
+
+## Validação
+
+- `npm test`: regras de sincronização, conflito, offline, isolamento local e regressões.
+- `npm run build`.
+- `$env:FIREBASE_LIVE_TEST='1'; npx playwright test e2e/firebase-accounts.spec.js --project=chromium`:
+  opt-in para contas descartáveis, dados sintéticos e verificações das regras no
+  projeto real, com limpeza em `finally`. Não usa contas de produtores.
+- `npx playwright test e2e/onboarding-flow.spec.js e2e/ajuda.spec.js --project=chromium`.
+
+As regras em `firestore.rules` foram publicadas pelo console. Alterações futuras
+podem ser publicadas por `firebase deploy --only firestore:rules`, com autenticação
+administrativa apropriada. Nunca habilitar regras públicas para resolver erros.
+Não ativar faturamento, SMS ou backups pagos sem autorização do proprietário.

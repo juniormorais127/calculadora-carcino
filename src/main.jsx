@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import AccountProvider from "./components/AccountProvider.jsx";
 import "./index.css";
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -15,6 +16,6 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <AccountProvider><App /></AccountProvider>
   </React.StrictMode>
 );

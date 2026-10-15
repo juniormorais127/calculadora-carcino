@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Droplets, Plus, AlertTriangle, CheckCircle, Trash2, Calendar, Clock, Sparkles } from "lucide-react";
-import { db } from "../services/db.js";
+import { useDatabase } from "./AccountProvider.jsx";
 import { calculateToxicAmmonia } from "../services/calculatorService.js";
 import { avaliarQualidadeAgua, avaliarParametro } from "../services/qualidadeAguaService.js";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
@@ -14,6 +14,7 @@ export default function QualidadeAguaView({
   novoViveiroCriadoId = null,
   onSolicitarCadastroViveiro = null
 }) {
+  const db = useDatabase();
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );

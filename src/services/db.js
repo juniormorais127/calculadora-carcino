@@ -1,17 +1,31 @@
 import Dexie from "dexie";
 
-export const db = new Dexie("CalculadoraCarcinoDB");
-
-db.version(1).stores({
+const schema = {
   viveiros: "++id, nome, status, dataPovoamento, createdAt",
   biometrias: "++id, viveiroId, data, createdAt",
   qualidadeAgua: "++id, viveiroId, data, horario, createdAt",
   registrosAlimentacao: "++id, viveiroId, data, createdAt",
   configuracoes: "++id, chave"
-});
+};
+
+export function createDatabase(name) {
+  const database = new Dexie(name);
+  database.version(1).stores(schema);
+  return database;
+}
+
+export const db = createDatabase("CalculadoraCarcinoDB");
+
+const accountDatabases = new Map();
+export function getAccountDatabase(uid) {
+  if (!uid || !/^[a-zA-Z0-9_-]{1,128}$/.test(uid)) throw new Error('Conta inválida.');
+  if (!accountDatabases.has(uid)) accountDatabases.set(uid, createDatabase(`CarcinoGestao-user-${uid}`));
+  return accountDatabases.get(uid);
+}
 
 // Novos produtores começam com uma base vazia. Exemplos são opcionais.
-export async function initializeDatabase() {
+export async function initializeDatabase(database = db) {
+  const db = database;
   await db.transaction('rw', db.configuracoes, async () => {
     if (!(await db.configuracoes.where('chave').equals('baseInicializada').first())) {
       await db.configuracoes.add({ chave: 'baseInicializada', valor: true });
@@ -22,7 +36,8 @@ export async function initializeDatabase() {
 /**
  * Popula dados iniciais de demonstração se a base estiver vazia
  */
-export async function seedInitialDataIfEmpty({ force = false } = {}) {
+export async function seedInitialDataIfEmpty({ force = false } = {}, database = db) {
+  const db = database;
   return db.transaction('rw', db.tables, async () => {
     const initialized = await db.configuracoes.where('chave').equals('baseInicializada').first();
     if (initialized && !force) return;
@@ -186,7 +201,8 @@ export async function seedInitialDataIfEmpty({ force = false } = {}) {
 /**
  * Exporta todo o banco local para JSON para backup
  */
-export async function exportLocalDatabase() {
+export async function exportLocalDatabase(database = db) {
+  const db = database;
   return db.transaction('r', db.tables, async () => {
     const backup = {
       versao: 1,
@@ -204,7 +220,8 @@ export async function exportLocalDatabase() {
 /**
  * Restaura o banco local a partir de JSON
  */
-export async function importLocalDatabase(jsonString) {
+export async function importLocalDatabase(jsonString, database = db) {
+  const db = database;
   const data = JSON.parse(jsonString);
   if (!data || data.versao !== 1) throw new Error('Versão de backup inválida ou incompatível.');
   for (const table of db.tables) {
@@ -235,14 +252,16 @@ export async function importLocalDatabase(jsonString) {
   });
 }
 
-export async function clearLocalDatabase() {
+export async function clearLocalDatabase(database = db) {
+  const db = database;
   await db.transaction('rw', db.tables, async () => {
     for (const table of db.tables) await table.clear();
     await db.configuracoes.add({ chave: 'baseInicializada', valor: true });
   });
 }
 
-export async function deleteViveiro(id) {
+export async function deleteViveiro(id, database = db) {
+  const db = database;
   await db.transaction('rw', db.tables, async () => {
     await db.viveiros.delete(id);
     for (const table of [db.biometrias, db.qualidadeAgua, db.registrosAlimentacao]) {

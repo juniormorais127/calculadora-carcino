@@ -9,10 +9,13 @@ import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
 import SanidadeView from "./components/SanidadeView.jsx";
 import MercadoView from "./components/MercadoView.jsx";
-import { db, initializeDatabase, seedInitialDataIfEmpty } from "./services/db.js";
+import { initializeDatabase, seedInitialDataIfEmpty } from "./services/db.js";
+import { useAccount } from "./components/AccountProvider.jsx";
+import AccountView from "./components/AccountView.jsx";
 import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
+  const { database: db, user, syncStatus, dataVersion, sync } = useAccount();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [viveiros, setViveiros] = useState([]);
   const [biometrias, setBiometrias] = useState([]);
@@ -34,7 +37,7 @@ export default function App() {
   const loadData = async () => {
     setError("");
     try {
-      await initializeDatabase();
+      await initializeDatabase(db);
       const allViveiros = await db.viveiros.toArray();
       const allBiometrias = await db.biometrias.toArray();
       const allAgua = await db.qualidadeAgua.toArray();
@@ -54,7 +57,7 @@ export default function App() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [dataVersion]);
 
   useEffect(() => {
     if (feedbackBanner) {
@@ -78,7 +81,7 @@ export default function App() {
   };
 
   const handleCarregarExemplos = async () => {
-    await seedInitialDataIfEmpty({ force: true });
+    await seedInitialDataIfEmpty({ force: true }, db);
     await loadData();
     setFeedbackBanner({
       tipo: "sucesso",
@@ -113,11 +116,17 @@ export default function App() {
       <Header
         farmProfile={farmProfile}
         telaAtual={activeTab}
+        user={user}
+        onConta={() => handleNavigate("conta")}
         resumoRegistros={`${viveiros.length} viveiro(s) · ${biometrias.length} biometria(s) · ${qualidadeAgua.length} medição(ões) de água`}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
+        {user && <div role="status" className={`my-3 flex flex-wrap justify-between items-center gap-2 rounded-xl border px-3 py-2 text-xs ${syncStatus.state === 'synced' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
+          <span>{syncStatus.message}</span>
+          {['conflict', 'pending'].includes(syncStatus.state) && <button onClick={() => syncStatus.state === 'conflict' ? handleNavigate('conta') : sync()} className="min-h-11 font-bold underline underline-offset-2">{syncStatus.state === 'conflict' ? 'Revisar versões' : 'Tentar sincronizar'}</button>}
+        </div>}
 
         {feedbackBanner && (
           <div 
@@ -151,6 +160,7 @@ export default function App() {
           </div>
         ) : (
           <>
+            {activeTab === "conta" && <AccountView />}
             {activeTab === "dashboard" && (
               <Dashboard
                 viveiros={viveiros}
@@ -242,7 +252,7 @@ export default function App() {
       </main>
       <footer className="site-footer max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 text-xs text-slate-500 flex flex-wrap justify-between gap-2 border-t border-slate-200">
         <span>CarcinoGestão · Gestão para produtores de camarão</span>
-        <span>Seus registros ficam neste navegador. Faça backups em Ajustes.</span>
+        <span>{user ? "Confira o status da nuvem. Exporte backups em Ajustes." : "Modo local. Entre na sua conta para salvar na nuvem."}</span>
       </footer>
     </div>
   );
