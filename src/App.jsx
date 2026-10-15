@@ -9,6 +9,8 @@ import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
 import SanidadeView from "./components/SanidadeView.jsx";
 import MercadoView from "./components/MercadoView.jsx";
+import AnalyticsView from "./components/AnalyticsView.jsx";
+import { analytics } from "./services/analyticsService.js";
 import { db, initializeDatabase, seedInitialDataIfEmpty } from "./services/db.js";
 import { CheckCircle2, X } from "lucide-react";
 
@@ -20,6 +22,9 @@ export default function App() {
   const [farmProfile, setFarmProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => { analytics.iniciarAcesso(); }, []);
+  useEffect(() => { if (!loading && !error) analytics.pagina(activeTab); }, [activeTab, loading, error]);
 
   // Modais acionados do Dashboard
   const [openModalBiometria, setOpenModalBiometria] = useState(false);
@@ -224,6 +229,7 @@ export default function App() {
 
             {activeTab === "mercado" && (
               <MercadoView
+                onOpenStats={() => handleNavigate("estatisticas")}
                 onVoltarCalculos={() => handleNavigate("calculadoras")}
               />
             )}
@@ -237,6 +243,7 @@ export default function App() {
                 onReload={loadData}
               />
             )}
+            {activeTab === "estatisticas" && <AnalyticsView onVoltar={() => handleNavigate("mercado")} />}
           </>
         )}
       </main>
