@@ -18,20 +18,14 @@ import {
 } from "lucide-react";
 import { FABRICANTES_RACAO, VENDEDORES_POR_ESTADO, ANUNCIOS_PATROCINADORES } from "../data/fabricantesRacao.js";
 import CompanyLogo from "./CompanyLogo.jsx";
+import { RANKING_CAMARAO, FONTE_RANKING_CAMARAO, posicaoProducao } from "../data/rankingCamarao.js";
 
+const ESTADOS_CADASTRADOS = new Set(VENDEDORES_POR_ESTADO.map(v => v.estado));
 const ESTADOS = [
   { sigla: "TODOS", nome: "Todos os Estados" },
-  { sigla: "RN", nome: "Rio Grande do Norte" },
-  { sigla: "CE", nome: "Ceará" },
-  { sigla: "BA", nome: "Bahia" },
-  { sigla: "PI", nome: "Piauí" },
-  { sigla: "PB", nome: "Paraíba" },
-  { sigla: "PE", nome: "Pernambuco" },
-  { sigla: "SE", nome: "Sergipe" },
-  { sigla: "AL", nome: "Alagoas" },
-  { sigla: "SC", nome: "Santa Catarina" },
-  { sigla: "SP", nome: "São Paulo" },
-  { sigla: "MA", nome: "Maranhão" }
+  ...RANKING_CAMARAO.filter(estado => ESTADOS_CADASTRADOS.has(estado.sigla)),
+  ...[...ESTADOS_CADASTRADOS].filter(sigla => !RANKING_CAMARAO.some(e => e.sigla === sigla))
+    .map(sigla => ({ sigla, nome: VENDEDORES_POR_ESTADO.find(v => v.estado === sigla).estadoNome })),
 ];
 
 export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "TODAS", onVoltarCalculos }) {
@@ -74,6 +68,10 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
     }
 
     return true;
+  }).sort((a, b) => {
+    const posicaoA = posicaoProducao(a.estado);
+    const posicaoB = posicaoProducao(b.estado);
+    return posicaoA === posicaoB ? 0 : posicaoA - posicaoB;
   });
 
   const handleSubmitAnuncio = (e) => {
@@ -189,6 +187,10 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
             {ESTADOS.map((est) => (
               <button
                 key={est.sigla}
+                title={est.sigla === "TODOS" ? est.nome : est.posicao
+                  ? `${est.posicao}º — ${est.nome}: ${(est.producaoKg / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} t em ${FONTE_RANKING_CAMARAO.ano}`
+                  : `${est.nome}: sem produção registrada no levantamento de ${FONTE_RANKING_CAMARAO.ano}`}
+                aria-pressed={estadoFiltro === est.sigla}
                 onClick={() => setEstadoFiltro(est.sigla)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   estadoFiltro === est.sigla
@@ -196,10 +198,15 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                     : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
                 }`}
               >
-                {est.sigla}
+                {est.posicao ? `${est.posicao}º ${est.sigla}` : est.sigla}
               </button>
             ))}
           </div>
+          <p className="mt-2 text-xs text-slate-600">
+            Estados com vendedores cadastrados, em ordem de produção de camarão de cultivo.
+            {" "}<a href={FONTE_RANKING_CAMARAO.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline underline-offset-2">Fonte: IBGE/PPM {FONTE_RANKING_CAMARAO.ano}</a>.
+            {" "}Estados sem produção registrada ficam ao final, sem posição.
+          </p>
         </div>
 
         {/* Linha com Busca e Filtro de Marca */}
