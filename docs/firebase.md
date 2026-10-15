@@ -9,6 +9,19 @@ A abertura do site exige login antes de montar o painel. Cadastro e recuperaçã
 de senha ficam disponíveis nessa tela. Sessões já autenticadas abrem o painel;
 ao sair, o aplicativo retorna à tela de login.
 
+Recuperação: o modelo em `password-reset-email.html` usa `%LINK%` como destino
+do botão. **Pendente de liberação pelo suporte Firebase**: o console recusou
+a gravação com “As atualizações de modelos de e-mail não estão disponíveis
+para este projeto”. O modelo padrão e o link Firebase permanecem ativos.
+Quando a edição for liberada, aplicar o modelo em português e definir nome
+do remetente CarcinoGestão e assunto “Redefina sua senha | CarcinoGestão”.
+A URL acionável no console deve apontar para a raiz publicada
+`https://juniormorais127.github.io/calculadora-carcino/`. O app lê `mode` e
+`oobCode`, remove esses parâmetros do histórico e verifica o código com o SDK
+antes de oferecer a nova senha. Links expirados permitem solicitar outro.
+O remetente de e-mail ainda usa o domínio padrão Firebase; personalizar o
+endereço do remetente exige domínio próprio e verificação DNS.
+
 Cada UID possui um banco IndexedDB próprio. A base antiga `CalculadoraCarcinoDB`
 é exclusiva do modo local. O usuário pode importar os registros antigos em uma
 conta vazia, confirmando explicitamente a propriedade. A cópia original permanece.

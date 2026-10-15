@@ -29,7 +29,7 @@ const button = 'min-h-11 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity
 export default function AccountView() {
   const account = useAccount();
   const { user, database, syncStatus, metadata } = account;
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).has('recuperar') ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
