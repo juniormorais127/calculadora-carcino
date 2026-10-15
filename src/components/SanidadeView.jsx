@@ -5,15 +5,15 @@ import {
   Search, 
   AlertTriangle, 
   ShieldCheck, 
-  Sparkles, 
+  Layers, 
   Info, 
   Flame, 
   ChevronDown, 
-  ChevronUp,
-  FileCheck2,
-  BookOpen,
-  Sprout,
-  Store
+  ChevronUp, 
+  FileCheck2, 
+  BookOpen, 
+  Sprout, 
+  Store 
 } from "lucide-react";
 import { DOENCAS_CAMARAO, BOAS_PRATICAS_ABCC } from "../data/carcinoData.js";
 import { DADOS_PROBIOTICOS_SOLO } from "../data/probioticosSolo.js";
@@ -113,11 +113,11 @@ export default function SanidadeView({ onNavigate }) {
               onClick={() => setActiveSubTab("inovacoes")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeSubTab === "inovacoes"
-                  ? "bg-indigo-600 text-white shadow-sm "
+                  ? "bg-emerald-600 text-white shadow-sm "
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Sparkles className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
               <span>Novidades & Futuro</span>
             </button>
 
@@ -359,9 +359,9 @@ export default function SanidadeView({ onNavigate }) {
       {/* ============================================================== */}
       {activeSubTab === "inovacoes" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border border-indigo-600/30 rounded-3xl p-5 shadow-sm space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" />
+          <div className="bg-white border border-emerald-600/30 rounded-3xl p-5 shadow-sm space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-emerald-700" />
               Cultivo Multifásico (Berçários Hiperintensivos)
             </span>
             <h3 className="text-base font-bold text-slate-900">
@@ -371,7 +371,7 @@ export default function SanidadeView({ onNavigate }) {
               Manter as pós-larvas por 15 a 25 dias em tanques berçários circulares com aeração intensa e bioflocos até atingirem 0.5 a 1.0g.
             </p>
             <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 border border-slate-200 space-y-1">
-              <div className="font-bold text-indigo-700">Vantagens comprovadas:</div>
+              <div className="font-bold text-emerald-800">Vantagens comprovadas:</div>
               <div>• Reduz o tempo de permanência no viveiro de terra de 90 para 65 dias;</div>
               <div>• Aumenta a sobrevivência geral em até 15%;</div>
               <div>• Protege os animais na fase de maior vulnerabilidade contra o AHPND/EMS.</div>

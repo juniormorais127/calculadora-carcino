@@ -29,11 +29,11 @@ export default function CalcAeracao({ viveiroAtual }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-        <TituloEntrada icone={Wind} titulo="Estrutura do viveiro" cor="indigo" auto={viveiroAtual ? "Auto (do Viveiro)" : null} />
+        <TituloEntrada icone={Wind} titulo="Estrutura do viveiro" cor="sky" auto={viveiroAtual ? "Auto (do Viveiro)" : null} />
 
         {viveiroAtual && (
           <FaixaAutomatica
-            cor="indigo"
+            cor="sky"
             rotulo={`${viveiroAtual.nome}:`}
             itens={[
               { rotulo: "Área", valor: `${((Number(viveiroAtual.areaM2) || 0) / 10000).toFixed(2)} ha` },
@@ -51,7 +51,7 @@ export default function CalcAeracao({ viveiroAtual }) {
             onChange={setAreaM2}
             step="100"
             sufixo="m²"
-            cor="indigo"
+            cor="sky"
             ajuda={`${(areaM2 / 10000).toFixed(2)} hectares`}
           />
           <CampoNumero
@@ -60,14 +60,14 @@ export default function CalcAeracao({ viveiroAtual }) {
             onChange={setDensidadeM2}
             step="0.5"
             sufixo="cam/m²"
-            cor="indigo"
+            cor="sky"
             ajuda="A densidade define o sistema e a demanda de aeração."
           />
           <CampoSelect
             label="Tipo de aerador"
             valor={tipoAerador}
             onChange={setTipoAerador}
-            cor="indigo"
+            cor="sky"
             opcoes={TIPOS_AERADOR.map(t => ({ valor: t.tipo, rotulo: t.tipo }))}
             ajuda={aeradorSelecionado.observacao}
           />
@@ -75,13 +75,13 @@ export default function CalcAeracao({ viveiroAtual }) {
       </div>
 
       <div className="lg:col-span-7 space-y-4">
-        <CartaoSaida titulo="Dimensionamento de aeração" cor="indigo">
+        <CartaoSaida titulo="Dimensionamento de aeração" cor="sky">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CartaoResultado
               titulo="Potência por hectare"
               valor={resultado.hpPorHaMin === resultado.hpPorHaMax ? resultado.hpPorHaMin : `${resultado.hpPorHaMin} a ${resultado.hpPorHaMax}`}
               unidade="HP/ha"
-              cor="indigo"
+              cor="sky"
               detalhe={`Sistema identificado: ${resultado.sistema || "—"}`}
             />
             <CartaoResultado
@@ -94,23 +94,23 @@ export default function CalcAeracao({ viveiroAtual }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-sky-500/20">
               <div className="text-xs text-slate-600 font-medium">Regime de operação</div>
               <div className="text-lg font-semibold text-slate-900 mt-1">{resultado.regimeAeracao || "—"}</div>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-indigo-500/20">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-sky-500/20">
               <div className="text-xs text-slate-600 font-medium">Produtividade esperada do sistema</div>
               <div className="text-sm font-bold text-slate-900 mt-1">{resultado.produtividadeKgHaCiclo || "—"}</div>
             </div>
           </div>
 
-          <PainelInterno titulo="Manejo recomendado:" cor="indigo">
+          <PainelInterno titulo="Manejo recomendado:" cor="sky">
             <p>{resultado.observacao}</p>
           </PainelInterno>
         </CartaoSaida>
 
         <DicaTecnica
-          cor="indigo"
+          cor="sky"
           titulo="Aeração é o teto da densidade."
           texto="A tabela usada é a da Cartilha de IMNV (ABCCam): até 30 camarões/m² pedem apenas 2 a 4 HP/ha, mas 100/m² exigem 26 HP/ha e 150/m² chegam a 40 HP/ha, com aeração 24 h/dia. Difusores entregam o mesmo oxigênio com cerca de um terço da potência dos aeradores de pás, ao custo de tubulação e soprador."
         />

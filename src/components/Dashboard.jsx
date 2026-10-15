@@ -153,25 +153,30 @@ export default function Dashboard({
   return (
     <div className="space-y-6 pb-20 md:pb-8">
       {/* Top Banner & Quick Actions */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 relative overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-xs relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 mb-2">
-              <TrendingUp className="w-3.5 h-3.5" />
-              Sua produção, em um só lugar
-            </span>
-            <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
-              Visão geral
-            </h2>
-            <p className="text-sm text-slate-700 mt-1 max-w-xl">
-              Acompanhe viveiros, crescimento e qualidade da água. Seus registros ficam salvos com segurança no seu aparelho.
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                Painel de Operações da Fazenda
+              </h2>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="relative flex h-2 w-2">
+                  <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                </span>
+                {viveirosAtivos.length} {viveirosAtivos.length === 1 ? "viveiro ativo" : "viveiros ativos"}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
+              Acompanhamento zootécnico e telemetria de viveiros. Dados salvos 100% no seu aparelho, sem depender de internet.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleCliqueBiometria}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Biometria</span>
@@ -179,7 +184,7 @@ export default function Dashboard({
 
             <button
               onClick={handleCliqueAgua}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <Droplets className="w-4 h-4" />
               <span>+ Qualidade Água</span>
@@ -188,76 +193,86 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* KPI Grid */}
+      {/* KPI Grid de Telemetria Zootécnica */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {/* Card 1: Viveiros Ativos */}
-        <div className="bg-white border border-slate-200 hover:border-emerald-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        {/* Card 1: Biomassa Estimada */}
+        <div className="bg-white border border-slate-200/90 hover:border-teal-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Viveiros Ativos</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700">
-              <Layers className="w-5 h-5" />
+            <span className="text-xs font-bold text-slate-600">Biomassa Estimada</span>
+            <div className="p-2 rounded-xl bg-teal-50 border border-teal-100 text-teal-700">
+              <Scale className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2">
-            <div className="text-2xl font-semibold text-slate-900">{viveirosAtivos.length}</div>
-            <div className="text-xs text-slate-600 mt-0.5">
-              de {viveiros.length} cadastrados
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Biomassa Total */}
-        <div className="bg-white border border-slate-200 hover:border-teal-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Biomassa Estimada</span>
-            <div className="p-2 rounded-xl bg-teal-500/10 text-teal-700">
-              <Scale className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-semibold text-slate-900">
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
               {totalBiomassaKg > 1000 
-                ? `${(totalBiomassaKg / 1000).toFixed(2)} ton`
-                : `${totalBiomassaKg.toFixed(0)} kg`}
+                ? `${(totalBiomassaKg / 1000).toFixed(2)}`
+                : `${totalBiomassaKg.toFixed(0)}`}{" "}
+              <span className="text-xs sm:text-sm font-bold text-teal-800">
+                {totalBiomassaKg > 1000 ? "ton" : "kg"}
+              </span>
             </div>
-            <div className="text-xs text-teal-700 font-medium mt-0.5">
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
               Camarão em cultivo
             </div>
           </div>
         </div>
 
-        {/* Card 3: Ração Diária Prevista */}
-        <div className="bg-white border border-slate-200 hover:border-amber-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        {/* Card 2: Ração do Dia */}
+        <div className="bg-white border border-slate-200/90 hover:border-amber-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Ração Hoje (Prev.)</span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700">
-              <FeedTrayIcon className="w-5 h-5" />
+            <span className="text-xs font-bold text-slate-600">Ração Hoje (Prev.)</span>
+            <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
+              <FeedTrayIcon className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2">
-            <div className="text-2xl font-semibold text-slate-900">
-              {totalRacaoHojeKg.toFixed(0)} <span className="text-sm font-semibold text-slate-600">kg/dia</span>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
+              {totalRacaoHojeKg.toFixed(0)}{" "}
+              <span className="text-xs sm:text-sm font-bold text-amber-800">kg/dia</span>
             </div>
-            <div className="text-xs text-amber-700 font-medium mt-0.5">
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
               Soma de todos os viveiros
             </div>
           </div>
         </div>
 
-        {/* Card 4: Peso Médio */}
-        <div className="bg-white border border-slate-200 hover:border-cyan-300 card-hover-lift rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+        {/* Card 3: Peso Médio Geral */}
+        <div className="bg-white border border-slate-200/90 hover:border-sky-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Peso Médio Geral</span>
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-700">
-              <ShrimpIcon className="w-5 h-5" />
+            <span className="text-xs font-bold text-slate-600">Peso Médio Geral</span>
+            <div className="p-2 rounded-xl bg-sky-50 border border-sky-100 text-sky-700">
+              <ShrimpIcon className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2">
-            <div className="text-2xl font-semibold text-slate-900">
-              {pesoMedioGeral} <span className="text-sm font-semibold text-slate-600">g</span>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
+              {pesoMedioGeral}{" "}
+              <span className="text-xs sm:text-sm font-bold text-sky-800">g</span>
             </div>
-            <div className="text-xs text-slate-600 mt-0.5">
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
               Últimas biometrias
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Viveiros em Produção */}
+        <div className="bg-white border border-slate-200/90 hover:border-emerald-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-600">Viveiros Ativos</span>
+            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
+              {viveirosAtivos.length}{" "}
+              <span className="text-xs sm:text-sm font-bold text-slate-500">
+                / {viveiros.length}
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Viveiros cadastrados
             </div>
           </div>
         </div>

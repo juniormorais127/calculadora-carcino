@@ -24,6 +24,26 @@ export const CORES = {
     suave: "bg-cyan-50 border-cyan-100 text-cyan-700",
     aviso: "bg-cyan-500/15 border-cyan-500/30 text-cyan-700"
   },
+  sky: {
+    texto: "text-sky-700",
+    foco: "focus:border-sky-500",
+    bordaCard: "border-sky-600/40",
+    gradiente: "from-sky-50 via-slate-50 to-slate-50",
+    bordaTile: "border-sky-500/20",
+    badge: "bg-sky-500/20 text-sky-700 border-sky-500/40",
+    suave: "bg-sky-50 border-sky-100 text-sky-700",
+    aviso: "bg-sky-500/15 border-sky-500/30 text-sky-700"
+  },
+  teal: {
+    texto: "text-teal-700",
+    foco: "focus:border-teal-500",
+    bordaCard: "border-teal-600/40",
+    gradiente: "from-teal-50 via-slate-50 to-slate-50",
+    bordaTile: "border-teal-500/20",
+    badge: "bg-teal-500/20 text-teal-700 border-teal-500/40",
+    suave: "bg-teal-50 border-teal-100 text-teal-700",
+    aviso: "bg-teal-500/15 border-teal-500/30 text-teal-700"
+  },
   amber: {
     texto: "text-amber-700",
     foco: "focus:border-amber-500",

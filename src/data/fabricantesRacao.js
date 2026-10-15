@@ -432,7 +432,7 @@ export const ANUNCIOS_PATROCINADORES = [
     badge: "Patrocinador Oficial",
     whatsapp: "84998761234",
     linkInfo: "https://www.admnutricaoanimal.com.br",
-    cor: "from-blue-700 to-indigo-900",
+    cor: "from-sky-700 to-teal-900",
     corBadge: "bg-blue-500/20 text-blue-700 border-blue-500/30"
   },
   {

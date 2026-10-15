@@ -21,7 +21,7 @@ import {
   ShoppingBag,
   BadgeCheck
 } from "lucide-react";
-import { FeedTrayIcon } from "./icons/CustomAquacultureIcons.jsx";
+import { FeedTrayIcon, ShrimpIcon } from "./icons/CustomAquacultureIcons.jsx";
 import CalcCalibre from "./calculadoras/CalcCalibre.jsx";
 import CalcCrescimento from "./calculadoras/CalcCrescimento.jsx";
 import CalcIonico from "./calculadoras/CalcIonico.jsx";
@@ -57,12 +57,12 @@ const CALCULADORAS = [
   { id: "agua", label: "Tratamento de Água", shortLabel: "Água", desc: "Alcalinidade e bicarbonato", icon: Droplets, cor: "cyan" },
   { id: "solo", label: "Calagem de Solo", shortLabel: "Solo", desc: "Calcário e probióticos de fundo", icon: Sprout, cor: "emerald" },
   { id: "amonia", label: "Amônia Tóxica (NH3)", shortLabel: "Amônia", desc: "Fração letal em função do pH", icon: FlaskConical, cor: "rose" },
-  { id: "povoamento", label: "Povoamento & Metas", shortLabel: "Povoamento", desc: "Cálculo de PLs e biomassa final", icon: Sparkles, cor: "indigo" },
-  { id: "calibre", label: "Calibre & Despesca", shortLabel: "Calibre", desc: "Classificação comercial e despesca", icon: Scale, cor: "lime" },
+  { id: "povoamento", label: "Povoamento & Metas", shortLabel: "Povoamento", desc: "Cálculo de PLs e biomassa final", icon: ShrimpIcon, cor: "emerald" },
+  { id: "calibre", label: "Calibre & Despesca", shortLabel: "Calibre", desc: "Classificação comercial e despesca", icon: Scale, cor: "emerald" },
   { id: "crescimento", label: "Crescimento & Índices", shortLabel: "Crescimento", desc: "Curva zootécnica e ganho diário", icon: TrendingUp, cor: "emerald" },
   { id: "ionico", label: "Balanço Iônico", shortLabel: "Íons", desc: "Ca, Mg, K e salinidade", icon: Atom, cor: "cyan" },
-  { id: "aeracao", label: "Aeração & Sistema", shortLabel: "Aeração", desc: "Cavalos de força e aeradores", icon: Wind, cor: "indigo" },
-  { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", desc: "Relação carbono/nitrogênio e melaço", icon: Leaf, cor: "violet" },
+  { id: "aeracao", label: "Aeração & Sistema", shortLabel: "Aeração", desc: "Cavalos de força e aeradores", icon: Wind, cor: "sky" },
+  { id: "bioflocos", label: "Bioflocos (C:N)", shortLabel: "Bioflocos", desc: "Relação carbono/nitrogênio e melaço", icon: Leaf, cor: "teal" },
 ];
 
 export default function CalculadorasHub({ viveiros = [], biometrias = [], qualidadeAgua = [], onNavigate }) {
@@ -1377,24 +1377,24 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
         {subTab === "povoamento" && (
           <div className="space-y-4">
             {/* Resumo Rápido no Topo */}
-            <div className="bg-gradient-to-r from-indigo-500/15 via-indigo-500/10 to-transparent border border-indigo-500/30 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
+            <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-slate-900 shadow-2xs">
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
                   Pós-Larvas para Compra
                 </span>
-                <div className="text-xl sm:text-2xl font-black text-indigo-900 leading-tight">
-                  {resPovo.totalPLs.toLocaleString()} <span className="text-xs font-bold text-slate-700">PLs</span>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tabular-nums">
+                  {resPovo.totalPLs.toLocaleString()} <span className="text-xs font-bold text-emerald-700">PLs</span>
                 </div>
                 <span className="text-[11px] text-slate-600 block mt-0.5 truncate">
                   Para área de {povoAreaM2.toLocaleString()} m² ({povoDensidade} cam/m²)
                 </span>
               </div>
-              <div className="text-right flex-shrink-0 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-indigo-500/20 self-start sm:self-auto">
+              <div className="text-right flex-shrink-0 bg-white px-3 py-1.5 rounded-xl border border-emerald-200/80 self-start sm:self-auto shadow-2xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
                   Biomassa Prevista
                 </span>
-                <span className="text-base sm:text-lg font-black text-slate-900">
-                  {resPovo.biomassaEsperadaKg.toLocaleString()} <span className="text-xs font-bold text-indigo-700">kg</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 tabular-nums">
+                  {resPovo.biomassaEsperadaKg.toLocaleString()} <span className="text-xs font-bold text-emerald-700">kg</span>
                 </span>
               </div>
             </div>
@@ -1402,9 +1402,9 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
                 <TituloEntrada
-                  icone={Sparkles}
+                  icone={ShrimpIcon}
                   titulo="Planejamento do Ciclo"
-                  cor="indigo"
+                  cor="emerald"
                 />
 
                 <div className="space-y-3.5">
@@ -1415,7 +1415,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                     step="1000"
                     min="500"
                     sufixo="m²"
-                    cor="indigo"
+                    cor="emerald"
                   />
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1426,7 +1426,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                       step="1"
                       min="1"
                       sufixo="cam/m²"
-                      cor="indigo"
+                      cor="emerald"
                     />
                     <CampoNumero
                       label="Sobrevivência"
@@ -1435,7 +1435,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                       step="5"
                       min="10"
                       sufixo="%"
-                      cor="indigo"
+                      cor="emerald"
                     />
                   </div>
 
@@ -1446,21 +1446,21 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                     step="0.5"
                     min="5"
                     sufixo="g"
-                    cor="indigo"
+                    cor="emerald"
                     ajuda="Peso comercial planejado para a despesca."
                   />
                 </div>
               </div>
 
               <div className="lg:col-span-7 space-y-4">
-                <CartaoSaida titulo="Projeção de Pós-Larvas e Colheita" cor="indigo">
+                <CartaoSaida titulo="Projeção de Pós-Larvas e Colheita" cor="emerald">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <CartaoResultado
                       titulo="PLs Necessárias para Compra"
                       valor={resPovo.totalPLs.toLocaleString()}
                       unidade="PLs"
                       detalhe={`Estimativa para povoar ${povoAreaM2.toLocaleString()} m²`}
-                      cor="indigo"
+                      cor="emerald"
                     />
 
                     <CartaoResultado
@@ -1468,7 +1468,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                       valor={resPovo.biomassaEsperadaKg.toLocaleString()}
                       unidade="kg"
                       detalhe={`Produtividade estimada: ${resPovo.produtividadeKgHa} kg/ha`}
-                      cor="indigo"
+                      cor="emerald"
                     />
                   </div>
                 </CartaoSaida>
