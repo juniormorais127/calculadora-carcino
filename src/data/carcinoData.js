@@ -178,6 +178,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Viral (Nimaviridae)",
     gravidade: "Extrema (Mortalidade de até 100% em 3 a 10 dias)",
     cor: "rose",
+    imagem: "images/doencas/wssv.jpg",
+    legendaImagem: "Carapaça com manchas brancas circulares de deposição de cálcio (0,5 a 2 mm) e coloração avermelhada característica.",
+    fonteImagem: "ABCC / NACA / FAO / OIE - Manual de Identificação de Enfermidades em Crustáceos",
     periodoCritico: "Qualquer fase, especialmente com quedas de temperatura (< 27°C) e estresse osmótico",
     sintomas: [
       "Pontos brancos circulares (0.5 a 2 mm) na face interna da carapaça e cefalotórax",
@@ -196,6 +199,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Viral (Totiviridae)",
     gravidade: "Alta (Mortalidade cumulativa de 40% a 70%)",
     cor: "amber",
+    imagem: "images/doencas/imnv.png",
+    legendaImagem: "Necrose muscular esquelética com aspecto opaco leitoso ('carne cozida') nos segmentos abdominais e urópodes avermelhados em Litopenaeus vannamei.",
+    fonteImagem: "Dr. Arun K. Dhar (Univ. of Arizona) / Global Seafood Alliance / ABCC",
     periodoCritico: "Juvenis e adultos (a partir de 4 a 6 gramas) submetidos a estresse térmico ou de oxigênio",
     sintomas: [
       "Músculo do abdômen e cauda com áreas brancas opacas (aspecto leitoso ou 'carne cozida')",
@@ -213,6 +219,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Bacteriana (Vibrio parahaemolyticus com toxina PirA/PirB)",
     gravidade: "Extrema (Até 100% de mortalidade nas primeiras semanas)",
     cor: "rose",
+    imagem: "images/doencas/ahpnd.jpg",
+    legendaImagem: "Camarão juvenil com hepatopâncreas gravemente atrofiado, pálido/translúcido e trato digestivo vazio comparado à integridade de túbulos normais.",
+    fonteImagem: "Dr. Chalor Limsuwan (Kasetsart Univ.) / Global Seafood Alliance / ABCC",
     periodoCritico: "Primeiros 20 a 35 dias após o povoamento (DOC 20-35)",
     sintomas: [
       "Hepatopâncreas gravemente atrofiado, pálido, esbranquiçado ou translúcido",
@@ -230,6 +239,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Bactéria Intracelular Obrigatória",
     gravidade: "Moderada a Alta (Mortalidade lenta acumulada até 80%)",
     cor: "yellow",
+    imagem: "images/doencas/nhp.jpg",
+    legendaImagem: "Carapaça dissecada exibindo hepatopâncreas aquoso com atrofia acentuada de 50%, desbotamento amarelado e intestino completamente vazio.",
+    fonteImagem: "Dr. Carlos R. Pantoja & Dr. Donald V. Lightner (Univ. of Arizona) / Global Seafood Alliance / ABCC",
     periodoCritico: "Águas quentes (> 29°C) combinadas com alta salinidade (> 25 ppt)",
     sintomas: [
       "Hepatopâncreas atrófico, aquoso e com coloração amarelada ou desbotada",
@@ -247,6 +259,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Microsporídio (Enterocytozoon hepatopenaei)",
     gravidade: "Econômica Severa (Estagnação de crescimento / 'Camarão Canivete')",
     cor: "amber",
+    imagem: "images/doencas/ehp.jpg",
+    legendaImagem: "Retardo severo de crescimento e desuniformidade extrema do lote ('camarão canivete'), animais da mesma data com disparidade acentuada de peso.",
+    fonteImagem: "Dr. Donald V. Lightner & Dr. Kathy Tang (Univ. of Arizona) / Global Seafood Alliance / ABCC",
     periodoCritico: "Presente silenciosamente desde o povoamento, manifesta-se aos 5-8 gramas",
     sintomas: [
       "Retardo severo e inexplicável no crescimento (camarão não passa de 6-8g)",
@@ -264,6 +279,9 @@ export const DOENCAS_CAMARAO = [
     tipo: "Bacteriana Oportunista (Vibrio alginolyticus, V. harveyi)",
     gravidade: "Média a Alta (Depende da qualidade da água)",
     cor: "teal",
+    imagem: "images/doencas/vibriose.png",
+    legendaImagem: "Lesão muscular bacteriana localizada com foco de melanização (mancha escura no tecido), necrose cuticular e urópodes avermelhados.",
+    fonteImagem: "Dr. Stephen G. Newman, Ph.D. / Global Seafood Alliance / ABCC",
     periodoCritico: "Viveiros com excesso de matéria orgânica no fundo e baixa alcalinidade (< 90 mg/L)",
     sintomas: [
       "Bioluminescência noturna visível no viveiro e nos camarões (cepas de V. harveyi)",

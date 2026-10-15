@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 export default function offlinePlugin() {
   let base;
@@ -7,8 +8,16 @@ export default function offlinePlugin() {
     apply: 'build',
     configResolved(config) { base = config.base; },
     generateBundle(_options, bundle) {
-      const files = ['index.html', 'icon.svg', 'manifest.webmanifest', ...Object.keys(bundle).filter(name => name !== 'index.html')];
-      const version = createHash('sha256').update(JSON.stringify(files)).digest('hex').slice(0, 16);
+      const diseaseImages = [
+        'images/doencas/wssv.jpg',
+        'images/doencas/imnv.png',
+        'images/doencas/ahpnd.jpg',
+        'images/doencas/nhp.jpg',
+        'images/doencas/ehp.jpg',
+        'images/doencas/vibriose.png'
+      ];
+      const files = ['index.html', 'icon.svg', 'manifest.webmanifest', ...diseaseImages, ...Object.keys(bundle).filter(name => name !== 'index.html')];
+      const version = createHash('sha256').update(JSON.stringify(files)).update(readFileSync(new URL('../public/icon.svg', import.meta.url))).digest('hex').slice(0, 16);
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = 'carcino-${version}';
 const BASE = ${JSON.stringify(base)};

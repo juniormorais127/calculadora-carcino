@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { calcularManejoProbioticoSolo } from "../src/services/probioticoService.js";
 import { FABRICANTES_RACAO, VENDEDORES_POR_ESTADO, ANUNCIOS_PATROCINADORES } from "../src/data/fabricantesRacao.js";
 import { DADOS_PROBIOTICOS_SOLO } from "../src/data/probioticosSolo.js";
+import { DOENCAS_CAMARAO } from "../src/data/carcinoData.js";
 
 test("serviço de probióticos de solo", async (t) => {
   await t.test("calcula dose de manutenção preventiva semanal para 1 hectare", () => {
@@ -99,6 +102,27 @@ test("catálogo de fabricantes de ração e vendedores", async (t) => {
       assert.ok(ad.nomeEmpresa);
       assert.ok(ad.chamada);
       assert.ok(ad.badge);
+    }
+  });
+});
+
+test("catálogo de doenças de camarão com fotos clínicas e fontes ABCC", async (t) => {
+  await t.test("todas as doenças possuem imagem, legenda clínica e fonte citada da ABCC/entidades", () => {
+    assert.equal(DOENCAS_CAMARAO.length, 6);
+    for (const doenca of DOENCAS_CAMARAO) {
+      assert.ok(doenca.imagem, `Doença ${doenca.id} deve ter caminho de imagem`);
+      assert.ok(doenca.legendaImagem, `Doença ${doenca.id} deve ter legenda clínica`);
+      assert.ok(doenca.fonteImagem, `Doença ${doenca.id} deve ter fonte citada`);
+      assert.ok(doenca.fonteImagem.includes("ABCC"), `Doença ${doenca.id} deve citar a ABCC`);
+    }
+  });
+
+  await t.test("todas as imagens de doenças existem fisicamente na pasta public", () => {
+    for (const doenca of DOENCAS_CAMARAO) {
+      const fullPath = resolve("public", doenca.imagem);
+      assert.ok(existsSync(fullPath), `Arquivo ${fullPath} deve existir no disco`);
+      const stat = statSync(fullPath);
+      assert.ok(stat.size > 10000, `Arquivo ${fullPath} deve ter conteúdo real (>10KB)`);
     }
   });
 });

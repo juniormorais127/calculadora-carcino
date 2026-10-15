@@ -13,16 +13,42 @@ import {
   FileCheck2, 
   BookOpen, 
   Sprout, 
-  Store 
+  Store,
+  Camera,
+  Maximize2,
+  X
 } from "lucide-react";
 import { DOENCAS_CAMARAO, BOAS_PRATICAS_ABCC } from "../data/carcinoData.js";
 import { DADOS_PROBIOTICOS_SOLO } from "../data/probioticosSolo.js";
 import { loadChecklist, saveChecklist } from "../services/checklistService.js";
 
+const formatImgUrl = (path) => {
+  if (!path) return "";
+  const base = import.meta.env.BASE_URL || "/";
+  const cleanBase = base.endsWith("/") ? base : `${base}/`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return `${cleanBase}${cleanPath}`;
+};
+
 export default function SanidadeView({ onNavigate }) {
   const [activeSubTab, setActiveSubTab] = useState("doencas"); // doencas, bpm, inovacoes
   const [buscaSintoma, setBuscaSintoma] = useState("");
   const [expandedDoencaId, setExpandedDoencaId] = useState("wssv");
+  const [selectedImageModal, setSelectedImageModal] = useState(null);
+
+  useEffect(() => {
+    if (!selectedImageModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setSelectedImageModal(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [selectedImageModal]);
 
   const [checkedItens, setCheckedItens] = useState({});
   const checkedRef = useRef({});
@@ -193,6 +219,12 @@ export default function SanidadeView({ onNavigate }) {
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700">
                             {doenca.tipo}
                           </span>
+                          {doenca.imagem && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              <Camera className="w-3 h-3 text-emerald-600" />
+                              Foto ABCC
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-rose-700 font-medium mt-0.5">
                           {doenca.gravidade}
@@ -202,7 +234,7 @@ export default function SanidadeView({ onNavigate }) {
 
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="hidden sm:inline text-xs text-slate-600 font-medium">
-                        {isExpanded ? "Recolher detalhes" : "Ver diagnóstico"}
+                        {isExpanded ? "Recolher detalhes" : "Ver diagnóstico e foto"}
                       </span>
                       <span className="p-1.5 rounded-xl bg-slate-100 text-slate-700">
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -218,6 +250,90 @@ export default function SanidadeView({ onNavigate }) {
                         <span className="font-bold text-amber-700 block mb-0.5">Período Crítico de Risco:</span>
                         <p className="text-slate-700">{doenca.periodoCritico}</p>
                       </div>
+
+                      {/* Registro Fotográfico e Fonte Oficial */}
+                      {doenca.imagem && (
+                        <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-3.5 sm:p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                              <Camera className="w-4 h-4 text-emerald-600" />
+                              Registro Fotográfico de Campo (ABCC):
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedImageModal({
+                                src: formatImgUrl(doenca.imagem),
+                                title: doenca.nome,
+                                sigla: doenca.sigla,
+                                legenda: doenca.legendaImagem,
+                                fonte: doenca.fonteImagem
+                              })}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-xl transition-all shadow-xs cursor-pointer"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Ampliar Foto</span>
+                            </button>
+                          </div>
+
+                          {/* Foto Interativa com clique para ampliar */}
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Ampliar foto clínica de ${doenca.nome}`}
+                            onClick={() => setSelectedImageModal({
+                              src: formatImgUrl(doenca.imagem),
+                              title: doenca.nome,
+                              sigla: doenca.sigla,
+                              legenda: doenca.legendaImagem,
+                              fonte: doenca.fonteImagem
+                            })}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setSelectedImageModal({
+                                  src: formatImgUrl(doenca.imagem),
+                                  title: doenca.nome,
+                                  sigla: doenca.sigla,
+                                  legenda: doenca.legendaImagem,
+                                  fonte: doenca.fonteImagem
+                                });
+                              }
+                            }}
+                            className="relative group cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-slate-900 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          >
+                            <img
+                              src={formatImgUrl(doenca.imagem)}
+                              alt={`Identificação patológica de ${doenca.nome} (${doenca.sigla})`}
+                              loading="lazy"
+                              className="w-full h-48 sm:h-64 object-cover object-center group-hover:scale-102 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+                              <span className="text-[11px] text-white/95 font-medium flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                                <Maximize2 className="w-3 h-3 text-emerald-400" />
+                                Toque na imagem para ampliar em alta definição
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Legenda Diagnóstica e Fonte Citada Logo Abaixo */}
+                          <div className="space-y-1.5 pt-0.5">
+                            {doenca.legendaImagem && (
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                <strong className="font-semibold text-slate-900">Sinal Patológico:</strong> {doenca.legendaImagem}
+                              </p>
+                            )}
+                            {doenca.fonteImagem && (
+                              <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-slate-200 text-xs text-slate-600">
+                                <BookOpen className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                                <div>
+                                  <span className="font-semibold text-slate-800">Fonte: </span>
+                                  <span className="text-slate-600">{doenca.fonteImagem}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Sinais Clínicos Visuais */}
                       <div>
@@ -507,6 +623,74 @@ export default function SanidadeView({ onNavigate }) {
                   <p className="text-[10px] text-slate-500 mt-1 leading-tight">{f.descricao}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Lightbox de Visualização em Alta Resolução */}
+      {selectedImageModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Foto em alta resolução de ${selectedImageModal.title}`}
+          onClick={() => setSelectedImageModal(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200"
+          >
+            {/* Header do Modal */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between gap-3 bg-slate-50">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 text-xs font-bold rounded-lg bg-rose-100 text-rose-800 border border-rose-200">
+                    {selectedImageModal.sigla}
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                    {selectedImageModal.title}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">Identificação Patológica e Diagnóstico Visual</p>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Fechar visualização"
+                onClick={() => setSelectedImageModal(null)}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200/80 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Imagem em Alta Resolução */}
+            <div className="flex-1 min-h-0 bg-slate-950 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+              <img
+                src={selectedImageModal.src}
+                alt={selectedImageModal.title}
+                className="max-h-[60vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+              />
+            </div>
+
+            {/* Rodapé com Legenda e Fonte Técnica */}
+            <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-2">
+              {selectedImageModal.legenda && (
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  <strong className="font-semibold text-slate-900">Sinal Patológico: </strong>
+                  {selectedImageModal.legenda}
+                </p>
+              )}
+              {selectedImageModal.fonte && (
+                <div className="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs text-slate-600">
+                  <BookOpen className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-slate-800">Fonte: </span>
+                    <span>{selectedImageModal.fonte}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
