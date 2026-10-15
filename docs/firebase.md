@@ -5,6 +5,10 @@ Login por e-mail/senha, sem Analytics no aplicativo. O cadastro web público est
 em `src/services/firebase.js`; a proteção real fica nas regras, nunca na API key.
 Domínio autorizado: `juniormorais127.github.io`.
 
+A abertura do site exige login antes de montar o painel. Cadastro e recuperação
+de senha ficam disponíveis nessa tela. Sessões já autenticadas abrem o painel;
+ao sair, o aplicativo retorna à tela de login.
+
 Cada UID possui um banco IndexedDB próprio. A base antiga `CalculadoraCarcinoDB`
 é exclusiva do modo local. O usuário pode importar os registros antigos em uma
 conta vazia, confirmando explicitamente a propriedade. A cópia original permanece.

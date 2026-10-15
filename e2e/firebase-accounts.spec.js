@@ -37,7 +37,6 @@ async function cleanup(account) {
 }
 async function login(page, account) {
   await page.goto('./');
-  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.getByLabel('E-mail', { exact: true }).fill(account.email);
   await page.getByLabel('Senha', { exact: true }).fill(account.password);
   await page.locator('form').getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -61,7 +60,6 @@ test('contas privadas, recuperação em outro aparelho, modo offline e login', a
     const pageA = await contextA.newPage();
     const errors = []; pageA.on('pageerror', error => errors.push(error.message));
     await pageA.goto('./');
-    await pageA.getByRole('button', { name: 'Entrar', exact: true }).click();
     await pageA.getByRole('button', { name: 'Criar conta gratuita' }).click();
     await pageA.getByLabel('E-mail', { exact: true }).fill('nao-enviar@example.invalid');
     await pageA.getByLabel('Senha', { exact: true }).fill('SenhaTeste123!');
@@ -104,7 +102,8 @@ test('contas privadas, recuperação em outro aparelho, modo offline e login', a
     await expect(pageA.getByText('Criado sem internet A', { exact: true })).toBeVisible();
     await pageA.getByRole('button', { name: 'Minha conta', exact: true }).click();
     await pageA.getByRole('button', { name: 'Sair da conta', exact: true }).click();
-    await pageA.getByRole('button', { name: 'Viveiros', exact: true }).click();
+    await expect(pageA.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
+    await expect(pageA.getByRole('button', { name: 'Viveiros', exact: true })).toBeHidden();
     await expect(pageA.getByText('Privado A', { exact: true })).toBeHidden();
     await expect(pageA.getByText('Criado sem internet A', { exact: true })).toBeHidden();
     expect(errors).toEqual([]);

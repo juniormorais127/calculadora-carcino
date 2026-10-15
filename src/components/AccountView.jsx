@@ -114,6 +114,6 @@ export default function AccountView() {
       <button disabled={busy} type="submit" className={`${button} w-full bg-emerald-700 text-white inline-flex justify-center items-center gap-2`}><LogIn className="w-4 h-4" />{busy ? 'Aguarde…' : mode === 'signup' ? 'Criar conta' : mode === 'reset' ? 'Enviar instruções' : 'Entrar'}</button>
       <div className="flex flex-wrap gap-3">{['login', 'signup', 'reset'].filter(value => value !== mode).map(value => <button key={value} type="button" disabled={busy} className="min-h-11 text-sm font-semibold text-emerald-800 underline underline-offset-4" onClick={() => { setMode(value); setError(''); setMessage(''); setPassword(''); setConfirmation(''); }}>{value === 'login' ? 'Já tenho uma conta' : value === 'signup' ? 'Criar conta gratuita' : 'Esqueci minha senha'}</button>)}</div>
     </form>
-    <p className="text-xs text-slate-600">Você pode continuar usando o site sem entrar. Nesse modo, os registros ficam somente neste navegador. Entrar não envia os dados antigos automaticamente.</p>
+    <p className="text-xs text-slate-600">Entre para acessar sua produção. Se você já usava este navegador, poderá importar seus registros locais em Minha conta após entrar.</p>
   </section>;
 }
