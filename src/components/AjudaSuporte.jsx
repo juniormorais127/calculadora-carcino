@@ -175,9 +175,9 @@ export default function AjudaSuporte({ telaAtual, resumoRegistros }) {
         onClick={() => { setAberto(true); setErro(""); }}
         aria-label="Ajuda e suporte"
         title="Ajuda: enviar sugestão ou relatar um problema"
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 font-semibold transition-colors active:scale-95"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs text-slate-200 font-bold transition-all active:scale-95 shadow-xs"
       >
-        <LifeBuoy className="w-4 h-4 text-emerald-700" />
+        <LifeBuoy className="w-4 h-4 text-emerald-400" />
         <span className="hidden sm:inline">Ajuda</span>
       </button>
 

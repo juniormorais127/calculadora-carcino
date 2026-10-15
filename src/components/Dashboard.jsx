@@ -153,30 +153,34 @@ export default function Dashboard({
   return (
     <div className="space-y-6 pb-20 md:pb-8">
       {/* Top Banner & Quick Actions */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-xs relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-emerald-950 border border-emerald-800/40 rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-950/15 relative overflow-hidden">
+        {/* Subtle decorative aquatic light bursts */}
+        <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute right-32 -bottom-16 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Painel de Operações da Fazenda
               </h2>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs animate-water-ripple">
                 <span className="relative flex h-2 w-2">
-                  <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                  <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 {viveirosAtivos.length} {viveirosAtivos.length === 1 ? "viveiro ativo" : "viveiros ativos"}
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
               Acompanhamento zootécnico e telemetria de viveiros. Dados salvos 100% no seu aparelho, sem depender de internet.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handleCliqueBiometria}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/40 hover:shadow-emerald-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Biometria</span>
@@ -184,7 +188,7 @@ export default function Dashboard({
 
             <button
               onClick={handleCliqueAgua}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-950/40 hover:shadow-sky-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               <Droplets className="w-4 h-4" />
               <span>+ Qualidade Água</span>
@@ -196,10 +200,10 @@ export default function Dashboard({
       {/* KPI Grid de Telemetria Zootécnica */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Biomassa Estimada */}
-        <div className="bg-white border border-slate-200/90 hover:border-teal-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white via-white to-emerald-50/50 border border-emerald-200/90 hover:border-emerald-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-emerald-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Biomassa Estimada</span>
-            <div className="p-2 rounded-xl bg-teal-50 border border-teal-100 text-teal-700">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-600/30 group-hover:scale-110 transition-transform">
               <Scale className="w-4 h-4" />
             </div>
           </div>
@@ -208,7 +212,7 @@ export default function Dashboard({
               {totalBiomassaKg > 1000 
                 ? `${(totalBiomassaKg / 1000).toFixed(2)}`
                 : `${totalBiomassaKg.toFixed(0)}`}{" "}
-              <span className="text-xs sm:text-sm font-bold text-teal-800">
+              <span className="text-xs sm:text-sm font-bold text-emerald-700">
                 {totalBiomassaKg > 1000 ? "ton" : "kg"}
               </span>
             </div>
@@ -219,17 +223,17 @@ export default function Dashboard({
         </div>
 
         {/* Card 2: Ração do Dia */}
-        <div className="bg-white border border-slate-200/90 hover:border-amber-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white via-white to-amber-50/50 border border-amber-200/90 hover:border-amber-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-amber-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Ração Hoje (Prev.)</span>
-            <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-600/30 group-hover:scale-110 transition-transform">
               <FeedTrayIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
               {totalRacaoHojeKg.toFixed(0)}{" "}
-              <span className="text-xs sm:text-sm font-bold text-amber-800">kg/dia</span>
+              <span className="text-xs sm:text-sm font-bold text-amber-700">kg/dia</span>
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">
               Soma de todos os viveiros
@@ -238,17 +242,17 @@ export default function Dashboard({
         </div>
 
         {/* Card 3: Peso Médio Geral */}
-        <div className="bg-white border border-slate-200/90 hover:border-sky-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white via-white to-sky-50/50 border border-sky-200/90 hover:border-sky-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-sky-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Peso Médio Geral</span>
-            <div className="p-2 rounded-xl bg-sky-50 border border-sky-100 text-sky-700">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sm shadow-sky-600/30 group-hover:scale-110 transition-transform">
               <ShrimpIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="text-2xl sm:text-3xl font-black text-slate-900 tabular-nums tracking-tight">
               {pesoMedioGeral}{" "}
-              <span className="text-xs sm:text-sm font-bold text-sky-800">g</span>
+              <span className="text-xs sm:text-sm font-bold text-sky-700">g</span>
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">
               Últimas biometrias
@@ -257,10 +261,10 @@ export default function Dashboard({
         </div>
 
         {/* Card 4: Viveiros em Produção */}
-        <div className="bg-white border border-slate-200/90 hover:border-emerald-400 card-hover-lift rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-white via-white to-teal-50/50 border border-teal-200/90 hover:border-teal-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-teal-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Viveiros Ativos</span>
-            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-sm shadow-teal-600/30 group-hover:scale-110 transition-transform">
               <Layers className="w-4 h-4" />
             </div>
           </div>

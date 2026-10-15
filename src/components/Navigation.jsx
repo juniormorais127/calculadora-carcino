@@ -16,7 +16,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
   return (
     <>
       {/* Desktop / Tablet Top Nav */}
-      <nav aria-label="Navegação principal" className="hidden md:flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200/90 max-w-6xl mx-auto my-3 px-2 shadow-2xs">
+      <nav aria-label="Navegação principal" className="hidden md:flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl border border-slate-200 max-w-6xl mx-auto my-3 px-2.5 shadow-sm">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -27,8 +27,8 @@ export default function Navigation({ activeTab, setActiveTab }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 isActive
-                  ? "bg-emerald-700 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 active:bg-slate-100"
+                  ? "bg-gradient-to-r from-emerald-700 to-teal-700 text-white shadow-md shadow-emerald-950/20 scale-[1.02]"
+                  : "text-slate-600 hover:text-emerald-950 hover:bg-emerald-50/70 active:scale-95"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -56,7 +56,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
                     : "text-slate-500 hover:text-slate-800 font-medium"
                 }`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-emerald-700 text-white shadow-xs" : "text-slate-500"}`}>
+                <div className={`p-1.5 rounded-xl transition-all ${isActive ? "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-sm shadow-emerald-600/30 scale-105" : "text-slate-500"}`}>
                   <Icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 2} />
                 </div>
                 <span className={`text-[10px] tracking-tight mt-0.5 truncate max-w-full ${isActive ? "font-bold text-emerald-900" : "font-medium text-slate-600"}`}>

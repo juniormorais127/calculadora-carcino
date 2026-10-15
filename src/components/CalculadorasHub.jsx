@@ -267,11 +267,11 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
                 onClick={() => mudarCalculadora(calc.id)}
                 className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 shadow-2xs cursor-pointer ${
                   isAtivo
-                    ? "bg-slate-900 text-white shadow-sm ring-2 ring-emerald-500/30"
-                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80"
+                    ? "bg-gradient-to-r from-emerald-800 to-teal-800 text-white shadow-md shadow-emerald-950/20 scale-[1.02] ring-2 ring-emerald-400/40"
+                    : "bg-slate-50 hover:bg-emerald-50/70 hover:text-emerald-950 text-slate-700 border border-slate-200/80 hover:border-emerald-300"
                 }`}
               >
-                <Icone className={`w-4 h-4 ${isAtivo ? "text-emerald-400" : "text-slate-500"}`} />
+                <Icone className={`w-4 h-4 ${isAtivo ? "text-emerald-300" : "text-slate-500"}`} />
                 <span>{calc.label}</span>
               </button>
             );
