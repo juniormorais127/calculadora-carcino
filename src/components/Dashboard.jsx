@@ -11,7 +11,7 @@ import {
   Store,
   Sprout
 } from "lucide-react";
-import { ShrimpIcon, FeedTrayIcon } from "./icons/CustomAquacultureIcons.jsx";
+import { ShrimpGroupIcon, FeedPelletsIcon, EarthenPondIcon } from "./icons/CustomAquacultureIcons.jsx";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 import { calculateDailyFeed, calculateToxicAmmonia } from "../services/calculatorService.js";
 import { avaliarQualidadeAgua, NIVEIS } from "../services/qualidadeAguaService.js";
@@ -204,7 +204,7 @@ export default function Dashboard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Biomassa Estimada</span>
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-600/30 group-hover:scale-110 transition-transform">
-              <Scale className="w-4 h-4" />
+              <ShrimpGroupIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
           <div className="mt-3">
@@ -227,7 +227,7 @@ export default function Dashboard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Ração Hoje (Prev.)</span>
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-600/30 group-hover:scale-110 transition-transform">
-              <FeedTrayIcon className="w-4 h-4" />
+              <FeedPelletsIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
           <div className="mt-3">
@@ -246,7 +246,7 @@ export default function Dashboard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Peso Médio Geral</span>
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sm shadow-sky-600/30 group-hover:scale-110 transition-transform">
-              <ShrimpIcon className="w-4 h-4" />
+              <Scale className="w-5 h-5 -m-0.5" />
             </div>
           </div>
           <div className="mt-3">
@@ -265,7 +265,7 @@ export default function Dashboard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Viveiros Ativos</span>
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-sm shadow-teal-600/30 group-hover:scale-110 transition-transform">
-              <Layers className="w-4 h-4" />
+              <EarthenPondIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
           <div className="mt-3">

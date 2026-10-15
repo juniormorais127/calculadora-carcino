@@ -203,6 +203,47 @@ export function WaterQualityIcon({ className = "w-6 h-6", size, strokeWidth = 1.
   );
 }
 
+// A reduced shrimp mark for the compact header logo.
+export function ShrimpMarkIcon({ className = "w-6 h-6", ...props }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
+    <path d="M5 9C7 4 13 2 20 4M5 9C8 6 12 6 15 7M3 7l3 3" />
+    <path d="M6 10c4-2 9-1 12 3 3 5-1 9-6 8l-3-1 3-3c3 1 5-1 3-3-2-2-5-2-8-1l-1-3Z" />
+    <path d="m12 10-2 3m6-1-2 3m4 1-3 1M8 14l-1 2m4-2-1 2M9 20l-3 1" />
+    <circle cx="7" cy="10.5" r=".8" fill="currentColor" stroke="none" />
+  </svg>;
+}
+
+// Simplified silhouettes remain legible at dashboard icon sizes.
+export function ShrimpGroupIcon({ className = "w-6 h-6", ...props }) {
+  const shrimp = <>
+    <path d="M3 5 1 3m3 2C5 2 8 1 10 2M3 5c3-1 7 0 8 3s-1 5-4 5H5l2-3h2c1-2-1-4-4-3L3 5Z" />
+    <path d="m7 5-1 3m4-1-2 2M5 8l-1 2" />
+    <circle cx="4" cy="5.5" r=".7" fill="currentColor" stroke="none" />
+  </>;
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
+    <g transform="translate(1 1)">{shrimp}</g>
+    <g transform="translate(14 7)">{shrimp}</g>
+    <g transform="translate(2 14)">{shrimp}</g>
+  </svg>;
+}
+
+export function FeedPelletsIcon({ className = "w-6 h-6", ...props }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
+    <g transform="rotate(-30 7 6)"><rect x="3" y="3.5" width="8" height="5" rx="2" /><path d="M5.5 4v4" /></g>
+    <g transform="rotate(35 17 10)"><rect x="13" y="7.5" width="8" height="5" rx="2" /><path d="M15.5 8v4" /></g>
+    <g transform="rotate(-15 9 18)"><rect x="4" y="15.5" width="10" height="5" rx="2" /><path d="M6.5 16v4" /></g>
+    <circle cx="18.5" cy="19" r="1" fill="currentColor" stroke="none" />
+  </svg>;
+}
+
+export function EarthenPondIcon({ className = "w-6 h-6", ...props }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
+    <path d="m3 5 18 0 1 13-3 3H5l-3-3L3 5Z" />
+    <path d="m3 5 3 4h12l3-4M6 9 5 17h14l-1-8M2 18l3-1m14 0 3 1" />
+    <path d="M8 12c1 .9 2 .9 3 0s2-.9 3 0 2 .9 3 0M8 15h8" />
+  </svg>;
+}
+
 export default {
   ShrimpIcon,
   FeedTrayIcon,
