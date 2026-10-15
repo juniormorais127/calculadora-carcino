@@ -3,9 +3,13 @@
 // rede de vendedores/representantes comerciais locais por Estado
 // e sistema de patrocinadores/anúncios do CarcinoGestão.
 
+const admLogo = new URL("../assets/logos/adm.png", import.meta.url).href;
+const guabiLogo = new URL("../assets/logos/guabi.png", import.meta.url).href;
+
 export const FABRICANTES_RACAO = [
   {
     id: "adm",
+    logo: admLogo,
     nome: "ADM Nutrição Animal",
     linhas: "Camanutri & Density",
     slogan: "Nutrição de alta digestibilidade e performance zootécnica comprovada",
@@ -50,6 +54,8 @@ export const FABRICANTES_RACAO = [
   },
   {
     id: "guabi",
+    logo: guabiLogo,
+    logoFundoEscuro: true,
     nome: "Guabi Aqua",
     linhas: "Guabi-Poti (Mirim QS & Guaçu)",
     slogan: "Líder nacional em nutrição aquícola com tecnologia de Quorum Sensing",
@@ -94,6 +100,7 @@ export const FABRICANTES_RACAO = [
   },
   {
     id: "aquanutri",
+    logo: null,
     nome: "AquaNutri Nutrição Especializada",
     linhas: "AquaNutri Juvenil & Engorda",
     slogan: "Nutrição equilibrada para carcinicultura costeira e águas oligohalinas",

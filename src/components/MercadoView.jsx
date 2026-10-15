@@ -17,6 +17,7 @@ import {
   Briefcase
 } from "lucide-react";
 import { FABRICANTES_RACAO, VENDEDORES_POR_ESTADO, ANUNCIOS_PATROCINADORES } from "../data/fabricantesRacao.js";
+import CompanyLogo from "./CompanyLogo.jsx";
 
 const ESTADOS = [
   { sigla: "TODOS", nome: "Todos os Estados" },
@@ -136,10 +137,8 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                 className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-emerald-500/40 hover:bg-emerald-50/20 transition-all"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-black tracking-wider text-slate-900">
-                      {fab.logoText}
-                    </span>
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <CompanyLogo nome={fab.nome} logo={fab.logo} fundoEscuro={fab.logoFundoEscuro} />
                     <span className="text-[10px] bg-emerald-500/15 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
                       Homologado
                     </span>
@@ -280,7 +279,10 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                 <div className="space-y-3">
                   {/* Topo do Card */}
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <div className="min-w-0">
+                      <div className="mb-3">
+                        <CompanyLogo nome={v.empresa} logo={v.logo} fundoEscuro={v.logoFundoEscuro} />
+                      </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
                           {v.estado}
