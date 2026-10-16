@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, query, where, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { firestore } from './firebase.js';
 import { validateVisitReport } from './technicalVisitData.js';
 

@@ -1,5 +1,24 @@
 import { test, expect } from '@playwright/test';
 
+test('assinaturas reais de visitas iniciam sem derrubar a interface', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('./');
+  await page.getByRole('heading', { name: 'Entrar na minha conta' }).waitFor();
+  const count = await page.evaluate(async () => {
+    const { watchFieldRecords } = await import('/src/services/technicalVisits.js');
+    const stops = [];
+    for (const field of ['ownerUid', 'technicianUid', null]) {
+      for (const name of ['technicalVisits', 'fieldAuthorizations']) stops.push(watchFieldRecords(name, field, 'regression-fixture', () => {}, () => {}));
+    }
+    stops.forEach(stop => stop());
+    return stops.length;
+  });
+  expect(count).toBe(6);
+  await expect(page.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora do relatorio', async ({ page }, testInfo) => {
   await page.route('https://tile.openstreetmap.org/**', route => route.abort());
   await page.goto('./');
