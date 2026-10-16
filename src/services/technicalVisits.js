@@ -1,8 +1,30 @@
 import { collection, doc, getDoc, query, where, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { firestore } from './firebase.js';
-import { validateVisitReport } from './technicalVisitData.js';
+import { validateVisitReport, validateIndependentVisit } from './technicalVisitData.js';
 
 export const authorizationId = (ownerUid, technicianUid) => `${ownerUid}~${technicianUid}`;
+export async function submitIndependentVisit(user, input) {
+  const value = validateIndependentVisit(input);
+  if (value.clientEmail === user.email.toLowerCase()) throw new Error('Informe o e-mail do produtor, diferente da sua conta.');
+  const ref = doc(collection(firestore, 'fieldInspectionReports'));
+  const batch = writeBatch(firestore);
+  batch.set(ref, { clientEmail: value.clientEmail, propertyName: value.propertyName, technicianUid: user.uid, technicianEmail: user.email,
+    visitedOn: value.visitedOn, summary: value.notes, latitude: value.location.latitude, longitude: value.location.longitude,
+    licenseStatus: value.licenseStatus, licenseNumber: value.license?.number || '', licenseRegisteredOn: value.license?.registeredOn || '', licenseExpiresOn: value.license?.expiresOn || '',
+    ownerUid: null, status: 'pending', createdAt: serverTimestamp(), decidedAt: null });
+  batch.set(doc(firestore, 'technicalNotebooks', user.uid, 'inspections', ref.id), { notes: value.privateNotes, createdAt: serverTimestamp() });
+  await batch.commit();
+  return ref.id;
+}
+export async function decideIndependentVisit(user, id, accepted) {
+  const ref = doc(firestore, 'fieldInspectionReports', id);
+  await runTransaction(firestore, async transaction => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists() || snapshot.data().status !== 'pending') throw new Error('Este registro já foi analisado.');
+    if (snapshot.data().clientEmail !== user.email.toLowerCase()) throw new Error('Este registro não pertence à sua conta.');
+    transaction.update(ref, { status: accepted ? 'accepted' : 'rejected', ownerUid: user.uid, decidedAt: serverTimestamp() });
+  });
+}
 export function watchFieldRecords(name, field, uid, next, error) {
   const ref = collection(firestore, name);
   return onSnapshot(field ? query(ref, where(field, '==', uid)) : ref, snapshot => next(snapshot.docs.map(item => ({ ...item.data(), id: item.id }))), error);
@@ -17,7 +39,7 @@ export async function readSharedFarm(ownerUid) {
   return snapshot.exists() ? snapshot.data() : null;
 }
 export async function publishSharedFarm(user, farmProfile, ponds) {
-  await setDoc(doc(firestore, 'fieldFarms', user.uid), { ownerUid: user.uid,
+  await setDoc(doc(firestore, 'fieldFarms', user.uid), { ownerUid: user.uid, ownerEmail: user.email.toLowerCase(),
     name: String(farmProfile?.nomeFazenda || 'Propriedade sem nome').slice(0, 200),
     ponds: ponds.map(pond => ({ id: pond.id, name: String(pond.nome).slice(0, 200), latitude: pond.latitude ?? null, longitude: pond.longitude ?? null })), updatedAt: serverTimestamp() });
 }
@@ -44,8 +66,8 @@ export async function decideVisit(id, accepted) {
     transaction.update(ref, { status: accepted ? 'accepted' : 'rejected', decidedAt: serverTimestamp() });
   });
 }
-export async function readPrivateVisit(uid, id) {
-  const snapshot = await getDoc(doc(firestore, 'technicalNotebooks', uid, 'visits', id));
+export async function readPrivateVisit(uid, id, independent = false) {
+  const snapshot = await getDoc(doc(firestore, 'technicalNotebooks', uid, independent ? 'inspections' : 'visits', id));
   return snapshot.data()?.notes || 'Sem anotações privadas.';
 }
 export { applyAcceptedVisit, checkVisitApproval } from './technicalVisitLocal.js';

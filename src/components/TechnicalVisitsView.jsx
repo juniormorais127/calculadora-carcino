@@ -15,11 +15,14 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
   const technician = !administrative && accountRole(access, user.uid) === 'field_technician';
   const [tab, setTab] = useState(administrative ? 'admin' : technician ? 'technician' : 'client');
   const [grants, setGrants] = useState([]), [visits, setVisits] = useState([]);
+  const [inspections, setInspections] = useState([]);
+  const [clientEmail, setClientEmail] = useState(''), [propertyName, setPropertyName] = useState('');
   const [authorizedFarms, setAuthorizedFarms] = useState([]), [farmsLoading, setFarmsLoading] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [message, setMessage] = useState('');
   const [techCode, setTechCode] = useState(''), [ownerEmail, setOwnerEmail] = useState('');
   const [farm, setFarm] = useState(null), [pondId, setPondId] = useState('');
+  const independent = !!farm?.independent;
   const [location, setLocation] = useState({ latitude: '', longitude: '' });
   const [summary, setSummary] = useState(''), [privateNotes, setPrivateNotes] = useState('');
   const [visitedOn, setVisitedOn] = useState(new Date().toLocaleDateString('en-CA'));
@@ -27,10 +30,11 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
   const [licenseNumber, setLicenseNumber] = useState(''), [licenseRegisteredOn, setLicenseRegisteredOn] = useState(''), [licenseExpiresOn, setLicenseExpiresOn] = useState('');
   const [privateView, setPrivateView] = useState(null);
   useEffect(() => {
-    setFarm(null); setPrivateView(null); setError(''); setVisits([]); setGrants([]);
+    setFarm(null); setPrivateView(null); setError(''); setVisits([]); setGrants([]); setInspections([]);
     const field = administrative ? null : tab === 'technician' ? 'technicianUid' : 'ownerUid';
     const fail = () => setError('Não foi possível carregar as visitas. Confira a conexão e suas permissões.');
-    const stops = [api.watchFieldRecords('fieldAuthorizations', field, user.uid, setGrants, fail), api.watchFieldRecords('technicalVisits', field, user.uid, setVisits, fail)];
+    const stops = [api.watchFieldRecords('fieldAuthorizations', field, user.uid, setGrants, fail), api.watchFieldRecords('technicalVisits', field, user.uid, setVisits, fail),
+      api.watchFieldRecords('fieldInspectionReports', administrative ? null : tab === 'technician' ? 'technicianUid' : 'clientEmail', tab === 'technician' ? user.uid : user.email.toLowerCase(), setInspections, fail)];
     return () => stops.forEach(stop => stop());
   }, [user.uid, tab, administrative, api]);
   useEffect(() => {
@@ -69,6 +73,11 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
   async function submit(event) {
     event.preventDefault();
     await run(async () => {
+      if (independent) {
+        await api.submitIndependentVisit(user, { clientEmail, propertyName, visitedOn, summary, privateNotes, ...location, licenseStatus, licenseNumber, licenseRegisteredOn, licenseExpiresOn });
+        setFarm(null); setMessage('Registro de campo enviado ao cliente para ciência e aceite. O licenciamento foi marcado no seu mapa e no painel administrativo. O cadastro do produtor não foi alterado.');
+        return;
+      }
       const pond = farm.ponds.find(item => String(item.id) === pondId);
       if (!pond) throw new Error('Selecione o viveiro visitado.');
       await api.submitTechnicalVisit(user, farm, pond, { visitedOn, summary, privateNotes, correctLocation, ...location, licenseStatus, licenseNumber, licenseRegisteredOn, licenseExpiresOn });
@@ -85,12 +94,17 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn('');
     });
   }
-  const ordered = [...visits].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  const allVisits = [...visits, ...inspections.map(item => ({ ...item, independent: true, farmName: item.propertyName, pondName: 'Registro de campo', pondId: null }))];
+  const ordered = [...allVisits].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
   return <section className="py-5 pb-20 space-y-6">
     <div className="space-y-2"><h2 className="text-2xl font-bold">{administrative ? 'Visitas e licenciamento' : 'Visitas técnicas'}</h2><p className="text-sm text-slate-600 max-w-2xl">O técnico propõe ajustes. O cliente revisa e aceita ou recusa o relatório. A localização só muda após o aceite.</p></div>
     {technician && <nav aria-label="Área de visitas" className="flex flex-wrap gap-2"><button className={button} aria-pressed={tab === 'client'} onClick={() => setTab('client')}>Minha propriedade</button><button className={button} aria-pressed={tab === 'technician'} onClick={() => setTab('technician')}>Meus atendimentos</button></nav>}
     {error && <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-4">{error}</p>}
     {message && <p role="status" className="text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-4">{message}</p>}
+    {tab === 'technician' && <div className="space-y-3"><button className={`${button} bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy} onClick={() => {
+      setPropertyName(''); setClientEmail(''); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown'); setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn(''); setPondId('');
+      setFarm({ independent: true, ponds: [] }); setError(''); setMessage('');
+    }}>Registrar visita e notificar produtor</button><p className="text-sm text-slate-600">Registre uma constatação de campo, como ausência de licenciamento, sem precisar de acesso ao cadastro do cliente. Ele será avisado no site pelo e-mail informado.</p></div>}
     {tab === 'technician' && <div className="space-y-4 max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
       <h3 className="text-lg font-bold">Nova visita</h3>
       <p className="text-sm text-slate-600">Selecione a propriedade autorizada para preencher data, localização, licenciamento e o relatório da visita.</p>
@@ -113,13 +127,11 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       </div>)}
     </div>
     {farm && tab === 'technician' && <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 max-w-2xl">
-      <h3 className="text-lg font-bold">Registrar visita: {farm.name}</h3>
-      <label className="block text-sm font-semibold">Nome da propriedade<input readOnly value={farm.name} className={`${input} bg-slate-50`} /></label>
-      <p className="text-xs text-slate-600">O nome vem do cadastro autorizado pelo cliente. O relatório será enviado para essa conta.</p>
-      <label className="block text-sm font-semibold">Viveiro<select required value={pondId} onChange={event => setPondId(event.target.value)} className={input}><option value="">Selecione</option>{farm.ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}</select></label>
+      <h3 className="text-lg font-bold">{independent ? 'Registro de campo e notificação ao produtor' : `Registrar visita: ${farm.name}`}</h3>
+      {independent ? <><label className="block text-sm font-semibold">Nome da propriedade<input required maxLength={200} value={propertyName} onChange={event => setPropertyName(event.target.value)} className={input} /></label><label className="block text-sm font-semibold">E-mail do produtor cadastrado no site<input type="email" required maxLength={320} value={clientEmail} onChange={event => setClientEmail(event.target.value)} className={input} /></label><p className="text-xs text-slate-600">Confira o e-mail com o produtor. O aviso aparecerá nessa conta, sem enviar e-mail externo. Nenhum dado privado do cadastro é consultado.</p></> : <><label className="block text-sm font-semibold">Nome da propriedade<input readOnly value={farm.name} className={`${input} bg-slate-50`} /></label><p className="text-xs text-slate-600">O nome vem do cadastro autorizado pelo cliente. O relatório será enviado para essa conta.</p><label className="block text-sm font-semibold">Viveiro<select required value={pondId} onChange={event => setPondId(event.target.value)} className={input}><option value="">Selecione</option>{farm.ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}</select></label></>}
       <label className="block text-sm font-semibold">Data da visita<input type="date" required value={visitedOn} onChange={event => setVisitedOn(event.target.value)} className={input} /></label>
       <PondLocationFields value={location} onChange={value => { setLocation(value); setCorrectLocation(true); }} />
-      <label className="flex gap-3 items-center min-h-11 text-sm font-semibold"><input type="checkbox" checked={correctLocation} onChange={event => setCorrectLocation(event.target.checked)} />Informar localização errada e propor correção</label>
+      {!independent && <label className="flex gap-3 items-center min-h-11 text-sm font-semibold"><input type="checkbox" checked={correctLocation} onChange={event => setCorrectLocation(event.target.checked)} />Informar localização errada e propor correção</label>}
       <label className="block text-sm font-semibold">Situação do licenciamento<select value={licenseStatus} onChange={event => setLicenseStatus(event.target.value)} className={input}>{Object.entries(LICENSE_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {licenseStatus === 'licensed' && <><label className="block text-sm font-semibold">Número do licenciamento<input required maxLength={120} value={licenseNumber} onChange={event => setLicenseNumber(event.target.value)} className={input} /></label><label className="block text-sm font-semibold">Data de cadastro do licenciamento<input type="date" required value={licenseRegisteredOn} onChange={event => setLicenseRegisteredOn(event.target.value)} className={input} /></label><label className="block text-sm font-semibold">Vencimento do licenciamento<input type="date" required value={licenseExpiresOn} onChange={event => setLicenseExpiresOn(event.target.value)} className={input} /></label></>}
       <label className="block text-sm font-semibold">Relatório para aprovação do cliente (obrigatório)<textarea required minLength={10} maxLength={10000} rows={4} value={summary} onChange={event => setSummary(event.target.value)} className={input} /></label>
@@ -127,7 +139,7 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       <p className="text-xs text-slate-600">Só você acessa as anotações privadas. O relatório acima, as coordenadas e o licenciamento serão enviados ao cliente para revisão. Administradores e Sênior podem consultar o relatório e o mapa.</p>
       <div className="flex flex-wrap gap-3"><button disabled={busy} className={button}>Registrar visita e enviar para aceite</button><button type="button" disabled={busy} onClick={() => setFarm(null)} className={button}>Cancelar visita</button></div>
     </form>}
-    {(administrative || tab === 'technician') && <TechnicalVisitMap visits={visits} />}
+    {(administrative || tab === 'technician') && <TechnicalVisitMap visits={allVisits} />}
     <div className="space-y-5"><h3 className="text-lg font-bold">{administrative ? 'Histórico de visitas' : tab === 'technician' ? 'Propriedades visitadas e alterações propostas' : 'Relatórios recebidos e notificações'}</h3>
       {!ordered.length && <p className="text-sm text-slate-600">Nenhuma visita registrada.</p>}
       {ordered.map(visit => <article key={visit.id} className="space-y-3 border-b border-slate-300 pb-5">
@@ -135,8 +147,9 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
         <p className="text-sm whitespace-pre-wrap break-words">{visit.summary}</p>
         {visit.correctLocation && <p className="text-sm">Correção de localização: {visit.previousLatitude ?? 'sem latitude'}, {visit.previousLongitude ?? 'sem longitude'} → <strong>{visit.latitude}, {visit.longitude}</strong></p>}
         <p className="text-sm">{LICENSE_LABELS[visit.licenseStatus]}{visit.licenseStatus === 'licensed' ? ` · Nº ${visit.licenseNumber} · Cadastro: ${visit.licenseRegisteredOn} · Vencimento: ${visit.licenseExpiresOn}` : ''}</p>
-        {visit.status === 'pending' && visit.ownerUid === user.uid && <div className="space-y-2"><p className="text-xs text-slate-600">Ao aceitar, você aprova o relatório e os ajustes descritos. Se houver erro, recuse e peça uma nova visita ao técnico.</p><div className="flex flex-wrap gap-3"><button disabled={busy} className={button} onClick={() => run(async () => { await api.checkVisitApproval(database, visit); await api.decideVisit(visit.id, true); await api.applyAcceptedVisit(database, { ...visit, status: 'accepted' }); await onReload?.(); setMessage('Visita aceita. Ajustes aplicados ao cadastro e aguardando a sincronização da conta.'); })}>Aceitar relatório e ajustes</button><button disabled={busy} className={button} onClick={() => run(async () => { await api.decideVisit(visit.id, false); setMessage('Visita recusada. O cadastro não foi alterado.'); })}>Recusar relatório</button></div></div>}
-        {visit.technicianUid === user.uid && <button className={button} disabled={busy} onClick={() => run(async () => setPrivateView({ id: visit.id, notes: await api.readPrivateVisit(user.uid, visit.id) }))}>Ver minhas anotações privadas</button>}
+        {visit.independent && visit.status === 'pending' && visit.clientEmail === user.email.toLowerCase() && <div className="space-y-2"><p className="text-xs text-slate-600">Este registro documenta a constatação do técnico. Aceitar confirma sua ciência e concordância; não altera as coordenadas nem libera acesso ao seu cadastro.</p><div className="flex flex-wrap gap-3"><button disabled={busy} className={button} onClick={() => run(async () => { await api.decideIndependentVisit(user, visit.id, true); setMessage('Registro aceito. Sua decisão foi enviada ao técnico.'); })}>Aceitar registro de campo</button><button disabled={busy} className={button} onClick={() => run(async () => { await api.decideIndependentVisit(user, visit.id, false); setMessage('Registro contestado. O técnico verá sua decisão.'); })}>Contestar registro de campo</button></div></div>}
+        {!visit.independent && visit.status === 'pending' && visit.ownerUid === user.uid && <div className="space-y-2"><p className="text-xs text-slate-600">Ao aceitar, você aprova o relatório e os ajustes descritos. Se houver erro, recuse e peça uma nova visita ao técnico.</p><div className="flex flex-wrap gap-3"><button disabled={busy} className={button} onClick={() => run(async () => { await api.checkVisitApproval(database, visit); await api.decideVisit(visit.id, true); await api.applyAcceptedVisit(database, { ...visit, status: 'accepted' }); await onReload?.(); setMessage('Visita aceita. Ajustes aplicados ao cadastro e aguardando a sincronização da conta.'); })}>Aceitar relatório e ajustes</button><button disabled={busy} className={button} onClick={() => run(async () => { await api.decideVisit(visit.id, false); setMessage('Visita recusada. O cadastro não foi alterado.'); })}>Recusar relatório</button></div></div>}
+        {visit.technicianUid === user.uid && <button className={button} disabled={busy} onClick={() => run(async () => setPrivateView({ id: visit.id, notes: await api.readPrivateVisit(user.uid, visit.id, visit.independent) }))}>Ver minhas anotações privadas</button>}
         {privateView?.id === visit.id && <p className="text-sm whitespace-pre-wrap break-words border border-slate-200 rounded-xl p-4">{privateView.notes}</p>}
       </article>)}
     </div>

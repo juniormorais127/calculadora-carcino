@@ -21,7 +21,7 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(grant('client', true, 'stranger'));
     await assertSucceeds(grant('client'));
     await assertSucceeds(grant('admin', true, 'techB'));
-    await assertSucceeds(setDoc(doc(db('client'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }], updatedAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(doc(db('client'), 'fieldFarms', 'client'), { ownerUid: 'client', ownerEmail: 'client@example.com', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }], updatedAt: serverTimestamp() }));
     await assertSucceeds(getDoc(doc(db('techA'), 'fieldFarms', 'client')));
     await assertFails(getDoc(doc(db('stranger'), 'fieldFarms', 'client')));
     await assertFails(setDoc(doc(db('techA'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Alterado' }));
@@ -51,5 +51,19 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(setDoc(doc(a, 'technicalVisits', 'after-revoke'), visit()));
     await assertSucceeds(getDoc(doc(a, 'technicalVisits', 'visit1')));
     await assertFails(getDoc(doc(a, 'users', 'client', 'state', 'current')));
+    const inspection = { clientEmail: 'client@example.com', propertyName: 'Area sem licenca', technicianUid: 'techA', technicianEmail: 'techA@example.com', visitedOn: '2026-10-16', summary: 'Nao foi apresentado documento de licenciamento.', latitude: -11, longitude: -37, licenseStatus: 'unlicensed', licenseNumber: '', licenseRegisteredOn: '', licenseExpiresOn: '', ownerUid: null, status: 'pending', createdAt: serverTimestamp(), decidedAt: null };
+    const independent = writeBatch(a);
+    independent.set(doc(a, 'fieldInspectionReports', 'inspection1'), inspection);
+    independent.set(doc(a, 'technicalNotebooks', 'techA', 'inspections', 'inspection1'), { notes: 'Privado', createdAt: serverTimestamp() });
+    await assertSucceeds(independent.commit());
+    await assertSucceeds(getDocs(collection(db('admin'), 'fieldFarms')));
+    await assertFails(getDocs(collection(db('techB'), 'fieldFarms')));
+    await assertSucceeds(getDocs(query(collection(db('client'), 'fieldInspectionReports'), where('clientEmail', '==', 'client@example.com'))));
+    for (const actor of ['techA', 'admin', 'senior', 'client']) await assertSucceeds(getDoc(doc(db(actor), 'fieldInspectionReports', 'inspection1')));
+    for (const actor of ['techB', 'stranger']) await assertFails(getDoc(doc(db(actor), 'fieldInspectionReports', 'inspection1')));
+    for (const actor of ['client', 'admin', 'senior', 'techB']) await assertFails(getDoc(doc(db(actor), 'technicalNotebooks', 'techA', 'inspections', 'inspection1')));
+    await assertFails(updateDoc(doc(a, 'fieldInspectionReports', 'inspection1'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db('client'), 'fieldInspectionReports', 'inspection1'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(db('stranger'), 'fieldInspectionReports', 'spoofInspection'), { ...inspection, technicianUid: 'stranger', technicianEmail: 'stranger@example.com' }));
   });
 });

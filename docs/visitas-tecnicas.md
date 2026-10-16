@@ -52,3 +52,23 @@ npx --yes --package firebase-tools@15.34.0 firebase emulators:exec --only firest
 O teste inclui autorizações por cliente/administração, revogação, isolamento
 entre técnicos, bloqueio de autoaprovação, proteção das notas contra leitura
 por cliente/admin/Sênior, validação de campos e bloqueio dos dados de produção.
+
+## Registro independente e mapa administrativo
+
+O botão **Registrar visita e notificar produtor** permite ao técnico informar
+nome da propriedade, e-mail do produtor, data, coordenadas, licenciamento e relato
+sem autorização prévia. Isso não consulta nem modifica o cadastro do produtor.
+O aviso é disponibilizado dentro do site para a conta cujo e-mail foi informado.
+O produtor pode aceitar ou contestar. Anotações privadas continuam separadas.
+
+A aba administrativa **Mapa de propriedades** reúne os cadastros com coordenadas
+sincronizadas e os registros independentes com coordenadas. Verde indica
+licenciamento informado; vermelho, ausência informada; cinza, sem avaliação.
+A situação do último relatório é apresentada com seu estado de aceite. A ausência
+de informação não é tratada como ausência de licença. Registros de campo sem
+correspondência no cadastro aparecem identificados como não vinculados.
+
+O mapa mostra pontos, não limites de imóveis. Dados que ainda estão apenas no
+aparelho do cliente só aparecem após acesso ao site atualizado e sincronização.
+Os demais técnicos não recebem acesso ao mapa administrativo nem aos registros
+de colegas. O proprietário vê as notificações endereçadas à sua conta.

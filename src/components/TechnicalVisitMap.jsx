@@ -17,14 +17,14 @@ export default function TechnicalVisitMap({ visits }) {
     // technician's private history into the current technician's map.
     const seen = new Set();
     [...visits].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).forEach(visit => {
-      const key = `${visit.ownerUid}/${visit.pondId}/${visit.technicianUid}`;
+      const key = `${visit.ownerUid || visit.clientEmail}/${visit.independent ? visit.farmName : visit.pondId}/${visit.technicianUid}`;
       if (seen.has(key)) return;
       seen.add(key);
       if (!Number.isFinite(visit.latitude) || !Number.isFinite(visit.longitude)) return;
       const point = [visit.latitude, visit.longitude]; points.push(point);
       const color = visit.licenseStatus === 'licensed' ? '#047857' : visit.licenseStatus === 'unlicensed' ? '#be123c' : '#475569';
       const popup = document.createElement('div');
-      popup.textContent = `${visit.farmName} · ${visit.pondName} — ${LICENSE_LABELS[visit.licenseStatus]} — ${VISIT_LABELS[visit.status]} — Visita: ${visit.visitedOn}`;
+      popup.textContent = `${visit.farmName} · ${visit.pondName} — ${LICENSE_LABELS[visit.licenseStatus]} — ${VISIT_LABELS[visit.status] || 'Cadastro da propriedade'} — Visita: ${visit.visitedOn}`;
       L.circleMarker(point, { radius: 9, color, fillColor: color, fillOpacity: 0.8 }).addTo(map).bindPopup(popup);
     });
     if (points.length) map.fitBounds(points, { padding: [30, 30], maxZoom: 16 });

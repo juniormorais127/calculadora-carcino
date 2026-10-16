@@ -34,8 +34,8 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
     await database.viveiros.clear(); await database.configuracoes.clear();
     await database.viveiros.add({ id: 1, nome: 'Viveiro 1', latitude: -10.9, longitude: -37.1 });
     const grants = [{ id: 'client~tech', ownerUid: 'client', technicianUid: 'tech', active: true }];
-    const visits = [], listeners = [];
-    const emit = () => listeners.forEach(item => item.next((item.name === 'technicalVisits' ? visits : grants).filter(record => !item.field || record[item.field] === item.uid)));
+    const visits = [], inspections = [], listeners = [];
+    const emit = () => listeners.forEach(item => item.next((item.name === 'technicalVisits' ? visits : item.name === 'fieldInspectionReports' ? inspections : grants).filter(record => !item.field || record[item.field] === item.uid)));
     window.clearTechnicalGrants = () => { grants.splice(0); emit(); };
     const farm = { ownerUid: 'client', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }] };
     let privateNotes = '';
@@ -48,6 +48,8 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
         visits.push({ ...input, id: 'visit1', ownerUid: 'client', technicianUid: 'tech', technicianEmail: 'tecnico@example.com', farmName: farm.name, pondId: pond.id, pondName: pond.name, latitude: Number(input.latitude), longitude: Number(input.longitude), previousLatitude: pond.latitude, previousLongitude: pond.longitude, status: 'pending' }); emit();
       },
       async decideVisit(id, accepted) { visits.find(item => item.id === id).status = accepted ? 'accepted' : 'rejected'; emit(); },
+      async submitIndependentVisit(user, input) { inspections.push({ ...input, id: 'inspection1', technicianUid: user.uid, technicianEmail: user.email, latitude: Number(input.latitude), longitude: Number(input.longitude), status: 'pending' }); emit(); },
+      async decideIndependentVisit(user, id, accepted) { inspections.find(item => item.id === id).status = accepted ? 'accepted' : 'rejected'; emit(); },
       applyAcceptedVisit: realApi.applyAcceptedVisit, checkVisitApproval: realApi.checkVisitApproval,
       async readPrivateVisit() { return privateNotes; },
     };
@@ -97,4 +99,17 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await page.evaluate(() => { window.clearTechnicalGrants(); window.setFieldRole('field_technician'); });
   await expect(page.getByText(/Nenhuma propriedade disponível para visita/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Preencher visita', exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Registrar visita e notificar produtor' }).click();
+  await page.getByLabel('Nome da propriedade', { exact: true }).fill('Fazenda Sem Licenca');
+  await page.getByLabel('E-mail do produtor cadastrado no site').fill('client@example.com');
+  await page.getByLabel('Latitude', { exact: true }).fill('-11');
+  await page.getByLabel('Longitude', { exact: true }).fill('-37');
+  await page.getByLabel('Situação do licenciamento').selectOption('unlicensed');
+  await page.getByLabel(/Relatório para aprovação/).fill('Na visita nao foi apresentado documento de licenciamento.');
+  await page.getByRole('button', { name: 'Registrar visita e enviar para aceite' }).click();
+  await expect(page.getByText(/Registro de campo enviado ao cliente/)).toBeVisible();
+  await page.evaluate(() => window.setFieldRole('producer'));
+  await page.getByRole('button', { name: 'Aceitar registro de campo' }).click();
+  await expect(page.getByText(/Registro aceito/)).toBeVisible();
+  expect((await page.evaluate(() => window.readTechnicalPond())).latitude).toBe(-10.95);
 });

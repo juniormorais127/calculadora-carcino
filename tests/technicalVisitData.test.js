@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateTechnicalVisit, validateVisitReport } from '../src/services/technicalVisitData.js';
+import { validateTechnicalVisit, validateVisitReport, validateIndependentVisit } from '../src/services/technicalVisitData.js';
 const visit = { visitedOn: '2026-10-16', notes: 'Visita para conferir a localização do viveiro.', latitude: '-10,9', longitude: '-37.1' };
 test('visita exige relato e datas reais; licenciamento exige número e período completo', () => {
   const value = validateTechnicalVisit(visit);
@@ -19,4 +19,12 @@ test('relatorio compartilhado e anotacoes privadas sao campos separados', () => 
   assert.equal(result.license, null);
   assert.throws(() => validateVisitReport({ ...input, latitude: '', longitude: '' }));
   assert.throws(() => validateVisitReport({ ...input, licenseStatus: 'licensed' }));
+});
+test('registro independente exige contato e propriedade sem exigir autorizacao nem alterar cadastro', () => {
+  const data = { ...visit, summary: visit.notes, clientEmail: 'CLIENT@example.com', propertyName: 'Fazenda Teste', licenseStatus: 'unlicensed' };
+  const result = validateIndependentVisit(data);
+  assert.equal(result.clientEmail, 'client@example.com');
+  assert.equal(result.licenseStatus, 'unlicensed');
+  assert.throws(() => validateIndependentVisit({ ...data, clientEmail: '' }));
+  assert.throws(() => validateIndependentVisit({ ...data, propertyName: '' }));
 });
