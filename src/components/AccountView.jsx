@@ -6,6 +6,7 @@ import { useAccount } from './AccountProvider.jsx';
 import { db as guestDb, exportLocalDatabase, importLocalDatabase } from '../services/db.js';
 import { isEmptyData } from '../services/cloudData.js';
 import { isAdmin } from '../services/purchaseMetrics.js';
+import { premiumStatus } from '../services/accountPermissions.js';
 
 export function authMessage(error) {
   const messages = {
@@ -68,6 +69,8 @@ export default function AccountView({ onAdmin }) {
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
     {isAdmin(user) && onAdmin && <button className={`${button} bg-emerald-700 text-white`} onClick={onAdmin}>Painel administrativo</button>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
+    <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus(account.access) : 'Consultando…'}</strong></p>
+    {account.accessError && <p role="status" className="text-sm text-amber-800">{account.accessError}</p>}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="flex gap-2 items-center font-bold"><Cloud className="w-5 h-5 text-emerald-700" />Seus dados de produção</h3>
       <p className="text-sm text-slate-700">Cada login possui registros independentes. Ao entrar em outro aparelho, sua cópia da nuvem será recuperada. Sem internet, você pode continuar usando a cópia deste aparelho.</p>

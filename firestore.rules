@@ -3,6 +3,27 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function owner(uid) { return request.auth != null && request.auth.uid == uid; }
     function admin() { return request.auth != null && request.auth.uid == 'Dc2sEKML8Lc66cgj8VvSX4Uhhpk1'; }
+    match /accountProfiles/{uid} {
+      allow get: if owner(uid) || admin();
+      allow list: if admin();
+      function validProfile() {
+        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt'])
+          && request.resource.data.email is string && request.resource.data.email.size() <= 320
+          && request.resource.data.premium is bool
+          && (request.resource.data.expiresAt == null || request.resource.data.expiresAt is timestamp);
+      }
+      allow create: if owner(uid) && validProfile()
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time && request.resource.data.lastSeenAt == request.time
+        && request.resource.data.premium == false && request.resource.data.expiresAt == null
+        && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
+      allow update: if validProfile() && (
+        (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
+          && request.resource.data.email == request.auth.token.email && request.resource.data.lastSeenAt == request.time)
+        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt'])
+          && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time));
+      allow delete: if admin() || owner(uid);
+    }
     match /purchaseEvents/{eventId} {
       allow get: if admin() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
       allow list: if admin();

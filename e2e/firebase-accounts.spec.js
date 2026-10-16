@@ -19,6 +19,7 @@ async function createAccount() {
 }
 async function cleanup(account) {
   if (!account) return;
+  await request(`accountProfiles/${account.localId}`, account, 'DELETE');
   const manifest = await request(`users/${account.localId}/state/current`, account);
   if (manifest.ok) {
     const fields = (await manifest.json()).fields;
@@ -122,6 +123,14 @@ test('métricas gravam por conta, reenviam offline e negam leitura geral', async
     context = await browser.newContext();
     const page = await context.newPage();
     await login(page, a);
+    await expect.poll(async () => (await request(`accountProfiles/${a.localId}`, a)).status, { timeout: 15000 }).toBe(200);
+    expect((await request(`accountProfiles/${a.localId}`, b)).status).toBe(403);
+    expect((await request('accountProfiles?pageSize=10', a)).status).toBe(403);
+    const promote = await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=premium`, a, 'PATCH', { fields: { premium: { booleanValue: true } } });
+    expect(promote.status).toBe(403);
+    const profile = (await (await request(`accountProfiles/${a.localId}`, a)).json()).fields;
+    expect(profile.email.stringValue).toBe(a.email);
+    expect(profile.premium.booleanValue).toBe(false);
     const id = await page.evaluate(async () => {
       const { trackPurchase } = await import('/src/services/purchaseTracking.js');
       return trackPurchase('brand', { id: 'test-only', name: 'Métrica temporária', category: 'Ração' });

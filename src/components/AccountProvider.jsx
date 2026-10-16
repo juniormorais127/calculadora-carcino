@@ -7,6 +7,9 @@ import { createCloudSync } from '../services/cloudSync.js';
 import { remoteFor } from '../services/cloudRemote.js';
 import { serializeData } from '../services/cloudData.js';
 import { flushPurchaseEvents } from '../services/purchaseTracking.js';
+import { registerAccountProfile } from '../services/accountProfiles.js';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore } from '../services/firebase.js';
 
 export const AccountContext = createContext(null);
 const metadata = new Dexie('CarcinoGestaoCloudMetadata');
@@ -15,6 +18,21 @@ export const useAccount = () => useContext(AccountContext);
 export const useDatabase = () => useAccount()?.database || guestDb;
 
 function AccountSession({ user, children }) {
+  const [access, setAccess] = useState(null);
+  const [accessError, setAccessError] = useState('');
+  useEffect(() => {
+    if (!user) return;
+    let disposed = false;
+    const register = () => {
+      if (navigator.onLine) void registerAccountProfile(user).catch(() => { if (!disposed) setAccessError('Não foi possível atualizar o cadastro. Tente novamente com internet.'); });
+    };
+    register();
+    const unsubscribe = onSnapshot(doc(firestore, 'accountProfiles', user.uid), snapshot => {
+      setAccess(snapshot.exists() ? snapshot.data() : null); setAccessError('');
+    }, () => setAccessError('Não foi possível consultar sua permissão de acesso.'));
+    window.addEventListener('online', register);
+    return () => { disposed = true; unsubscribe(); window.removeEventListener('online', register); };
+  }, [user?.uid]);
   const database = useMemo(() => user ? getAccountDatabase(user.uid) : guestDb, [user?.uid]);
   const [syncStatus, setSyncStatus] = useState({ state: user ? 'syncing' : 'local', message: user ? 'Conectando sua conta…' : 'Modo local: dados somente neste navegador.' });
   const [dataVersion, setDataVersion] = useState(0);
@@ -71,7 +89,7 @@ function AccountSession({ user, children }) {
     };
   }, [database, user?.uid]);
   const value = {
-    user, database, syncStatus, dataVersion,
+    user, database, syncStatus, dataVersion, access, accessError,
     sync: () => controller.current?.sync(),
     useCloud: () => controller.current?.useCloud(),
     logout: () => signOut(auth),
