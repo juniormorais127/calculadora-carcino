@@ -100,7 +100,11 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await expect(page.getByText(/Nenhuma propriedade disponível para visita/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Preencher visita', exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Registrar visita e notificar produtor' }).click();
+  await expect(page.getByLabel('Nome da propriedade', { exact: true })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Registro de campo e notificação ao produtor' })).toBeInViewport();
   await page.getByLabel('Nome da propriedade', { exact: true }).fill('Fazenda Sem Licenca');
+  await page.getByRole('button', { name: 'Registrar visita e notificar produtor' }).click();
+  await expect(page.getByLabel('Nome da propriedade', { exact: true })).toHaveValue('Fazenda Sem Licenca');
   await page.getByLabel('E-mail do produtor cadastrado no site').fill('client@example.com');
   await page.getByLabel('Latitude', { exact: true }).fill('-11');
   await page.getByLabel('Longitude', { exact: true }).fill('-37');

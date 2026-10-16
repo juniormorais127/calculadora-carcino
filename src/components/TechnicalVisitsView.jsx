@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { firestore } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
@@ -29,6 +29,22 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
   const [correctLocation, setCorrectLocation] = useState(false), [licenseStatus, setLicenseStatus] = useState('unknown');
   const [licenseNumber, setLicenseNumber] = useState(''), [licenseRegisteredOn, setLicenseRegisteredOn] = useState(''), [licenseExpiresOn, setLicenseExpiresOn] = useState('');
   const [privateView, setPrivateView] = useState(null);
+  const formRef = useRef(null), feedbackRef = useRef(null);
+  function focusForm() {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    formRef.current?.querySelector('input:not([readonly]), select, textarea')?.focus({ preventScroll: true });
+  }
+  useEffect(() => {
+    if (!farm) return;
+    const frame = requestAnimationFrame(focusForm);
+    return () => cancelAnimationFrame(frame);
+  }, [farm]);
+  useEffect(() => {
+    if (error || message) {
+      feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      feedbackRef.current?.focus({ preventScroll: true });
+    }
+  }, [error, message]);
   useEffect(() => {
     setFarm(null); setPrivateView(null); setError(''); setVisits([]); setGrants([]); setInspections([]);
     const field = administrative ? null : tab === 'technician' ? 'technicianUid' : 'ownerUid';
@@ -99,9 +115,10 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
   return <section className="py-5 pb-20 space-y-6">
     <div className="space-y-2"><h2 className="text-2xl font-bold">{administrative ? 'Visitas e licenciamento' : 'Visitas técnicas'}</h2><p className="text-sm text-slate-600 max-w-2xl">O técnico propõe ajustes. O cliente revisa e aceita ou recusa o relatório. A localização só muda após o aceite.</p></div>
     {technician && <nav aria-label="Área de visitas" className="flex flex-wrap gap-2"><button className={button} aria-pressed={tab === 'client'} onClick={() => setTab('client')}>Minha propriedade</button><button className={button} aria-pressed={tab === 'technician'} onClick={() => setTab('technician')}>Meus atendimentos</button></nav>}
-    {error && <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-4">{error}</p>}
-    {message && <p role="status" className="text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-4">{message}</p>}
+    {error && <p ref={feedbackRef} tabIndex={-1} role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-4">{error}</p>}
+    {message && <p ref={feedbackRef} tabIndex={-1} role="status" className="text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-4">{message}</p>}
     {tab === 'technician' && <div className="space-y-3"><button className={`${button} bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy} onClick={() => {
+      if (independent) { focusForm(); return; }
       setPropertyName(''); setClientEmail(''); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown'); setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn(''); setPondId('');
       setFarm({ independent: true, ponds: [] }); setError(''); setMessage('');
     }}>Registrar visita e notificar produtor</button><p className="text-sm text-slate-600">Registre uma constatação de campo, como ausência de licenciamento, sem precisar de acesso ao cadastro do cliente. Ele será avisado no site pelo e-mail informado.</p></div>}
@@ -126,7 +143,7 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
         {tab === 'technician' ? item.active && <button className={button} disabled={busy} onClick={() => openFarm(item.ownerUid)}>Abrir propriedade</button> : item.active && <button className={button} disabled={busy} onClick={() => run(() => api.authorizeTechnician(item.ownerUid, item.technicianUid, user.uid, false))}>Revogar autorização</button>}
       </div>)}
     </div>
-    {farm && tab === 'technician' && <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 max-w-2xl">
+    {farm && tab === 'technician' && <form ref={formRef} onSubmit={submit} aria-busy={busy} className="scroll-mt-24 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 max-w-2xl">
       <h3 className="text-lg font-bold">{independent ? 'Registro de campo e notificação ao produtor' : `Registrar visita: ${farm.name}`}</h3>
       {independent ? <><label className="block text-sm font-semibold">Nome da propriedade<input required maxLength={200} value={propertyName} onChange={event => setPropertyName(event.target.value)} className={input} /></label><label className="block text-sm font-semibold">E-mail do produtor cadastrado no site<input type="email" required maxLength={320} value={clientEmail} onChange={event => setClientEmail(event.target.value)} className={input} /></label><p className="text-xs text-slate-600">Confira o e-mail com o produtor. O aviso aparecerá nessa conta, sem enviar e-mail externo. Nenhum dado privado do cadastro é consultado.</p></> : <><label className="block text-sm font-semibold">Nome da propriedade<input readOnly value={farm.name} className={`${input} bg-slate-50`} /></label><p className="text-xs text-slate-600">O nome vem do cadastro autorizado pelo cliente. O relatório será enviado para essa conta.</p><label className="block text-sm font-semibold">Viveiro<select required value={pondId} onChange={event => setPondId(event.target.value)} className={input}><option value="">Selecione</option>{farm.ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}</select></label></>}
       <label className="block text-sm font-semibold">Data da visita<input type="date" required value={visitedOn} onChange={event => setVisitedOn(event.target.value)} className={input} /></label>
@@ -137,7 +154,8 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       <label className="block text-sm font-semibold">Relatório para aprovação do cliente (obrigatório)<textarea required minLength={10} maxLength={10000} rows={4} value={summary} onChange={event => setSummary(event.target.value)} className={input} /></label>
       <label className="block text-sm font-semibold">Anotações privadas do técnico (opcional)<textarea maxLength={10000} rows={3} value={privateNotes} onChange={event => setPrivateNotes(event.target.value)} className={input} /></label>
       <p className="text-xs text-slate-600">Só você acessa as anotações privadas. O relatório acima, as coordenadas e o licenciamento serão enviados ao cliente para revisão. Administradores e Sênior podem consultar o relatório e o mapa.</p>
-      <div className="flex flex-wrap gap-3"><button disabled={busy} className={button}>Registrar visita e enviar para aceite</button><button type="button" disabled={busy} onClick={() => setFarm(null)} className={button}>Cancelar visita</button></div>
+      {busy && <p role="status" className="text-sm text-slate-700">Enviando o registro da visita. Aguarde a confirmação.</p>}
+      <div className="flex flex-wrap gap-3"><button disabled={busy} className={button}>{busy ? 'Enviando visita…' : 'Registrar visita e enviar para aceite'}</button><button type="button" disabled={busy} onClick={() => setFarm(null)} className={button}>Cancelar visita</button></div>
     </form>}
     {(administrative || tab === 'technician') && <TechnicalVisitMap visits={allVisits} />}
     <div className="space-y-5"><h3 className="text-lg font-bold">{administrative ? 'Histórico de visitas' : tab === 'technician' ? 'Propriedades visitadas e alterações propostas' : 'Relatórios recebidos e notificações'}</h3>
