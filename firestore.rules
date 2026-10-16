@@ -2,13 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function owner(uid) { return request.auth != null && request.auth.uid == uid; }
-    function admin() { return request.auth != null && request.auth.uid == 'Dc2sEKML8Lc66cgj8VvSX4Uhhpk1'; }
+    function primarySenior(uid) { return uid == 'Dc2sEKML8Lc66cgj8VvSX4Uhhpk1'; }
+    function profileRole(uid) {
+      return exists(/databases/$(database)/documents/accountProfiles/$(uid))
+        ? get(/databases/$(database)/documents/accountProfiles/$(uid)).data.get('role', 'producer') : 'producer';
+    }
+    function senior() { return request.auth != null && (primarySenior(request.auth.uid) || profileRole(request.auth.uid) == 'senior'); }
+    function admin() { return request.auth != null && (senior() || profileRole(request.auth.uid) == 'administrator'); }
     match /accountProfiles/{uid} {
       allow get: if owner(uid) || admin();
       allow list: if admin();
       function validProfile() {
         return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
-          && request.resource.data.get('role', 'producer') in ['producer', 'field_technician']
+          && request.resource.data.get('role', 'producer') in ['producer', 'field_technician', 'administrator', 'senior']
+          && (!primarySenior(uid) || request.resource.data.get('role', 'producer') == 'senior')
           && request.resource.data.email is string && request.resource.data.email.size() <= 320
           && request.resource.data.premium is bool
           && (request.resource.data.expiresAt == null || request.resource.data.expiresAt is timestamp);
@@ -17,20 +24,25 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time && request.resource.data.lastSeenAt == request.time
         && request.resource.data.premium == false && request.resource.data.expiresAt == null
-        && request.resource.data.get('role', 'producer') == 'producer'
+        && (request.resource.data.get('role', 'producer') == 'producer' || (primarySenior(uid) && request.resource.data.role == 'senior'))
         && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
       allow update: if validProfile() && (
         (owner(uid) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
           || (!('role' in resource.data) && request.resource.data.role == 'producer'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt', 'role']))
+          || (primarySenior(uid) && request.resource.data.role == 'senior'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt', 'role'])))
           && request.resource.data.email == request.auth.token.email && request.resource.data.lastSeenAt == request.time)
-        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
+        || ((senior() || (admin() && !primarySenior(uid)
+              && resource.data.get('role', 'producer') in ['producer', 'field_technician']
+              && request.resource.data.role in ['producer', 'field_technician']))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
           && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time));
-      allow delete: if admin() || owner(uid);
+      allow delete: if owner(uid) || (senior() && !primarySenior(uid));
     }
     match /purchaseEvents/{eventId} {
-      allow get: if admin() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
-      allow list: if admin();
+      allow get: if senior() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
+      allow list: if senior();
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['uid', 'kind', 'targetId', 'targetName', 'category', 'occurredAt', 'receivedAt'])
         && request.resource.data.uid == request.auth.uid
@@ -41,7 +53,7 @@ service cloud.firestore {
         && request.resource.data.occurredAt is int && request.resource.data.occurredAt > 0
         && request.resource.data.occurredAt <= request.time.toMillis() + 300000
         && request.resource.data.receivedAt == request.time;
-      allow delete: if admin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow delete: if senior() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
     match /users/{uid}/state/current {
       allow read: if owner(uid);

@@ -1,9 +1,9 @@
 # Painel de interesse em compras
 
 Acesso: portal `/calculadora-carcino/admin/` → Interesse em compras.
-Também há o atalho Minha conta → Abrir administração. Restrito ao UID administrativo
-`Dc2sEKML8Lc66cgj8VvSX4Uhhpk1`, também validado pelas regras Firestore.
-Trocar o administrador exige atualizar `purchaseMetrics.js` e `firestore.rules`.
+Também há o atalho Minha conta → Abrir administração. Restrito a Sênior, com UID
+principal `Dc2sEKML8Lc66cgj8VvSX4Uhhpk1`, validado pelas regras Firestore.
+Administradores delegados acessam somente a gestão de perfis inferiores.
 Nenhuma permissão administrativa aos dados de produção foi acrescentada.
 
 Eventos medidos a partir da publicação: abertura de Onde Comprar (`view`), filtro
@@ -19,7 +19,7 @@ evitam duplicatas de uploads cujo retorno se perdeu. Navegador fechado ou dados
 locais apagados antes da sincronização podem perder eventos ainda na fila.
 
 Usuários autenticados criam somente eventos próprios, consultam documentos
-próprios por ID e podem apagá-los; não listam eventos. Somente o administrador
+próprios por ID e podem apagá-los; não listam eventos. Somente Sênior
 lista os eventos gerais. Eventos são sinais enviados pelo cliente, não auditoria
 de transações: usuários podem repetir/fabricar cliques; não usar para comprovar
 vendas nem cobrar comissões automaticamente. Não há rastreamento de identidade

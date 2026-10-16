@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 import { firestore } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
-import { EVENT_LABELS, isAdmin, periodBounds, summarizeEvents } from '../services/purchaseMetrics.js';
+import { EVENT_LABELS, periodBounds, summarizeEvents } from '../services/purchaseMetrics.js';
+import { isSenior } from '../services/accountPermissions.js';
 
 const localDay = millis => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(millis));
 const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
@@ -17,7 +18,7 @@ function exportCsv(rows) {
 }
 
 export default function AdminPurchasesView({ readPage = getDocs }) {
-  const { user } = useAccount();
+  const { user, access } = useAccount();
   const [from, setFrom] = useState(localDay(Date.now() - 29 * 86400000));
   const [to, setTo] = useState(localDay(Date.now()));
   const [range, setRange] = useState({ from, to });
@@ -30,7 +31,7 @@ export default function AdminPurchasesView({ readPage = getDocs }) {
   const [category, setCategory] = useState('Todas');
   const [kind, setKind] = useState('Todos');
   const generation = useRef(0);
-  const allowed = isAdmin(user);
+  const allowed = isSenior(user, access);
   async function fetchPage(append, token) {
     setBusy(true); setError('');
     try {

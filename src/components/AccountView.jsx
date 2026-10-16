@@ -67,10 +67,10 @@ export default function AccountView() {
   };
   if (user) return <section className="max-w-2xl mx-auto py-5 space-y-5 pb-20">
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
-    {isAdmin(user) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}admin/`}>Abrir administração</a>}
+    {isAdmin(user, account.access) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}admin/`}>Abrir administração</a>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
-    <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus(account.access) : 'Consultando…'}</strong></p>
-    {account.access && <p className="text-sm text-slate-700">Perfil: <strong>{ACCOUNT_ROLES[accountRole(account.access)]}</strong></p>}
+    <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus({ ...account.access, role: accountRole(account.access, user.uid) }) : 'Consultando…'}</strong></p>
+    {account.access && <p className="text-sm text-slate-700">Perfil: <strong>{ACCOUNT_ROLES[accountRole(account.access, user.uid)]}</strong></p>}
     {account.accessError && <p role="status" className="text-sm text-amber-800">{account.accessError}</p>}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="flex gap-2 items-center font-bold"><Cloud className="w-5 h-5 text-emerald-700" />Seus dados de produção</h3>

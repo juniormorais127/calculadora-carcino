@@ -9,7 +9,7 @@ import AdminDashboard from './AdminDashboard.jsx';
 
 const button = 'min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50';
 export default function AdminPortal() {
-  const { user, logout } = useAccount();
+  const { user, access, accessLoading, logout } = useAccount();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -41,7 +41,7 @@ export default function AdminPortal() {
           <a className="min-h-11 inline-flex items-center text-sm font-semibold text-emerald-800 underline underline-offset-4" href={`${import.meta.env.BASE_URL}?recuperar=1`}>Esqueci minha senha</a>
         </form>
         <p className="text-xs text-slate-600">O cadastro de uma conta comum não concede acesso a este painel.</p>
-      </section> : isAdmin(user) ? <><p className="text-xs text-slate-600 break-all">Conectado como {user.email}</p><AdminDashboard /></> : <section className="max-w-lg mx-auto py-10 space-y-4"><h2 className="text-2xl font-bold">Acesso restrito</h2><p role="alert" className="text-sm text-slate-700">A conta {user.email} não possui permissão administrativa. Saia e entre com sua conta autorizada.</p><button disabled={busy} className={`${button} border-slate-300 hover:bg-slate-100`} onClick={exit}>Entrar com outra conta</button></section>}
+      </section> : accessLoading ? <p role="status" className="py-8 text-sm text-slate-600">Consultando seu perfil de acesso...</p> : isAdmin(user, access) ? <><p className="text-xs text-slate-600 break-all">Conectado como {user.email}</p><AdminDashboard /></> : <section className="max-w-lg mx-auto py-10 space-y-4"><h2 className="text-2xl font-bold">Acesso restrito</h2><p role="alert" className="text-sm text-slate-700">A conta {user.email} não possui permissão administrativa. Saia e entre com sua conta autorizada.</p><button disabled={busy} className={`${button} border-slate-300 hover:bg-slate-100`} onClick={exit}>Entrar com outra conta</button></section>}
     </main>
   </div>;
 }

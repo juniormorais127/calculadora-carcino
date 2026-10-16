@@ -8,13 +8,20 @@ compartilhados com o site no mesmo domínio. Não existe uma caixa postal
 `admin@juniormorais127.github.io`: endereço de e-mail próprio exige domínio
 e serviço de e-mail. A conta administrativa autorizada permanece a existente.
 
-No portal: Usuários e permissões. Apenas o UID
-administrativo já configurado pode listar e-mails e editar Premium. Uma permissão
-Premium nunca promove alguém a administrador.
+No portal: Usuários e permissões. Sênior e Administrador podem listar e-mails.
+Premium nunca promove alguém a administrador; o cargo é alterado separadamente.
+
+Hierarquia: `senior` tem acesso completo e gerencia os demais cargos, inclusive
+administradores. `administrator` altera apenas perfis cujo cargo atual e novo
+cargo estejam em Produtor/Técnico de campo; não altera superiores ou a própria
+conta administrativa e não concede cargos administrativos. As regras validam o
+perfil do solicitante no servidor. O UID principal `Dc2sEKML8Lc66cgj8VvSX4Uhhpk1`
+é sempre Sênior e não pode ser rebaixado pelo aplicativo. Outros Sêniores podem
+ser concedidos/revogados por Sênior. Apenas Sênior consulta o BI de compras.
 
 Perfil profissional separado da assinatura: `producer` (Produtor) e
 `field_technician` (Técnico de campo). Novas contas começam como Produtor.
-Só o administrador altera o perfil; usuários antigos sem esse campo são
+Só a gestão autorizada altera o perfil; usuários antigos sem esse campo são
 tratados como Produtor e podem registrar esse padrão no próximo acesso, sem
 alterar Premium ou validade existentes. O painel permite filtrar por perfil.
 Ser Técnico de campo não concede Premium nem dados de outros produtores.
@@ -32,8 +39,9 @@ SDK ou chave de serviço no navegador. Para incluir contas antigas sem novo
 login seria necessário importar seus perfis de forma administrativa ou adicionar
 um backend de administração. A lista não mostra sessões/acessos em tempo real.
 
-Regras: dono cria exclusivamente perfil gratuito e só altera e-mail/último
-acesso; administrador altera somente Premium/validade/autor/data. Outros usuários
+Regras: dono cria exclusivamente perfil gratuito de Produtor (exceto o UID
+principal Sênior) e só altera e-mail/último acesso, com migrações restritas de
+perfil legado. Gestão autorizada altera cargo/Premium/validade/autor/data. Outros usuários
 não consultam esse perfil. Senhas e dados de produção não são expostos.
 
 Validade opcional é fim do dia em Fortaleza. A revogação remove Premium e a

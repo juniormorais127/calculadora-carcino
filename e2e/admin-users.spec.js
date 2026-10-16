@@ -39,3 +39,25 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByLabel('Filtrar por perfil').selectOption('producer');
   await expect(page.getByText('produtor@example.com', { exact: true })).toBeHidden();
 });
+
+test('administrador só pode editar produtores e técnicos', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('heading', { name: 'Entrar na minha conta' }).waitFor();
+  await page.evaluate(async () => {
+    const React = (await import('/node_modules/.vite/deps/react.js')).default;
+    const { createRoot } = (await import('/node_modules/.vite/deps/react-dom_client.js')).default;
+    const { AccountContext } = await import('/src/components/AccountProvider.jsx');
+    const { default: Panel } = await import('/src/components/AdminUsersView.jsx');
+    document.getElementById('root').style.display = 'none';
+    const host = document.createElement('div'); host.className = 'max-w-6xl mx-auto px-4'; document.body.appendChild(host);
+    const loadUsers = async () => ({ users: ['producer', 'field_technician', 'administrator', 'senior'].map(role => ({ uid: role, email: `${role}@example.com`, role, premium: false })), more: false });
+    createRoot(host).render(React.createElement(AccountContext.Provider, { value: { user: { uid: 'delegated' }, access: { role: 'administrator' } } }, React.createElement(Panel, { loadUsers })));
+  });
+  await expect(page.getByRole('button', { name: 'Editar permissões de administrator@example.com' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Editar permissões de senior@example.com' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Editar permissões de field_technician@example.com' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Editar permissões de producer@example.com' }).click();
+  await expect(page.locator('#account-role option')).toHaveCount(2);
+  await expect(page.locator('#account-role option[value=administrator]')).toHaveCount(0);
+  await expect(page.locator('#account-role option[value=senior]')).toHaveCount(0);
+});

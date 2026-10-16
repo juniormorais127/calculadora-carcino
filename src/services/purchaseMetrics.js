@@ -1,5 +1,6 @@
-export const ADMIN_UID = 'Dc2sEKML8Lc66cgj8VvSX4Uhhpk1';
-export const isAdmin = user => user?.uid === ADMIN_UID;
+import { SENIOR_UID, accountRole } from './accountPermissions.js';
+export const ADMIN_UID = SENIOR_UID;
+export const isAdmin = (user, profile) => !!user && ['senior', 'administrator'].includes(accountRole(profile, user.uid));
 export const EVENT_LABELS = { view: 'Acesso à aba', brand: 'Interesse em marca', whatsapp: 'WhatsApp', phone: 'Ligação', product: 'Interesse em produto' };
 export function summarizeEvents(events) {
   const views = events.filter(e => e.kind === 'view');

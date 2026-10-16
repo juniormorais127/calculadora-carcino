@@ -19,6 +19,7 @@ export const useDatabase = () => useAccount()?.database || guestDb;
 
 function AccountSession({ user, children, syncProduction }) {
   const [access, setAccess] = useState(null);
+  const [accessLoading, setAccessLoading] = useState(!!user);
   const [accessError, setAccessError] = useState('');
   useEffect(() => {
     if (!user) return;
@@ -28,8 +29,8 @@ function AccountSession({ user, children, syncProduction }) {
     };
     register();
     const unsubscribe = onSnapshot(doc(firestore, 'accountProfiles', user.uid), snapshot => {
-      setAccess(snapshot.exists() ? snapshot.data() : null); setAccessError('');
-    }, () => setAccessError('Não foi possível consultar sua permissão de acesso.'));
+      setAccess(snapshot.exists() ? snapshot.data() : null); setAccessError(''); setAccessLoading(false);
+    }, () => { setAccessError('Não foi possível consultar sua permissão de acesso.'); setAccessLoading(false); });
     window.addEventListener('online', register);
     return () => { disposed = true; unsubscribe(); window.removeEventListener('online', register); };
   }, [user?.uid]);
@@ -89,7 +90,7 @@ function AccountSession({ user, children, syncProduction }) {
     };
   }, [database, user?.uid, syncProduction]);
   const value = {
-    user, database, syncStatus, dataVersion, access, accessError,
+    user, database, syncStatus, dataVersion, access, accessError, accessLoading,
     sync: () => controller.current?.sync(),
     useCloud: () => controller.current?.useCloud(),
     logout: () => signOut(auth),
