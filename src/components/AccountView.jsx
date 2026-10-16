@@ -8,7 +8,8 @@ import { isEmptyData } from '../services/cloudData.js';
 import { isAdmin } from '../services/purchaseMetrics.js';
 import { premiumStatus, accountRole, ACCOUNT_ROLES } from '../services/accountPermissions.js';
 import PhoneEditor from './PhoneEditor.jsx';
-import { saveAccountPhone } from '../services/accountProfiles.js';
+import { saveAccountPhone, saveAccountName } from '../services/accountProfiles.js';
+import AccountNameEditor from './AccountNameEditor.jsx';
 import TechnicianIdentityEditor from './TechnicianIdentityEditor.jsx';
 import { saveTechnicianIdentity } from '../services/technicalVisits.js';
 
@@ -71,13 +72,14 @@ export default function AccountView({ onVisits }) {
   };
   if (user) return <section className="max-w-2xl mx-auto py-5 space-y-5 pb-20">
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
+    <AccountNameEditor value={account.access?.fullName} onSave={name => saveAccountName(user, name)} />
     {onVisits && <button className={`${button} border border-emerald-700 text-emerald-800`} onClick={onVisits}>Visitas técnicas e autorizações</button>}
     {isAdmin(user, account.access) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}admin/`}>Abrir administração</a>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
     <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus({ ...account.access, role: accountRole(account.access, user.uid) }) : 'Consultando…'}</strong></p>
     {account.access && <p className="text-sm text-slate-700">Perfil: <strong>{ACCOUNT_ROLES[accountRole(account.access, user.uid)]}</strong></p>}
     {account.accessError && <p role="status" className="text-sm text-amber-800">{account.accessError}</p>}
-    {accountRole(account.access, user.uid) === 'field_technician' && <TechnicianIdentityEditor value={account.technicianIdentity} loading={account.identityLoading} loadError={account.identityError} onSave={value => saveTechnicianIdentity(user, value)} />}
+    {accountRole(account.access, user.uid) === 'field_technician' && <TechnicianIdentityEditor accountName={account.access?.fullName} value={account.technicianIdentity} loading={account.identityLoading} loadError={account.identityError} onSave={value => saveTechnicianIdentity(user, value)} />}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="font-bold">Meu contato</h3>
       <PhoneEditor phone={account.access?.phone} onSave={phone => saveAccountPhone(user, phone)} />

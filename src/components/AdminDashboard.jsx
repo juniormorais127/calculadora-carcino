@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminUsersView from './AdminUsersView.jsx';
 import AdminPurchasesView from './AdminPurchasesView.jsx';
 import { useAccount } from './AccountProvider.jsx';
@@ -6,11 +6,16 @@ import { isAdmin } from '../services/purchaseMetrics.js';
 import { isSenior } from '../services/accountPermissions.js';
 import TechnicalVisitsView from './TechnicalVisitsView.jsx';
 import AdminPropertyMap from './AdminPropertyMap.jsx';
+import AccountNameEditor from './AccountNameEditor.jsx';
+import { saveAccountName } from '../services/accountProfiles.js';
+import { syncPropertyDirectory } from '../services/technicalVisits.js';
 
 export default function AdminDashboard() {
   const { user, access } = useAccount();
   const [tab, setTab] = useState('users');
+  useEffect(() => { if (isAdmin(user, access) && access?.fullName) void syncPropertyDirectory().catch(() => {}); }, [user?.uid, access?.role, access?.fullName]);
   if (!isAdmin(user, access)) return <p role="alert">Área restrita à administração.</p>;
+  if (!access?.fullName) return <section className="max-w-lg py-5 space-y-4"><h2 className="text-xl font-bold">Complete o nome da sua conta</h2><AccountNameEditor onSave={name => saveAccountName(user, name)} /></section>;
   const tabs = isSenior(user, access) ? [['users', 'Usuários e permissões'], ['purchases', 'Interesse em compras']] : [['users', 'Usuários e permissões']];
   tabs.push(['visits', 'Visitas e licenciamento']);
   tabs.push(['map', 'Mapa de propriedades']);

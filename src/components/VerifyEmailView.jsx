@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getIdToken, reload, sendEmailVerification } from 'firebase/auth';
 import { useAccount } from './AccountProvider.jsx';
 import { authMessage } from './AccountView.jsx';
-import { saveAccountPhone } from '../services/accountProfiles.js';
+import { saveAccountPhone, saveAccountName } from '../services/accountProfiles.js';
+import AccountNameEditor from './AccountNameEditor.jsx';
 import PhoneEditor from './PhoneEditor.jsx';
 import { publicSiteUrl } from '../services/firebase.js';
 
@@ -40,9 +41,10 @@ export default function VerifyEmailView() {
     finally { setBusy(false); }
   }
   return <section className="py-6 space-y-5">
-    <div className="space-y-2"><h2 className="text-2xl font-bold">Complete a verificação da conta</h2><p className="text-sm text-slate-700">Para acessar os serviços de produção, confirme seu e-mail e informe seu celular com DDD.</p></div>
+    <div className="space-y-2"><h2 className="text-2xl font-bold">Complete a verificação da conta</h2><p className="text-sm text-slate-700">Para acessar os serviços, confirme seu e-mail e informe seu nome completo e celular com DDD.</p></div>
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
       <p className="text-sm text-slate-700 break-all">Conta: <strong>{user.email}</strong></p>
+      {!accessLoading && <AccountNameEditor value={access?.fullName} onSave={name => saveAccountName(user, name)} />}
       {error && <p role="alert" className="text-sm text-rose-800">{error}</p>}
       {message && <p role="status" className="text-sm text-emerald-900">{message}</p>}
       {accessLoading ? <p role="status" className="text-sm text-slate-700">Consultando cadastro...</p> : <>

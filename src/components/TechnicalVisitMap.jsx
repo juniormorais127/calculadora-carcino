@@ -17,7 +17,7 @@ export default function TechnicalVisitMap({ visits }) {
     // technician's private history into the current technician's map.
     const seen = new Set();
     [...visits].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).forEach(visit => {
-      const key = `${visit.ownerUid || visit.clientEmail}/${visit.independent ? visit.farmName : visit.pondId}/${visit.technicianUid}`;
+      const key = `${visit.recipientUid || visit.ownerUid || visit.clientEmail}/${visit.independent ? visit.farmName : visit.pondId}/${visit.technicianUid}`;
       if (seen.has(key)) return;
       seen.add(key);
       if (!Number.isFinite(visit.latitude) || !Number.isFinite(visit.longitude)) return;

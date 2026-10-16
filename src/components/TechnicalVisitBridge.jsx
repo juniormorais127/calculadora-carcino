@@ -7,11 +7,13 @@ export default function TechnicalVisitBridge({ onOpen, onReload }) {
   const { user, database, syncStatus } = useAccount();
   const [visits, setVisits] = useState([]), [error, setError] = useState('');
   const [inspections, setInspections] = useState([]);
+  const [directInspections, setDirectInspections] = useState([]);
   const lastProjection = useRef('');
   const callbacks = useRef({ onReload }); callbacks.current = { onReload };
   const synced = syncStatus.state === 'synced';
   useEffect(() => watchFieldRecords('technicalVisits', 'ownerUid', user.uid, setVisits, () => setError('Não foi possível consultar os avisos de visitas técnicas.')), [user.uid]);
   useEffect(() => watchFieldRecords('fieldInspectionReports', 'clientEmail', user.email.toLowerCase(), setInspections, () => setError('Não foi possível consultar as notificações de campo.')), [user.email]);
+  useEffect(() => watchFieldRecords('fieldInspectionReports', 'recipientUid', user.uid, setDirectInspections, () => setError('Não foi possível consultar os avisos da propriedade.')), [user.uid]);
   useEffect(() => {
     if (!synced) return;
     let stopped = false, timer;
@@ -43,6 +45,6 @@ export default function TechnicalVisitBridge({ onOpen, onReload }) {
     })();
     return () => { stopped = true; };
   }, [database, visits, synced]);
-  const pending = [...visits, ...inspections].filter(visit => visit.status === 'pending').length;
+  const pending = visits.filter(visit => visit.status === 'pending').length + [...new Map([...inspections, ...directInspections].map(item => [item.id, item])).values()].filter(visit => visit.status === 'pending').length;
   return <>{pending > 0 && <div role="status" className="my-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950"><span>{pending} visita(s) técnica(s) aguardando seu aceite. Confira o relatório e os ajustes propostos.</span><button className="min-h-11 font-semibold underline underline-offset-4" onClick={onOpen}>Revisar visitas</button></div>}{error && <p role="alert" className="my-3 text-sm text-rose-800">{error}</p>}</>;
 }

@@ -1,7 +1,7 @@
 import { describe, test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, updateDoc, collection, query, where, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, updateDoc, collection, query, where, orderBy, startAt, endAt, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, () => {
   let env;
@@ -11,7 +11,11 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
   before(async () => {
     env = await initializeTestEnvironment({ projectId: 'demo-carcino', firestore: { rules: readFileSync('firestore.rules', 'utf8') } });
     await env.withSecurityRulesDisabled(async context => {
-      for (const [uid, role] of [['client', 'producer'], ['techA', 'field_technician'], ['techB', 'field_technician'], ['admin', 'administrator'], ['senior', 'senior'], ['stranger', 'producer']]) await setDoc(doc(context.firestore(), 'accountProfiles', uid), { role });
+      for (const [uid, role] of [['client', 'producer'], ['techA', 'field_technician'], ['techB', 'field_technician'], ['admin', 'administrator'], ['senior', 'senior'], ['stranger', 'producer'], ['nameOwner', 'producer']]) {
+        const fullName = uid === 'techA' ? 'Ana Maria Silva' : `Nome ${uid}`;
+        await setDoc(doc(context.firestore(), 'accountProfiles', uid), { role, email: `${uid}@example.com`, createdAt: serverTimestamp(), lastSeenAt: serverTimestamp(), premium: false, expiresAt: null, changedBy: null, changedAt: null, ...(uid !== 'nameOwner' ? { fullName } : {}) });
+        if (uid !== 'nameOwner') await setDoc(doc(context.firestore(), 'accountNames', uid), { fullName, createdAt: serverTimestamp() });
+      }
     });
   });
   after(async () => { await env?.cleanup(); });
@@ -27,7 +31,7 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(setDoc(doc(db('techA'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Alterado' }));
     const a = db('techA');
     await assertFails(setDoc(doc(a, 'technicalVisits', 'missing-identity'), visit()));
-    const identity = { fullName: 'Ana Maria Silva', creaNumber: 'CREA-SE 123456', photoDataUrl: 'data:image/png;base64,YWJj', updatedAt: serverTimestamp() };
+    const identity = { fullName: 'Ana Maria Silva', creaNumber: 'CREA-SE 123456', photoDataUrl: 'data:image/png;base64,YWJj', employmentType: 'organization', organizationName: 'Senar', updatedAt: serverTimestamp() };
     await assertFails(setDoc(doc(a, 'technicianIdentities', 'techA'), { ...identity, fullName: 'Ana' }));
     await assertSucceeds(setDoc(doc(a, 'technicianIdentities', 'techA'), identity));
     await assertSucceeds(getDoc(doc(db('client'), 'technicianIdentities', 'techA')));
@@ -72,5 +76,26 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertSucceeds(updateDoc(doc(db('client'), 'fieldInspectionReports', 'inspection1'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
     await assertFails(setDoc(doc(db('stranger'), 'fieldInspectionReports', 'spoofInspection'), { ...inspection, technicianUid: 'stranger', technicianEmail: 'stranger@example.com' }));
     await assertFails(setDoc(doc(db('techB'), 'fieldInspectionReports', 'missingIdentityInspection'), { ...inspection, technicianUid: 'techB', technicianEmail: 'techB@example.com' }));
+    await assertSucceeds(setDoc(doc(db('client'), 'propertyDirectory', 'client'), { ownerUid: 'client', name: 'Fazenda Teste', nameSearch: 'fazenda teste', updatedAt: serverTimestamp() }));
+    await assertSucceeds(getDocs(query(collection(a, 'propertyDirectory'), orderBy('nameSearch'), startAt('faz'), endAt('faz\uf8ff'), limit(8))));
+    await assertFails(getDocs(collection(a, 'propertyDirectory')));
+    await assertFails(getDocs(query(collection(db('stranger'), 'propertyDirectory'), limit(8))));
+    const linked = { ...inspection, clientEmail: '', recipientUid: 'client', propertyName: 'Fazenda Teste' };
+    await assertSucceeds(setDoc(doc(a, 'fieldInspectionReports', 'linked'), linked));
+    await assertSucceeds(getDocs(query(collection(db('client'), 'fieldInspectionReports'), where('recipientUid', '==', 'client'))));
+    await assertSucceeds(updateDoc(doc(db('client'), 'fieldInspectionReports', 'linked'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(db('stranger'), 'fieldInspectionReports', 'linked')));
+    await assertFails(setDoc(doc(a, 'fieldInspectionReports', 'wrongProperty'), { ...linked, propertyName: 'Outra Propriedade' }));
+    await assertSucceeds(setDoc(doc(a, 'fieldInspectionReports', 'unlinked'), { ...inspection, clientEmail: '', recipientUid: null }));
+    await assertFails(getDoc(doc(db('client'), 'fieldInspectionReports', 'unlinked')));
+    const nameDb = db('nameOwner');
+    const names = writeBatch(nameDb);
+    names.set(doc(nameDb, 'accountNames', 'nameOwner'), { fullName: 'Nome Definitivo', createdAt: serverTimestamp() });
+    names.update(doc(nameDb, 'accountProfiles', 'nameOwner'), { fullName: 'Nome Definitivo' });
+    await assertSucceeds(names.commit());
+    await assertFails(updateDoc(doc(db('nameOwner'), 'accountProfiles', 'nameOwner'), { fullName: 'Outro Nome' }));
+    await assertFails(updateDoc(doc(db('admin'), 'accountProfiles', 'nameOwner'), { fullName: 'Outro Nome' }));
+    await assertFails(updateDoc(doc(db('nameOwner'), 'accountNames', 'nameOwner'), { fullName: 'Outro Nome' }));
+    await assertSucceeds(setDoc(doc(db('techB'), 'technicianIdentities', 'techB'), { ...identity, fullName: 'Nome techB', creaNumber: '', employmentType: 'private', organizationName: '' }));
   });
 });

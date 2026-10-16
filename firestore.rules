@@ -14,7 +14,8 @@ service cloud.firestore {
       allow get: if owner(uid) || admin();
       allow list: if admin();
       function validProfile() {
-        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role', 'phone'])
+        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role', 'phone', 'fullName'])
+          && (!('fullName' in request.resource.data) || request.resource.data.fullName == getAfter(/databases/$(database)/documents/accountNames/$(uid)).data.fullName)
           && request.resource.data.get('role', 'producer') in ['producer', 'field_technician', 'administrator', 'senior']
           && (!primarySenior(uid) || request.resource.data.get('role', 'producer') == 'senior')
           && request.resource.data.email is string && request.resource.data.email.size() <= 320
@@ -29,6 +30,8 @@ service cloud.firestore {
         && (request.resource.data.get('role', 'producer') == 'producer' || (primarySenior(uid) && request.resource.data.role == 'senior'))
         && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
       allow update: if validProfile() && (
+        (owner(uid) && !('fullName' in resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName']))
+        ||
         (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phone']) && request.resource.data.phone is string)
         || ((senior() || (admin() && !primarySenior(uid) && resource.data.get('role', 'producer') in ['producer', 'field_technician']))
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phone', 'changedBy', 'changedAt'])
@@ -47,6 +50,12 @@ service cloud.firestore {
           && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time));
       allow delete: if owner(uid) || (senior() && !primarySenior(uid));
     }
+    match /accountNames/{uid} {
+      allow get: if owner(uid) || admin();
+      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['fullName', 'createdAt'])
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')
+        && request.resource.data.createdAt == request.time;
+    }
     match /purchaseEvents/{eventId} {
       allow get: if senior() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
       allow list: if senior();
@@ -63,14 +72,19 @@ service cloud.firestore {
       allow delete: if senior() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
     function fieldTech() { return request.auth != null && request.auth.token.email_verified == true && profileRole(request.auth.uid) == 'field_technician'; }
-    function identifiedFieldTech() { return fieldTech() && exists(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid)); }
+    function identifiedFieldTech() { return fieldTech() && exists(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid))
+      && get(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid)).data.get('employmentType', '') in ['private', 'organization']
+      && get(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid)).data.fullName == get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.fullName; }
     match /technicianIdentities/{uid} {
       allow get: if request.auth != null;
       allow list: if admin();
       allow create, update: if owner(uid) && fieldTech()
-        && request.resource.data.keys().hasOnly(['fullName', 'creaNumber', 'photoDataUrl', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['fullName', 'creaNumber', 'photoDataUrl', 'employmentType', 'organizationName', 'updatedAt'])
+        && request.resource.data.employmentType in ['private', 'organization'] && request.resource.data.organizationName is string
+        && ((request.resource.data.employmentType == 'private' && request.resource.data.organizationName == '') || (request.resource.data.employmentType == 'organization' && request.resource.data.organizationName.size() >= 2 && request.resource.data.organizationName.size() <= 800))
         && request.resource.data.fullName is string && request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')
-        && request.resource.data.creaNumber is string && request.resource.data.creaNumber.size() >= 3 && request.resource.data.creaNumber.size() <= 320
+        && request.resource.data.fullName == get(/databases/$(database)/documents/accountProfiles/$(uid)).data.fullName
+        && request.resource.data.creaNumber is string && (request.resource.data.creaNumber == '' || request.resource.data.creaNumber.size() >= 3) && request.resource.data.creaNumber.size() <= 320
         && request.resource.data.photoDataUrl is string && request.resource.data.photoDataUrl.size() <= 100000 && request.resource.data.photoDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')
         && request.resource.data.updatedAt == request.time;
       allow delete: if owner(uid);
@@ -100,6 +114,15 @@ service cloud.firestore {
         && request.resource.data.ownerUid == uid && request.resource.data.name is string && request.resource.data.name.size() <= 200
         && request.resource.data.ponds is list && request.resource.data.ponds.size() <= 2000 && request.resource.data.updatedAt == request.time;
     }
+    match /propertyDirectory/{uid} {
+      allow get: if owner(uid) || identifiedFieldTech() || admin();
+      allow list: if admin() || (identifiedFieldTech() && request.query.limit != null && request.query.limit <= 8);
+      allow create, update: if (verifiedOwner(uid) || admin()) && request.resource.data.keys().hasOnly(['ownerUid', 'name', 'nameSearch', 'updatedAt'])
+        && request.resource.data.ownerUid == uid && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 800
+        && request.resource.data.nameSearch is string && request.resource.data.nameSearch.size() > 0 && request.resource.data.nameSearch.size() <= 800
+        && request.resource.data.name == getAfter(/databases/$(database)/documents/fieldFarms/$(uid)).data.name && request.resource.data.updatedAt == request.time;
+      allow delete: if owner(uid);
+    }
     match /technicalVisits/{id} {
       allow delete: if admin();
       allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || (fieldTech() && resource.data.technicianUid == request.auth.uid) || admin());
@@ -127,8 +150,9 @@ service cloud.firestore {
         && request.resource.data.status in ['accepted', 'rejected'] && request.resource.data.decidedAt == request.time;
     }
     match /fieldInspectionReports/{id} {
-      allow read: if request.auth != null && (resource.data.technicianUid == request.auth.uid || resource.data.clientEmail == request.auth.token.email.lower() || admin());
-      allow create: if identifiedFieldTech() && request.resource.data.keys().hasOnly(['clientEmail', 'propertyName', 'technicianUid', 'technicianEmail', 'visitedOn', 'summary', 'latitude', 'longitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'ownerUid', 'status', 'createdAt', 'decidedAt'])
+      allow read: if request.auth != null && (resource.data.technicianUid == request.auth.uid || resource.data.get('recipientUid', null) == request.auth.uid || resource.data.clientEmail == request.auth.token.email.lower() || admin());
+      allow create: if identifiedFieldTech() && request.resource.data.keys().hasOnly(['clientEmail', 'recipientUid', 'propertyName', 'technicianUid', 'technicianEmail', 'visitedOn', 'summary', 'latitude', 'longitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'ownerUid', 'status', 'createdAt', 'decidedAt'])
+        && (request.resource.data.get('recipientUid', null) == null || (request.resource.data.recipientUid is string && request.resource.data.recipientUid != request.auth.uid && request.resource.data.clientEmail == '' && request.resource.data.propertyName == get(/databases/$(database)/documents/propertyDirectory/$(request.resource.data.recipientUid)).data.name))
         && request.resource.data.technicianUid == request.auth.uid && request.resource.data.technicianEmail == request.auth.token.email
         && request.resource.data.clientEmail is string && request.resource.data.clientEmail.size() <= 320 && request.resource.data.clientEmail != request.auth.token.email.lower()
         && request.resource.data.propertyName is string && request.resource.data.propertyName.size() > 0 && request.resource.data.propertyName.size() <= 800
@@ -139,7 +163,7 @@ service cloud.firestore {
         && request.resource.data.licenseRegisteredOn is string && request.resource.data.licenseExpiresOn is string
         && (request.resource.data.licenseStatus != 'licensed' || (request.resource.data.licenseNumber.size() > 0 && request.resource.data.licenseRegisteredOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.licenseExpiresOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.licenseExpiresOn >= request.resource.data.licenseRegisteredOn))
         && request.resource.data.ownerUid == null && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time && request.resource.data.decidedAt == null;
-      allow update: if request.auth != null && request.auth.token.email_verified == true && resource.data.clientEmail == request.auth.token.email.lower() && resource.data.status == 'pending'
+      allow update: if request.auth != null && request.auth.token.email_verified == true && (resource.data.get('recipientUid', null) == request.auth.uid || resource.data.clientEmail == request.auth.token.email.lower()) && resource.data.status == 'pending'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid', 'status', 'decidedAt']) && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.status in ['accepted', 'rejected'] && request.resource.data.decidedAt == request.time;
       allow delete: if admin();

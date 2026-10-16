@@ -5,7 +5,7 @@ import { motivoDoBloqueioDeAcesso } from "../src/services/accountPermissions.js"
 
 const produtor = { uid: "uid-produtor", email: "produtor@exemplo.com", emailVerified: true };
 const semConfirmar = { ...produtor, emailVerified: false };
-const comCelular = { phone: "+5579999991234" };
+const comCelular = { fullName: 'Nome Produtor', phone: "+5579999991234" };
 
 test("bloqueio de acesso ao painel", async (t) => {
   await t.test("sem sessão pede login", () => {

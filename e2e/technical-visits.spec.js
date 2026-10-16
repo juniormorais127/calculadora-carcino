@@ -45,6 +45,7 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
       async authorizeTechnician() {},
       async saveTechnicianIdentity(user, value) { savedIdentity = value; window.setTechnicalIdentity(value); },
       async readTechnicianIdentity() { return savedIdentity; },
+      async searchRegisteredProperties(text) { return text.toLowerCase().startsWith('faz') ? [{ ownerUid: 'client', name: 'Fazenda Sem Licenca' }] : []; },
       async submitTechnicalVisit(user, farm, pond, input) {
         privateNotes = input.privateNotes;
         visits.push({ ...input, id: 'visit1', ownerUid: 'client', technicianUid: 'tech', technicianEmail: 'tecnico@example.com', farmName: farm.name, pondId: pond.id, pondName: pond.name, latitude: Number(input.latitude), longitude: Number(input.longitude), previousLatitude: pond.latitude, previousLongitude: pond.longitude, status: 'pending' }); emit();
@@ -61,17 +62,21 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
       const [identity, setIdentity] = React.useState(null); window.setTechnicalIdentity = setIdentity;
       const [role, setRole] = React.useState('field_technician'); window.setFieldRole = setRole;
       const uid = role === 'field_technician' ? 'tech' : role === 'administrator' ? 'admin' : 'client';
-      return React.createElement(AccountContext.Provider, { value: { user: { uid, email: `${uid}@example.com` }, access: { role }, database, technicianIdentity: identity } }, React.createElement(View, { key: uid, api, administrative: role === 'administrator' }));
+      return React.createElement(AccountContext.Provider, { value: { user: { uid, email: `${uid}@example.com` }, access: { role, fullName: role === 'field_technician' ? 'Ana Maria Silva' : 'Carlos Produtor' }, database, technicianIdentity: identity } }, React.createElement(View, { key: uid, api, administrative: role === 'administrator' }));
     }
     window.readTechnicalPond = () => database.viveiros.get(1);
     createRoot(host).render(React.createElement(Fixture));
   });
   await expect(page.getByRole('button', { name: 'Meus atendimentos' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Registrar visita e notificar produtor' })).toBeDisabled();
-  await page.getByLabel('Nome completo do técnico').fill('Ana Maria Silva');
-  await page.getByLabel('Número do CREA e UF').fill('CREA-SE 123456');
+  await expect(page.getByLabel('Nome completo do técnico')).toHaveAttribute('readonly', '');
+  await page.getByLabel('Número do CREA e UF (opcional)').fill('CREA-SE 123456');
+  await page.getByLabel('Tipo de atendimento').selectOption('organization');
+  await page.getByLabel('Nome do órgão ou empresa').fill('Senar');
   const png = await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32; canvas.getContext('2d').fillRect(0, 0, 32, 32); return canvas.toDataURL('image/png').split(',')[1]; });
-  await page.getByLabel('Foto do técnico (obrigatória)').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Anexar foto do técnico' }).click();
+  await (await chooser).setFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
   await expect(page.getByRole('img', { name: 'Prévia da foto do técnico' })).toBeVisible();
   await page.getByRole('button', { name: 'Salvar identificação profissional' }).click();
   await expect(page.getByRole('button', { name: 'Registrar visita e notificar produtor' })).toBeEnabled();
@@ -95,6 +100,7 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await page.evaluate(() => window.setFieldRole('producer'));
   await expect(page.locator('article').getByText('Ana Maria Silva', { exact: true })).toBeVisible();
   await expect(page.locator('article').getByText('CREA: CREA-SE 123456', { exact: true })).toBeVisible();
+  await expect(page.locator('article').getByText('Senar', { exact: true })).toBeVisible();
   await expect(page.getByText('ANOTACAO EXCLUSIVA DO TECNICO')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Ver minhas anotações privadas' })).toBeHidden();
   await page.getByRole('button', { name: 'Aceitar relatório e ajustes' }).click();
@@ -118,7 +124,9 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await page.getByLabel('Nome da propriedade', { exact: true }).fill('Fazenda Sem Licenca');
   await page.getByRole('button', { name: 'Registrar visita e notificar produtor' }).click();
   await expect(page.getByLabel('Nome da propriedade', { exact: true })).toHaveValue('Fazenda Sem Licenca');
-  await page.getByLabel('E-mail do produtor cadastrado no site').fill('client@example.com');
+  await page.getByRole('option', { name: /Fazenda Sem Licenca/ }).click();
+  await expect(page.getByText(/Propriedade vinculada/)).toBeVisible();
+  await expect(page.getByLabel('E-mail do produtor (opcional)')).toHaveValue('');
   await page.getByLabel('Latitude', { exact: true }).fill('-11');
   await page.getByLabel('Longitude', { exact: true }).fill('-37');
   await page.getByLabel('Situação do licenciamento').selectOption('unlicensed');

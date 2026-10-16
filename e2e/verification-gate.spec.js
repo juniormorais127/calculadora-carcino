@@ -17,6 +17,7 @@ test('serviços só montam após estado de e-mail confirmado', async ({ page }) 
       const [, refresh] = React.useState(0);
       const [access, setAccess] = React.useState({});
       window.receivePhone = () => setAccess({ phone: '+5579999991234' });
+      window.receiveName = () => setAccess({ phone: '+5579999991234', fullName: 'Nome Produtor' });
       window.receiveVerifiedIdentity = () => { user.emailVerified = true; refresh(n => n + 1); };
       return React.createElement(AccountContext.Provider, { value: { user, access, accessLoading: false, database, syncStatus: { state: 'synced', message: 'Teste' }, dataVersion: 0 } }, React.createElement(App));
     }
@@ -28,6 +29,9 @@ test('serviços só montam após estado de e-mail confirmado', async ({ page }) 
   await expect(page.getByLabel(/Celular com DDD/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeHidden();
   await page.evaluate(() => window.receivePhone());
+  await expect(page.getByLabel('Nome completo do usuário', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeHidden();
+  await page.evaluate(() => window.receiveName());
   await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: /Complete a/ })).toBeHidden();
 });

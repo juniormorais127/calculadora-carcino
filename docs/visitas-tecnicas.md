@@ -75,11 +75,13 @@ de colegas. O proprietário vê as notificações endereçadas à sua conta.
 
 ## Identificação profissional obrigatória
 
-Antes de enviar visitas ou notificações, o técnico deve salvar nome completo,
-número do CREA com UF e foto. O formulário está na área de visitas e em Minha
-conta. A identificação é exibida nas autorizações, nos relatórios e no contato
-do técnico no painel administrativo. O número é autodeclarado; não há consulta
-automática ao conselho profissional.
+Toda conta informa seu nome completo uma vez. O nome é fixado em um registro
+imutável separado, que também impede troca por exclusão e recriação do perfil.
+Na área técnica, esse nome aparece somente para leitura. O técnico cadastra
+foto e tipo de atendimento (particular ou órgão/empresa, com nome da instituição).
+O CREA é opcional: vazio, a identificação mostra “Não tem CREA cadastrado”.
+A identificação aparece nas autorizações, relatórios e no contato administrativo.
+CREA e vínculo são autodeclarados, sem consulta automática ao conselho.
 
 Fotos JPG/PNG/WebP de até 5 MB são decodificadas no navegador, reduzidas para
 até 256 pixels no maior lado e salvas como imagem compacta de até 100 KB no
@@ -88,3 +90,22 @@ adicional de armazenamento. Somente o próprio técnico pode editar a identifica
 Clientes autenticados podem consultar a identificação pelo código, e a listagem
 geral é restrita à administração. As regras bloqueiam novos relatórios enquanto
 o documento profissional obrigatório não existir.
+
+A foto tem botões explícitos “Anexar foto do técnico” e “Trocar foto do técnico”.
+Após selecionar, é necessário salvar a identificação para confirmar a imagem.
+
+## Busca de propriedade sem e-mail
+
+A partir de duas letras do nome, o técnico identificado recebe até oito
+sugestões de propriedades. A busca usa um diretório com somente nome e código,
+sem expor contato, localização ou dados de produção. Ao escolher uma sugestão,
+o aviso fica associado ao UID do produtor: ele recebe e decide no aplicativo,
+sem precisar informar e-mail. O e-mail continua opcional para registros sem
+cadastro selecionado. Sem vínculo e sem e-mail, o registro fica apenas no
+histórico do técnico e na administração, sem notificar uma conta.
+
+O diretório é atualizado na sincronização do cliente. Ao abrir a administração,
+cadastros já publicados na projeção compartilhada também são incluídos na busca.
+Dados que existem somente em backup/local ou ainda não foram projetados exigem
+acesso e sincronização pelo cliente. O aceite de uma notificação não concede
+acesso automático aos dados privados da conta.

@@ -6,7 +6,7 @@ export function buildPropertyMap(farms, visits, inspections) {
   const matched = new Set();
   let withoutLocation = 0;
   for (const farm of farms) {
-    const candidates = reports.filter(report => report.independent ? report.clientEmail === farm.ownerEmail && nameKey(report.propertyName) === nameKey(farm.name) : report.ownerUid === farm.ownerUid);
+    const candidates = reports.filter(report => report.independent ? report.recipientUid === farm.ownerUid || (report.clientEmail === farm.ownerEmail && nameKey(report.propertyName) === nameKey(farm.name)) : report.ownerUid === farm.ownerUid);
     candidates.forEach(report => { if (report.independent) matched.add(report.id); });
     const latest = candidates[0];
     let count = 0;
@@ -20,7 +20,7 @@ export function buildPropertyMap(farms, visits, inspections) {
   }
   const seen = new Set();
   for (const report of reports.filter(item => item.independent && !matched.has(item.id))) {
-    const key = `${report.clientEmail}/${nameKey(report.propertyName)}`;
+    const key = `${report.recipientUid || report.clientEmail}/${nameKey(report.propertyName)}`;
     if (seen.has(key)) continue;
     seen.add(key);
     if (!Number.isFinite(report.latitude) || !Number.isFinite(report.longitude)) continue;

@@ -43,9 +43,11 @@ export const LICENSE_LABELS = { licensed: 'Licenciada (informado pelo técnico)'
 export const VISIT_LABELS = { pending: 'Aguardando aprovação do cliente', accepted: 'Aceita pelo cliente', rejected: 'Recusada pelo cliente' };
 
 export function validateIndependentVisit(input) {
-  const clientEmail = String(input.clientEmail || '').trim().toLowerCase();
+  const clientEmail = input.recipientUid ? '' : String(input.clientEmail || '').trim().toLowerCase();
   const propertyName = String(input.propertyName || '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail) || clientEmail.length > 320) throw new Error('Informe o e-mail usado pelo cliente para entrar no site.');
+  const recipientUid = input.recipientUid || null;
+  if (clientEmail && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail) || clientEmail.length > 320)) throw new Error('Confira o e-mail do produtor ou deixe o campo vazio.');
+  if (recipientUid !== null && !/^[a-zA-Z0-9_-]{1,128}$/.test(recipientUid)) throw new Error('Selecione novamente o cadastro da propriedade.');
   if (!propertyName || propertyName.length > 200) throw new Error('Informe o nome da propriedade com até 200 caracteres.');
-  return { ...validateVisitReport({ ...input, correctLocation: false }), clientEmail, propertyName };
+  return { ...validateVisitReport({ ...input, correctLocation: false }), clientEmail, propertyName, recipientUid };
 }

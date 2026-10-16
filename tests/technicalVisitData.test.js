@@ -25,6 +25,8 @@ test('registro independente exige contato e propriedade sem exigir autorizacao n
   const result = validateIndependentVisit(data);
   assert.equal(result.clientEmail, 'client@example.com');
   assert.equal(result.licenseStatus, 'unlicensed');
-  assert.throws(() => validateIndependentVisit({ ...data, clientEmail: '' }));
+  assert.equal(validateIndependentVisit({ ...data, clientEmail: '' }).clientEmail, '');
+  assert.equal(validateIndependentVisit({ ...data, clientEmail: '', recipientUid: 'client' }).recipientUid, 'client');
+  assert.equal(validateIndependentVisit({ ...data, recipientUid: 'client' }).clientEmail, '');
   assert.throws(() => validateIndependentVisit({ ...data, propertyName: '' }));
 });

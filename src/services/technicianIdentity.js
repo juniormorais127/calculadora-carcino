@@ -2,10 +2,14 @@ export function validateTechnicianIdentity(input) {
   const fullName = String(input?.fullName || '').trim().replace(/\s+/g, ' ');
   const creaNumber = String(input?.creaNumber || '').trim();
   const photoDataUrl = String(input?.photoDataUrl || '');
+  const employmentType = input?.employmentType;
+  const organizationName = employmentType === 'organization' ? String(input?.organizationName || '').trim() : '';
   if (fullName.length < 5 || fullName.length > 200 || fullName.split(' ').length < 2) throw new Error('Informe seu nome completo, com nome e sobrenome.');
-  if (creaNumber.length < 3 || creaNumber.length > 80) throw new Error('Informe o número do CREA, incluindo a UF, com até 80 caracteres.');
+  if ((creaNumber && creaNumber.length < 3) || creaNumber.length > 80) throw new Error('Confira o número do CREA ou deixe o campo vazio.');
   if (photoDataUrl.length > 100000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photoDataUrl)) throw new Error('Adicione uma foto válida do técnico.');
-  return { fullName, creaNumber, photoDataUrl };
+  if (!['private', 'organization'].includes(employmentType)) throw new Error('Informe se o atendimento é particular ou vinculado a órgão/empresa.');
+  if (employmentType === 'organization' && (organizationName.length < 2 || organizationName.length > 200)) throw new Error('Informe o nome do órgão ou empresa com até 200 caracteres.');
+  return { fullName, creaNumber, photoDataUrl, employmentType, organizationName };
 }
 export function hasTechnicianIdentity(value) {
   try { validateTechnicianIdentity(value); return true; } catch { return false; }

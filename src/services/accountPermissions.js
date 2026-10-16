@@ -14,7 +14,7 @@ export const assignableRoles = (user, profile, target) => target.uid === SENIOR_
 export function motivoDoBloqueioDeAcesso({ user, perfil, perfilCarregando = false, perfilErro = false, online = true }) {
   if (!user) return 'sem-sessao';
   if (!user.emailVerified) return 'email-nao-verificado';
-  if (perfil) return perfil.phone ? null : 'sem-celular';
+  if (perfil) return !perfil.phone ? 'sem-celular' : !perfil.fullName ? 'sem-nome' : null;
   if (perfilCarregando && !perfilErro && online) return 'consultando-perfil';
   return null;
 }
