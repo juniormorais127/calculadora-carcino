@@ -15,13 +15,18 @@ function loadArchive() {
   }).catch(error => { archivePromise = null; throw error; });
   return archivePromise;
 }
-export default function TechnicalVisitMap({ visits }) {
+export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
   const host = useRef(null), mapRef = useRef(null), layerRef = useRef(null), markersRef = useRef(null);
   const [error, setError] = useState(false), [basemap, setBasemap] = useState('satellite');
   const [resolutionFallback, setResolutionFallback] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false), [archive, setArchive] = useState([]), [historyIndex, setHistoryIndex] = useState(0), [historyError, setHistoryError] = useState(''), [historyLoading, setHistoryLoading] = useState(false);
   const hasPoints = visits.some(visit => Number.isFinite(visit.latitude) && Number.isFinite(visit.longitude));
   const release = basemap === 'history' ? archive[historyIndex] : null;
+  useEffect(() => {
+    if (!historyRequest || !hasPoints) return;
+    setHistoryOpen(true);
+    if (archive.length) setBasemap('history');
+  }, [historyRequest, hasPoints, archive.length]);
   useEffect(() => {
     if (!hasPoints) return;
     const map = L.map(host.current, { scrollWheelZoom: false }).setView([-10.9, -37.1], 6);
