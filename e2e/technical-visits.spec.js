@@ -17,6 +17,7 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
     const grants = [{ id: 'client~tech', ownerUid: 'client', technicianUid: 'tech', active: true }];
     const visits = [], listeners = [];
     const emit = () => listeners.forEach(item => item.next((item.name === 'technicalVisits' ? visits : grants).filter(record => !item.field || record[item.field] === item.uid)));
+    window.clearTechnicalGrants = () => { grants.splice(0); emit(); };
     const farm = { ownerUid: 'client', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }] };
     let privateNotes = '';
     const api = {
@@ -41,9 +42,12 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
     window.readTechnicalPond = () => database.viveiros.get(1);
     createRoot(host).render(React.createElement(Fixture));
   });
-  await page.getByRole('button', { name: 'Meus atendimentos' }).click();
-  await page.getByRole('button', { name: 'Abrir propriedade' }).click();
+  await expect(page.getByRole('button', { name: 'Meus atendimentos' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: 'Nova visita', exact: true })).toBeVisible();
+  await page.getByLabel('Propriedade que vou visitar').selectOption('client');
+  await page.getByRole('button', { name: 'Preencher visita', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Registrar visita: Fazenda Teste' })).toBeVisible();
+  await expect(page.getByLabel('Nome da propriedade', { exact: true })).toHaveValue('Fazenda Teste');
   await page.getByLabel('Latitude', { exact: true }).fill('-10.95');
   await page.getByLabel('Longitude', { exact: true }).fill('-37.07');
   await page.getByLabel('Situação do licenciamento').selectOption('licensed');
@@ -71,4 +75,7 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await expect(page.getByRole('button', { name: 'Ver minhas anotações privadas' })).toBeHidden();
   await expect(page.getByText('ANOTACAO EXCLUSIVA DO TECNICO')).toBeHidden();
   await expect(page.getByText(/LIC-123/)).toBeVisible();
+  await page.evaluate(() => { window.clearTechnicalGrants(); window.setFieldRole('field_technician'); });
+  await expect(page.getByText(/Nenhuma propriedade disponível para visita/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Preencher visita', exact: true })).toBeHidden();
 });

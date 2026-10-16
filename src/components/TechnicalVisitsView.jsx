@@ -13,8 +13,10 @@ const input = 'mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-
 export default function TechnicalVisitsView({ administrative = false, onReload, api = fieldApi }) {
   const { user, access, database } = useAccount();
   const technician = !administrative && accountRole(access, user.uid) === 'field_technician';
-  const [tab, setTab] = useState(administrative ? 'admin' : 'client');
+  const [tab, setTab] = useState(administrative ? 'admin' : technician ? 'technician' : 'client');
   const [grants, setGrants] = useState([]), [visits, setVisits] = useState([]);
+  const [authorizedFarms, setAuthorizedFarms] = useState([]), [farmsLoading, setFarmsLoading] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [message, setMessage] = useState('');
   const [techCode, setTechCode] = useState(''), [ownerEmail, setOwnerEmail] = useState('');
   const [farm, setFarm] = useState(null), [pondId, setPondId] = useState('');
@@ -31,6 +33,18 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
     const stops = [api.watchFieldRecords('fieldAuthorizations', field, user.uid, setGrants, fail), api.watchFieldRecords('technicalVisits', field, user.uid, setVisits, fail)];
     return () => stops.forEach(stop => stop());
   }, [user.uid, tab, administrative, api]);
+  useEffect(() => {
+    if (tab !== 'technician') return;
+    let disposed = false;
+    setFarmsLoading(true); setAuthorizedFarms([]); setSelectedOwner('');
+    void Promise.allSettled(grants.filter(item => item.active).map(async item => ({ grant: item, farm: await api.readSharedFarm(item.ownerUid) }))).then(results => {
+      if (disposed) return;
+      const values = results.filter(item => item.status === 'fulfilled').map(item => item.value);
+      setAuthorizedFarms(values); setFarmsLoading(false);
+      if (results.some(item => item.status === 'rejected')) setError('Não foi possível consultar algumas propriedades. Confira a conexão e se a autorização continua ativa.');
+    });
+    return () => { disposed = true; };
+  }, [grants, tab, api]);
   useEffect(() => {
     const pond = farm?.ponds.find(item => String(item.id) === pondId);
     setLocation({ latitude: String(pond?.latitude ?? ''), longitude: String(pond?.longitude ?? '') }); setCorrectLocation(false);
@@ -62,12 +76,29 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       setMessage('Visita registrada. O cliente foi avisado no site e precisa aceitar os ajustes. Suas anotações privadas não foram enviadas.');
     });
   }
+  async function openFarm(ownerUid) {
+    await run(async () => {
+      const value = await api.readSharedFarm(ownerUid);
+      if (!value) throw new Error('O cliente precisa abrir o site e sincronizar os viveiros antes da visita.');
+      if (!value.ponds.length) throw new Error('A propriedade ainda não tem viveiros cadastrados. Peça ao cliente para cadastrar e sincronizar o viveiro que será visitado.');
+      setFarm(value); setSelectedOwner(ownerUid); setPondId(String(value.ponds[0].id)); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown');
+      setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn('');
+    });
+  }
   const ordered = [...visits].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
   return <section className="py-5 pb-20 space-y-6">
     <div className="space-y-2"><h2 className="text-2xl font-bold">{administrative ? 'Visitas e licenciamento' : 'Visitas técnicas'}</h2><p className="text-sm text-slate-600 max-w-2xl">O técnico propõe ajustes. O cliente revisa e aceita ou recusa o relatório. A localização só muda após o aceite.</p></div>
     {technician && <nav aria-label="Área de visitas" className="flex flex-wrap gap-2"><button className={button} aria-pressed={tab === 'client'} onClick={() => setTab('client')}>Minha propriedade</button><button className={button} aria-pressed={tab === 'technician'} onClick={() => setTab('technician')}>Meus atendimentos</button></nav>}
     {error && <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-4">{error}</p>}
     {message && <p role="status" className="text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-4">{message}</p>}
+    {tab === 'technician' && <div className="space-y-4 max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
+      <h3 className="text-lg font-bold">Nova visita</h3>
+      <p className="text-sm text-slate-600">Selecione a propriedade autorizada para preencher data, localização, licenciamento e o relatório da visita.</p>
+      {farmsLoading ? <p role="status" className="text-sm text-slate-600">Carregando propriedades autorizadas…</p> : authorizedFarms.some(item => item.farm) ? <>
+        <label className="block text-sm font-semibold">Propriedade que vou visitar<select value={selectedOwner} onChange={event => setSelectedOwner(event.target.value)} className={input}><option value="">Selecione a propriedade</option>{authorizedFarms.filter(item => item.farm).map(item => <option key={item.grant.ownerUid} value={item.grant.ownerUid}>{item.farm.name}</option>)}</select></label>
+        <button className={`${button} bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy || !selectedOwner} onClick={() => openFarm(selectedOwner)}>Preencher visita</button>
+      </> : <p className="text-sm text-slate-700">Nenhuma propriedade disponível para visita. Envie seu código abaixo ao cliente ou à administração para autorizar o atendimento. Depois, o cliente deve abrir o site e sincronizar os viveiros.</p>}
+    </div>}
     {tab !== 'technician' && <form onSubmit={grant} className="max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-lg font-bold">Autorizar uma visita técnica</h3>
       {administrative && <label className="block text-sm font-semibold">E-mail do cliente<input type="email" required value={ownerEmail} onChange={event => setOwnerEmail(event.target.value)} className={input} /></label>}
       <label className="block text-sm font-semibold">Código do técnico<input required value={techCode} onChange={event => setTechCode(event.target.value)} maxLength={128} className={input} /></label>
@@ -77,15 +108,14 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
     {tab === 'technician' && <div className="space-y-3"><h3 className="font-bold">Seu código para autorizar visitas</h3><p className="break-all font-semibold text-sm select-all">{user.uid}</p><p className="text-xs text-slate-600">Compartilhe esse código com o cliente ou a administração. Ele identifica sua conta, sem conceder acesso sozinho.</p></div>}
     <div className="space-y-3"><h3 className="text-lg font-bold">{tab === 'technician' ? 'Clientes que autorizaram atendimento' : 'Autorizações de atendimento'}</h3>
       {!grants.length && <p className="text-sm text-slate-600">Nenhuma autorização registrada.</p>}
-      {grants.map(item => <div key={item.id} className="border-b border-slate-200 pb-3 space-y-2"><p className="text-sm break-all">Cliente: {item.ownerUid} · Técnico: {item.technicianUid} · <strong>{item.active ? 'Autorizado' : 'Revogado'}</strong></p>
-        {tab === 'technician' ? item.active && <button className={button} disabled={busy} onClick={() => run(async () => {
-          const value = await api.readSharedFarm(item.ownerUid); if (!value) throw new Error('O cliente precisa abrir o site e sincronizar os viveiros antes da visita.');
-          setFarm(value); setPondId(String(value.ponds[0]?.id || '')); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown');
-        })}>Abrir propriedade</button> : item.active && <button className={button} disabled={busy} onClick={() => run(() => api.authorizeTechnician(item.ownerUid, item.technicianUid, user.uid, false))}>Revogar autorização</button>}
+      {grants.map(item => <div key={item.id} className="border-b border-slate-200 pb-3 space-y-2"><p className="text-sm break-all">{tab === 'technician' ? authorizedFarms.find(value => value.grant.ownerUid === item.ownerUid)?.farm?.name || (item.active ? 'Propriedade aguardando sincronização do cliente' : 'Atendimento revogado') : `Cliente: ${item.ownerUid} · Técnico: ${item.technicianUid}`} · <strong>{item.active ? 'Autorizado' : 'Revogado'}</strong></p>
+        {tab === 'technician' ? item.active && <button className={button} disabled={busy} onClick={() => openFarm(item.ownerUid)}>Abrir propriedade</button> : item.active && <button className={button} disabled={busy} onClick={() => run(() => api.authorizeTechnician(item.ownerUid, item.technicianUid, user.uid, false))}>Revogar autorização</button>}
       </div>)}
     </div>
     {farm && tab === 'technician' && <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 max-w-2xl">
       <h3 className="text-lg font-bold">Registrar visita: {farm.name}</h3>
+      <label className="block text-sm font-semibold">Nome da propriedade<input readOnly value={farm.name} className={`${input} bg-slate-50`} /></label>
+      <p className="text-xs text-slate-600">O nome vem do cadastro autorizado pelo cliente. O relatório será enviado para essa conta.</p>
       <label className="block text-sm font-semibold">Viveiro<select required value={pondId} onChange={event => setPondId(event.target.value)} className={input}><option value="">Selecione</option>{farm.ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}</select></label>
       <label className="block text-sm font-semibold">Data da visita<input type="date" required value={visitedOn} onChange={event => setVisitedOn(event.target.value)} className={input} /></label>
       <PondLocationFields value={location} onChange={value => { setLocation(value); setCorrectLocation(true); }} />
