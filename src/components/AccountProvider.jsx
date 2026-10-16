@@ -21,6 +21,15 @@ function AccountSession({ user, children, syncProduction }) {
   const [access, setAccess] = useState(null);
   const [accessLoading, setAccessLoading] = useState(!!user);
   const [accessError, setAccessError] = useState('');
+  const [technicianIdentity, setTechnicianIdentity] = useState(null);
+  const [identityLoading, setIdentityLoading] = useState(false);
+  const [identityError, setIdentityError] = useState('');
+  useEffect(() => {
+    setTechnicianIdentity(null); setIdentityError('');
+    if (!user || access?.role !== 'field_technician') { setIdentityLoading(false); return; }
+    setIdentityLoading(true);
+    return onSnapshot(doc(firestore, 'technicianIdentities', user.uid), snapshot => { setTechnicianIdentity(snapshot.data() || null); setIdentityLoading(false); setIdentityError(''); }, () => { setIdentityLoading(false); setIdentityError('Não foi possível consultar sua identificação profissional. Confira a conexão.'); });
+  }, [user?.uid, access?.role]);
   useEffect(() => {
     if (!user) return;
     let disposed = false;
@@ -90,7 +99,7 @@ function AccountSession({ user, children, syncProduction }) {
     };
   }, [database, user?.uid, user?.emailVerified, syncProduction]);
   const value = {
-    user, database, syncStatus, dataVersion, access, accessError, accessLoading,
+    user, database, syncStatus, dataVersion, access, accessError, accessLoading, technicianIdentity, identityLoading, identityError,
     sync: () => controller.current?.sync(),
     useCloud: () => controller.current?.useCloud(),
     logout: () => signOut(auth),

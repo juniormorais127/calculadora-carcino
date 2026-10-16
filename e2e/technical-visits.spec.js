@@ -38,11 +38,13 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
     const emit = () => listeners.forEach(item => item.next((item.name === 'technicalVisits' ? visits : item.name === 'fieldInspectionReports' ? inspections : grants).filter(record => !item.field || record[item.field] === item.uid)));
     window.clearTechnicalGrants = () => { grants.splice(0); emit(); };
     const farm = { ownerUid: 'client', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }] };
-    let privateNotes = '';
+    let privateNotes = '', savedIdentity = null;
     const api = {
       watchFieldRecords(name, field, uid, next) { const item = { name, field, uid, next }; listeners.push(item); emit(); return () => listeners.splice(listeners.indexOf(item), 1); },
       async readSharedFarm() { return farm; },
       async authorizeTechnician() {},
+      async saveTechnicianIdentity(user, value) { savedIdentity = value; window.setTechnicalIdentity(value); },
+      async readTechnicianIdentity() { return savedIdentity; },
       async submitTechnicalVisit(user, farm, pond, input) {
         privateNotes = input.privateNotes;
         visits.push({ ...input, id: 'visit1', ownerUid: 'client', technicianUid: 'tech', technicianEmail: 'tecnico@example.com', farmName: farm.name, pondId: pond.id, pondName: pond.name, latitude: Number(input.latitude), longitude: Number(input.longitude), previousLatitude: pond.latitude, previousLongitude: pond.longitude, status: 'pending' }); emit();
@@ -56,14 +58,23 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
     document.getElementById('root').style.display = 'none';
     const host = document.createElement('div'); host.className = 'max-w-6xl mx-auto px-4'; document.body.appendChild(host);
     function Fixture() {
+      const [identity, setIdentity] = React.useState(null); window.setTechnicalIdentity = setIdentity;
       const [role, setRole] = React.useState('field_technician'); window.setFieldRole = setRole;
       const uid = role === 'field_technician' ? 'tech' : role === 'administrator' ? 'admin' : 'client';
-      return React.createElement(AccountContext.Provider, { value: { user: { uid, email: `${uid}@example.com` }, access: { role }, database } }, React.createElement(View, { key: uid, api, administrative: role === 'administrator' }));
+      return React.createElement(AccountContext.Provider, { value: { user: { uid, email: `${uid}@example.com` }, access: { role }, database, technicianIdentity: identity } }, React.createElement(View, { key: uid, api, administrative: role === 'administrator' }));
     }
     window.readTechnicalPond = () => database.viveiros.get(1);
     createRoot(host).render(React.createElement(Fixture));
   });
   await expect(page.getByRole('button', { name: 'Meus atendimentos' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Registrar visita e notificar produtor' })).toBeDisabled();
+  await page.getByLabel('Nome completo do técnico').fill('Ana Maria Silva');
+  await page.getByLabel('Número do CREA e UF').fill('CREA-SE 123456');
+  const png = await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32; canvas.getContext('2d').fillRect(0, 0, 32, 32); return canvas.toDataURL('image/png').split(',')[1]; });
+  await page.getByLabel('Foto do técnico (obrigatória)').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  await expect(page.getByRole('img', { name: 'Prévia da foto do técnico' })).toBeVisible();
+  await page.getByRole('button', { name: 'Salvar identificação profissional' }).click();
+  await expect(page.getByRole('button', { name: 'Registrar visita e notificar produtor' })).toBeEnabled();
   await expect(page.getByRole('heading', { name: 'Nova visita', exact: true })).toBeVisible();
   await page.getByLabel('Propriedade que vou visitar').selectOption('client');
   await page.getByRole('button', { name: 'Preencher visita', exact: true }).click();
@@ -82,6 +93,8 @@ test('tecnico registra visita, cliente aprova ajuste e notas privadas ficam fora
   await expect(page.getByText(/Aguardando aprovação do cliente/)).toBeVisible();
   expect((await page.evaluate(() => window.readTechnicalPond())).latitude).toBe(-10.9);
   await page.evaluate(() => window.setFieldRole('producer'));
+  await expect(page.locator('article').getByText('Ana Maria Silva', { exact: true })).toBeVisible();
+  await expect(page.locator('article').getByText('CREA: CREA-SE 123456', { exact: true })).toBeVisible();
   await expect(page.getByText('ANOTACAO EXCLUSIVA DO TECNICO')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Ver minhas anotações privadas' })).toBeHidden();
   await page.getByRole('button', { name: 'Aceitar relatório e ajustes' }).click();

@@ -72,3 +72,19 @@ O mapa mostra pontos, não limites de imóveis. Dados que ainda estão apenas no
 aparelho do cliente só aparecem após acesso ao site atualizado e sincronização.
 Os demais técnicos não recebem acesso ao mapa administrativo nem aos registros
 de colegas. O proprietário vê as notificações endereçadas à sua conta.
+
+## Identificação profissional obrigatória
+
+Antes de enviar visitas ou notificações, o técnico deve salvar nome completo,
+número do CREA com UF e foto. O formulário está na área de visitas e em Minha
+conta. A identificação é exibida nas autorizações, nos relatórios e no contato
+do técnico no painel administrativo. O número é autodeclarado; não há consulta
+automática ao conselho profissional.
+
+Fotos JPG/PNG/WebP de até 5 MB são decodificadas no navegador, reduzidas para
+até 256 pixels no maior lado e salvas como imagem compacta de até 100 KB no
+documento de identificação do Firestore. Não é necessário ativar um serviço
+adicional de armazenamento. Somente o próprio técnico pode editar a identificação.
+Clientes autenticados podem consultar a identificação pelo código, e a listagem
+geral é restrita à administração. As regras bloqueiam novos relatórios enquanto
+o documento profissional obrigatório não existir.

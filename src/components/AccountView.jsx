@@ -9,6 +9,8 @@ import { isAdmin } from '../services/purchaseMetrics.js';
 import { premiumStatus, accountRole, ACCOUNT_ROLES } from '../services/accountPermissions.js';
 import PhoneEditor from './PhoneEditor.jsx';
 import { saveAccountPhone } from '../services/accountProfiles.js';
+import TechnicianIdentityEditor from './TechnicianIdentityEditor.jsx';
+import { saveTechnicianIdentity } from '../services/technicalVisits.js';
 
 export function authMessage(error) {
   const messages = {
@@ -75,6 +77,7 @@ export default function AccountView({ onVisits }) {
     <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus({ ...account.access, role: accountRole(account.access, user.uid) }) : 'Consultando…'}</strong></p>
     {account.access && <p className="text-sm text-slate-700">Perfil: <strong>{ACCOUNT_ROLES[accountRole(account.access, user.uid)]}</strong></p>}
     {account.accessError && <p role="status" className="text-sm text-amber-800">{account.accessError}</p>}
+    {accountRole(account.access, user.uid) === 'field_technician' && <TechnicianIdentityEditor value={account.technicianIdentity} loading={account.identityLoading} loadError={account.identityError} onSave={value => saveTechnicianIdentity(user, value)} />}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="font-bold">Meu contato</h3>
       <PhoneEditor phone={account.access?.phone} onSave={phone => saveAccountPhone(user, phone)} />

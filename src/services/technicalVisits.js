@@ -1,6 +1,15 @@
 import { collection, doc, getDoc, query, where, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { firestore } from './firebase.js';
 import { validateVisitReport, validateIndependentVisit } from './technicalVisitData.js';
+import { validateTechnicianIdentity } from './technicianIdentity.js';
+
+export async function saveTechnicianIdentity(user, value) {
+  await setDoc(doc(firestore, 'technicianIdentities', user.uid), { ...validateTechnicianIdentity(value), updatedAt: serverTimestamp() });
+}
+export async function readTechnicianIdentity(uid) {
+  const snapshot = await getDoc(doc(firestore, 'technicianIdentities', uid));
+  return snapshot.exists() ? snapshot.data() : null;
+}
 
 export const authorizationId = (ownerUid, technicianUid) => `${ownerUid}~${technicianUid}`;
 export async function submitIndependentVisit(user, input) {

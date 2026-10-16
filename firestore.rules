@@ -63,6 +63,18 @@ service cloud.firestore {
       allow delete: if senior() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
     function fieldTech() { return request.auth != null && request.auth.token.email_verified == true && profileRole(request.auth.uid) == 'field_technician'; }
+    function identifiedFieldTech() { return fieldTech() && exists(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid)); }
+    match /technicianIdentities/{uid} {
+      allow get: if request.auth != null;
+      allow list: if admin();
+      allow create, update: if owner(uid) && fieldTech()
+        && request.resource.data.keys().hasOnly(['fullName', 'creaNumber', 'photoDataUrl', 'updatedAt'])
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')
+        && request.resource.data.creaNumber is string && request.resource.data.creaNumber.size() >= 3 && request.resource.data.creaNumber.size() <= 320
+        && request.resource.data.photoDataUrl is string && request.resource.data.photoDataUrl.size() <= 100000 && request.resource.data.photoDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if owner(uid);
+    }
     function fieldAccess(uid) {
       return fieldTech() && exists(/databases/$(database)/documents/fieldAuthorizations/$(uid + '~' + request.auth.uid))
         && get(/databases/$(database)/documents/fieldAuthorizations/$(uid + '~' + request.auth.uid)).data.active == true;
@@ -91,7 +103,7 @@ service cloud.firestore {
     match /technicalVisits/{id} {
       allow delete: if admin();
       allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || (fieldTech() && resource.data.technicianUid == request.auth.uid) || admin());
-      allow create: if fieldTech() && request.resource.data.technicianUid == request.auth.uid && fieldAccess(request.resource.data.ownerUid)
+      allow create: if identifiedFieldTech() && request.resource.data.technicianUid == request.auth.uid && fieldAccess(request.resource.data.ownerUid)
         && request.resource.data.keys().hasOnly(['ownerUid', 'technicianUid', 'technicianEmail', 'farmName', 'pondId', 'pondName', 'visitedOn', 'summary', 'correctLocation', 'latitude', 'longitude', 'previousLatitude', 'previousLongitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'status', 'createdAt', 'decidedAt'])
         && request.resource.data.technicianEmail == request.auth.token.email
         && request.resource.data.farmName is string && request.resource.data.farmName.size() <= 200
@@ -116,7 +128,7 @@ service cloud.firestore {
     }
     match /fieldInspectionReports/{id} {
       allow read: if request.auth != null && (resource.data.technicianUid == request.auth.uid || resource.data.clientEmail == request.auth.token.email.lower() || admin());
-      allow create: if fieldTech() && request.resource.data.keys().hasOnly(['clientEmail', 'propertyName', 'technicianUid', 'technicianEmail', 'visitedOn', 'summary', 'latitude', 'longitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'ownerUid', 'status', 'createdAt', 'decidedAt'])
+      allow create: if identifiedFieldTech() && request.resource.data.keys().hasOnly(['clientEmail', 'propertyName', 'technicianUid', 'technicianEmail', 'visitedOn', 'summary', 'latitude', 'longitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'ownerUid', 'status', 'createdAt', 'decidedAt'])
         && request.resource.data.technicianUid == request.auth.uid && request.resource.data.technicianEmail == request.auth.token.email
         && request.resource.data.clientEmail is string && request.resource.data.clientEmail.size() <= 320 && request.resource.data.clientEmail != request.auth.token.email.lower()
         && request.resource.data.propertyName is string && request.resource.data.propertyName.size() > 0 && request.resource.data.propertyName.size() <= 800

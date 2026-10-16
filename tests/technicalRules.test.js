@@ -26,6 +26,12 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(getDoc(doc(db('stranger'), 'fieldFarms', 'client')));
     await assertFails(setDoc(doc(db('techA'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Alterado' }));
     const a = db('techA');
+    await assertFails(setDoc(doc(a, 'technicalVisits', 'missing-identity'), visit()));
+    const identity = { fullName: 'Ana Maria Silva', creaNumber: 'CREA-SE 123456', photoDataUrl: 'data:image/png;base64,YWJj', updatedAt: serverTimestamp() };
+    await assertFails(setDoc(doc(a, 'technicianIdentities', 'techA'), { ...identity, fullName: 'Ana' }));
+    await assertSucceeds(setDoc(doc(a, 'technicianIdentities', 'techA'), identity));
+    await assertSucceeds(getDoc(doc(db('client'), 'technicianIdentities', 'techA')));
+    await assertFails(setDoc(doc(db('techB'), 'technicianIdentities', 'techA'), identity));
     const batch = writeBatch(a);
     batch.set(doc(a, 'technicalVisits', 'visit1'), visit());
     batch.set(doc(a, 'technicalNotebooks', 'techA', 'visits', 'visit1'), { notes: 'Anotacao que somente o autor pode ler.', createdAt: serverTimestamp() });
@@ -65,5 +71,6 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(updateDoc(doc(a, 'fieldInspectionReports', 'inspection1'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
     await assertSucceeds(updateDoc(doc(db('client'), 'fieldInspectionReports', 'inspection1'), { status: 'accepted', ownerUid: 'client', decidedAt: serverTimestamp() }));
     await assertFails(setDoc(doc(db('stranger'), 'fieldInspectionReports', 'spoofInspection'), { ...inspection, technicianUid: 'stranger', technicianEmail: 'stranger@example.com' }));
+    await assertFails(setDoc(doc(db('techB'), 'fieldInspectionReports', 'missingIdentityInspection'), { ...inspection, technicianUid: 'techB', technicianEmail: 'techB@example.com' }));
   });
 });
