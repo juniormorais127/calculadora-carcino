@@ -1,6 +1,14 @@
 # Usuários e permissões de serviços
 
-Minha conta → Painel administrativo → Usuários e permissões. Apenas o UID
+Portal separado: `https://juniormorais127.github.io/calculadora-carcino/admin/`.
+Também há um atalho Minha conta → Abrir administração, somente para o dono.
+O portal tem entrada HTML/JS própria, sem montar as abas de produção nem
+iniciar sincronização dos dados de produção. Mantém Firebase e autenticação
+compartilhados com o site no mesmo domínio. Não existe uma caixa postal
+`admin@juniormorais127.github.io`: endereço de e-mail próprio exige domínio
+e serviço de e-mail. A conta administrativa autorizada permanece a existente.
+
+No portal: Usuários e permissões. Apenas o UID
 administrativo já configurado pode listar e-mails e editar Premium. Uma permissão
 Premium nunca promove alguém a administrador.
 

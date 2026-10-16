@@ -17,7 +17,7 @@ metadata.version(1).stores({ accounts: 'uid' });
 export const useAccount = () => useContext(AccountContext);
 export const useDatabase = () => useAccount()?.database || guestDb;
 
-function AccountSession({ user, children }) {
+function AccountSession({ user, children, syncProduction }) {
   const [access, setAccess] = useState(null);
   const [accessError, setAccessError] = useState('');
   useEffect(() => {
@@ -46,7 +46,7 @@ function AccountSession({ user, children }) {
     return () => { clearInterval(retryMetrics); window.removeEventListener('online', flushPurchaseEvents); window.removeEventListener('focus', flushPurchaseEvents); };
   }, [user?.uid]);
   useEffect(() => {
-    if (!user) return;
+    if (!user || !syncProduction) return;
     let timer;
     let disposed = false;
     const sync = createCloudSync({
@@ -87,7 +87,7 @@ function AccountSession({ user, children }) {
       controller.current = null;
       window.removeEventListener('online', schedule); window.removeEventListener('offline', schedule); window.removeEventListener('focus', schedule);
     };
-  }, [database, user?.uid]);
+  }, [database, user?.uid, syncProduction]);
   const value = {
     user, database, syncStatus, dataVersion, access, accessError,
     sync: () => controller.current?.sync(),
@@ -98,9 +98,9 @@ function AccountSession({ user, children }) {
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
-export default function AccountProvider({ children }) {
+export default function AccountProvider({ children, syncProduction = true }) {
   const [user, setUser] = useState(undefined);
   useEffect(() => onAuthStateChanged(auth, setUser, () => setUser(null)), []);
   if (user === undefined) return <div role="status" className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 p-6">Preparando o acesso ao CarcinoGestão…</div>;
-  return <AccountSession key={user?.uid || 'local'} user={user}>{children}</AccountSession>;
+  return <AccountSession key={user?.uid || 'local'} user={user} syncProduction={syncProduction}>{children}</AccountSession>;
 }

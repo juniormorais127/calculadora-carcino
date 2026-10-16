@@ -162,3 +162,23 @@ test('métricas gravam por conta, reenviam offline e negam leitura geral', async
     await cleanup(a); await cleanup(b);
   }
 });
+
+test('portal administrativo recusa conta comum e permite sair', async ({ browser }) => {
+  let account, context;
+  try {
+    account = await createAccount();
+    context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto('./admin/');
+    await page.getByLabel('E-mail administrativo').fill(account.email);
+    await page.getByLabel('Senha', { exact: true }).fill(account.password);
+    await page.getByRole('button', { name: 'Entrar no painel' }).click();
+    await expect(page.getByRole('heading', { name: 'Acesso restrito' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Administração', exact: true })).toBeHidden();
+    await page.getByRole('button', { name: 'Entrar com outra conta' }).click();
+    await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible();
+  } finally {
+    if (context) await context.close();
+    await cleanup(account);
+  }
+});

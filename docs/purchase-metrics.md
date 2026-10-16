@@ -1,6 +1,7 @@
 # Painel de interesse em compras
 
-Acesso: Minha conta → Painel administrativo. Restrito ao UID administrativo
+Acesso: portal `/calculadora-carcino/admin/` → Interesse em compras.
+Também há o atalho Minha conta → Abrir administração. Restrito ao UID administrativo
 `Dc2sEKML8Lc66cgj8VvSX4Uhhpk1`, também validado pelas regras Firestore.
 Trocar o administrador exige atualizar `purchaseMetrics.js` e `firestore.rules`.
 Nenhuma permissão administrativa aos dados de produção foi acrescentada.

@@ -14,8 +14,6 @@ import { useAccount } from "./components/AccountProvider.jsx";
 import AccountView from "./components/AccountView.jsx";
 import { ShrimpMarkIcon } from "./components/icons/CustomAquacultureIcons.jsx";
 import PasswordResetView from "./components/PasswordResetView.jsx";
-import AdminDashboard from "./components/AdminDashboard.jsx";
-import { isAdmin } from './services/purchaseMetrics.js';
 import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
@@ -187,8 +185,7 @@ function ProductionApp() {
           </div>
         ) : (
           <>
-            {activeTab === "conta" && <AccountView onAdmin={() => handleNavigate('admin')} />}
-            {activeTab === 'admin' && isAdmin(user) && <AdminDashboard />}
+            {activeTab === "conta" && <AccountView />}
             {activeTab === "dashboard" && (
               <Dashboard
                 viveiros={viveiros}

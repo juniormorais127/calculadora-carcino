@@ -16,7 +16,7 @@ export default function offlinePlugin() {
         'images/doencas/ehp.jpg',
         'images/doencas/vibriose.png'
       ];
-      const files = ['index.html', 'icon.svg', 'manifest.webmanifest', ...diseaseImages, ...Object.keys(bundle).filter(name => name !== 'index.html')];
+      const files = ['index.html', 'admin/index.html', 'icon.svg', 'manifest.webmanifest', ...diseaseImages, ...Object.keys(bundle).filter(name => name !== 'index.html' && name !== 'admin/index.html')];
       const version = createHash('sha256').update(JSON.stringify(files)).update(readFileSync(new URL('../public/icon.svg', import.meta.url))).digest('hex').slice(0, 16);
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = 'carcino-${version}';
@@ -34,7 +34,8 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.open(CACHE).then(cache => cache.match(BASE + 'index.html'))));
+    const fallback = url.pathname.startsWith(BASE + 'admin/') ? 'admin/index.html' : 'index.html';
+    event.respondWith(fetch(request).catch(() => caches.open(CACHE).then(cache => cache.match(BASE + fallback))));
   } else if (FILES.some(file => url.pathname === BASE + file)) {
     event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname, { ignoreVary: true })) || fetch(request)));
   }
