@@ -30,6 +30,10 @@ service cloud.firestore {
         && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
       allow update: if validProfile() && (
         (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phone']) && request.resource.data.phone is string)
+        || ((senior() || (admin() && !primarySenior(uid) && resource.data.get('role', 'producer') in ['producer', 'field_technician']))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phone', 'changedBy', 'changedAt'])
+          && request.resource.data.phone is string
+          && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time)
         || (owner(uid) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
           || (!('role' in resource.data) && request.resource.data.role == 'producer'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt', 'role']))

@@ -4,6 +4,7 @@ import { firestore } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
 import { isAdmin } from '../services/purchaseMetrics.js';
 import { expirationMillis, premiumStatus, accountRole, ACCOUNT_ROLES, canManageUser, assignableRoles, isSenior } from '../services/accountPermissions.js';
+import PhoneEditor from './PhoneEditor.jsx';
 
 const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
 const dateText = value => value?.toDate ? value.toDate().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' }) : '—';
@@ -16,7 +17,10 @@ export async function readUsers(cursor) {
 export async function writePermission(uid, data, adminUid) {
   await updateDoc(doc(firestore, 'accountProfiles', uid), { role: data.role, premium: data.premium, expiresAt: data.premium && data.expiresAt ? Timestamp.fromMillis(data.expiresAt) : null, changedBy: adminUid, changedAt: serverTimestamp() });
 }
-export default function AdminUsersView({ loadUsers = readUsers, savePermission = writePermission }) {
+export async function writeContact(uid, phone, adminUid) {
+  await updateDoc(doc(firestore, 'accountProfiles', uid), { phone, changedBy: adminUid, changedAt: serverTimestamp() });
+}
+export default function AdminUsersView({ loadUsers = readUsers, savePermission = writePermission, saveContact = writeContact }) {
   const { user, access } = useAccount();
   const allowed = isAdmin(user, access);
   const [users, setUsers] = useState([]);
@@ -29,6 +33,7 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
   const [roleFilter, setRoleFilter] = useState('all');
   const [role, setRole] = useState('producer');
   const [selected, setSelected] = useState(null);
+  const [contact, setContact] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [expiry, setExpiry] = useState('');
   const [reload, setReload] = useState(0);
@@ -79,6 +84,16 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
     {busy && <p role="status" className="text-sm text-slate-600">Aguarde…</p>}
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">{message}</p>}
+    {contact && <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 max-w-xl">
+      <h3 className="text-lg font-bold break-all">Contato de {contact.email}</h3>
+      <PhoneEditor key={contact.uid} phone={contact.phone} onSave={async phone => {
+        if (!canManageUser(user, access, contact)) throw new Error('Acesso recusado.');
+        await saveContact(contact.uid, phone, user.uid);
+        setUsers(old => old.map(profile => profile.uid === contact.uid ? { ...profile, phone } : profile));
+        setContact(old => ({ ...old, phone }));
+      }} />
+      <button type="button" className={button} onClick={() => setContact(null)}>Fechar contato</button>
+    </div>}
     {selected && <form onSubmit={save} className="rounded-2xl border border-emerald-300 bg-white p-5 space-y-4 max-w-xl">
       <h3 className="text-lg font-bold break-all">Permissões de {selected.email}</h3>
       <label htmlFor="account-role" className="block text-sm font-semibold text-slate-700">Perfil do usuário</label><select id="account-role" value={role} onChange={e => setRole(e.target.value)} disabled={busy} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">{assignableRoles(user, access, selected).map(id => <option key={id} value={id}>{ACCOUNT_ROLES[id]}</option>)}</select>
@@ -89,7 +104,7 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
       <div className="flex flex-wrap gap-3"><button className={`${button} bg-emerald-700 border-emerald-700 text-white hover:bg-emerald-800`} disabled={busy}>Salvar permissões</button><button className={button} type="button" disabled={busy} onClick={() => setSelected(null)}>Cancelar edição</button></div>
     </form>}
     <p className="md:hidden text-xs text-slate-600">Deslize a tabela para ver todos os dados.</p>
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Usuários cadastrados" tabIndex={0}><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-slate-100"><tr>{['E-mail', 'Perfil', 'Permissão', 'Validade', 'Último acesso registrado', 'Gerenciar'].map(label => <th className="p-3 font-semibold text-slate-700" scope="col" key={label}>{label}</th>)}</tr></thead><tbody>{visible.map(profile => <tr key={profile.uid} className="border-t border-slate-100"><th className="p-3 font-semibold break-all" scope="row">{profile.email}</th><td className="p-3">{ACCOUNT_ROLES[accountRole(profile, profile.uid)]}</td><td className="p-3">{premiumStatus({ ...profile, role: accountRole(profile, profile.uid) })}</td><td className="p-3">{profile.expiresAt ? dateText(profile.expiresAt) : 'Sem prazo'}</td><td className="p-3">{dateText(profile.lastSeenAt)}</td><td className="p-3"><button className={button} disabled={busy || !canManageUser(user, access, profile)} onClick={() => edit(profile)} aria-label={`Editar permissões de ${profile.email}`}>Editar permissões</button></td></tr>)}</tbody></table></div>
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white" role="region" aria-label="Usuários cadastrados" tabIndex={0}><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-slate-100"><tr>{['E-mail', 'Celular', 'Perfil', 'Permissão', 'Validade', 'Último acesso registrado', 'Gerenciar'].map(label => <th className="p-3 font-semibold text-slate-700" scope="col" key={label}>{label}</th>)}</tr></thead><tbody>{visible.map(profile => <tr key={profile.uid} className="border-t border-slate-100"><th className="p-3 font-semibold break-all" scope="row">{profile.email}</th><td className="p-3 whitespace-nowrap">{profile.phone ? <a href={`tel:${profile.phone}`} className="text-emerald-800 underline underline-offset-4">{profile.phone}</a> : 'N\u00e3o informado'}<span className="block text-xs text-slate-600">Sem confirmação por SMS</span></td><td className="p-3">{ACCOUNT_ROLES[accountRole(profile, profile.uid)]}</td><td className="p-3">{premiumStatus({ ...profile, role: accountRole(profile, profile.uid) })}</td><td className="p-3">{profile.expiresAt ? dateText(profile.expiresAt) : 'Sem prazo'}</td><td className="p-3">{dateText(profile.lastSeenAt)}</td><td className="p-3"><button className={button} disabled={busy || !canManageUser(user, access, profile)} onClick={() => { setContact(null); edit(profile); }} aria-label={`Editar permissões de ${profile.email}`}>Editar permissões</button><button className={`${button} mt-2`} disabled={busy || !canManageUser(user, access, profile)} onClick={() => { setSelected(null); setContact(profile); }} aria-label={`Editar contato de ${profile.email}`}>Editar contato</button></td></tr>)}</tbody></table></div>
     {!busy && !visible.length && <p className="text-sm text-slate-600">Nenhum usuário encontrado. Confira o e-mail ou peça que a pessoa entre no site para atualizar o cadastro.</p>}
     {more && <button className={button} disabled={busy} onClick={() => void moreUsers()}>Carregar mais usuários</button>}
     <p className="text-xs text-slate-600">Liberação manual, sem cobrança automática. A permissão Premium fica preparada para os serviços pagos que você definir; nenhuma função atual foi transformada em paga.</p>

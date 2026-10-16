@@ -59,6 +59,11 @@ test('verificacao obrigatoria protege producao no navegador e Firebase', async (
     await expect(page.getByText('Celular cadastrado:', { exact: false })).toBeVisible();
     const profile = await request(`accountProfiles/${a.localId}`, a);
     expect((await profile.json()).fields.phone.stringValue).toBe('+5579999991234');
+    await page.getByLabel(/Celular com DDD/).fill('(79) 99999-4321');
+    await page.getByRole('button', { name: 'Salvar celular' }).click();
+    await expect(page.getByText('Celular cadastrado:', { exact: false })).toContainText('+5579999994321');
+    const changed = await request(`accountProfiles/${a.localId}`, a);
+    expect((await changed.json()).fields.phone.stringValue).toBe('+5579999994321');
     expect((await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=phone`, a, 'PATCH', { fields: { phone: { stringValue: '123' } } })).status).toBe(403);
     expect((await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=phone&updateMask.fieldPaths=premium`, a, 'PATCH', { fields: { phone: { stringValue: '+5579999991234' }, premium: { booleanValue: true } } })).status).toBe(403);
     await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeHidden();
@@ -68,14 +73,14 @@ test('verificacao obrigatoria protege producao no navegador e Firebase', async (
       page.getByRole('button', { name: /Enviar confirma/ }).click(),
     ]);
     expect(response.status(), JSON.stringify(await response.json())).toBe(200);
-    await expect(page.getByRole('status')).toContainText('Enviamos o link');
+    await expect(page.getByText(/Enviamos o link/)).toBeVisible();
     await expect(page.getByRole('button', { name: /Reenviar em/ })).toBeDisabled();
     for (const width of [426, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.screenshot({ path: testInfo.outputPath(`verificacao-${width}.png`), fullPage: true });
     }
     await page.getByRole('button', { name: /confirmei meu e-mail/ }).click();
-    await expect(page.getByRole('status')).toContainText('ainda');
+    await expect(page.getByText(/ainda n/)).toBeVisible();
     const manifest = { fields: { revision: { integerValue: '1' }, snapshotId: { stringValue: 'test' }, chunks: { integerValue: '1' }, previousSnapshotId: { nullValue: null }, updatedAt: { timestampValue: new Date().toISOString() } } };
     expect((await request(`users/${a.localId}/state/current`, a, 'PATCH', manifest)).status).toBe(403);
     expect((await request(`users/${a.localId}/snapshots/test/chunks/0`, a, 'PATCH', { fields: { text: { stringValue: '{}' } } })).status).toBe(403);

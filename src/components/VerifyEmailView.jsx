@@ -3,13 +3,12 @@ import { getIdToken, reload, sendEmailVerification } from 'firebase/auth';
 import { useAccount } from './AccountProvider.jsx';
 import { authMessage } from './AccountView.jsx';
 import { saveAccountPhone } from '../services/accountProfiles.js';
-import { normalizePhone } from '../services/accountPhone.js';
+import PhoneEditor from './PhoneEditor.jsx';
 import { publicSiteUrl } from '../services/firebase.js';
 
 const button = 'min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700';
 export default function VerifyEmailView() {
   const { user, logout, access, accessLoading } = useAccount();
-  const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -21,12 +20,6 @@ export default function VerifyEmailView() {
     };
     tick(); const timer = setInterval(tick, 1000); return () => clearInterval(timer);
   }, [user.uid]);
-  async function savePhone(event) {
-    event.preventDefault(); setBusy(true); setError(''); setMessage('');
-    try { await saveAccountPhone(user, normalizePhone(phone)); setMessage('Celular salvo no seu cadastro.'); }
-    catch (err) { setError(err.code ? authMessage(err) : err.message); }
-    finally { setBusy(false); }
-  }
   async function send() {
     setBusy(true); setError(''); setMessage('');
     try {
@@ -52,12 +45,10 @@ export default function VerifyEmailView() {
       <p className="text-sm text-slate-700 break-all">Conta: <strong>{user.email}</strong></p>
       {error && <p role="alert" className="text-sm text-rose-800">{error}</p>}
       {message && <p role="status" className="text-sm text-emerald-900">{message}</p>}
-      {accessLoading ? <p role="status" className="text-sm text-slate-700">Consultando cadastro…</p> : access?.phone ? <p className="text-sm text-emerald-900">Celular cadastrado: <strong>{access.phone}</strong></p> : <form onSubmit={savePhone} className="space-y-3">
-        <label htmlFor="account-phone" className="block text-sm font-semibold text-slate-800">Celular com DDD (obrigatório)</label>
-        <input id="account-phone" type="tel" autoComplete="tel" inputMode="tel" required maxLength={24} value={phone} onChange={event => setPhone(event.target.value)} placeholder="(79) 99999-9999" aria-describedby="phone-help" className="w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-emerald-700" />
-        <p id="phone-help" className="text-xs text-slate-600">Use seu número de WhatsApp. Para outro país, inclua + e o código do país. Salvar o número não confirma sua titularidade nem ativa o bot.</p>
-        <button className={`${button} w-full bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy}>{busy ? 'Salvando…' : 'Salvar celular'}</button>
-      </form>}
+      {accessLoading ? <p role="status" className="text-sm text-slate-700">Consultando cadastro...</p> : <>
+        {access?.phone && <p className="text-sm text-emerald-900">Celular cadastrado: <strong>{access.phone}</strong></p>}
+        <PhoneEditor phone={access?.phone} disabled={busy} onSave={phone => saveAccountPhone(user, phone)} />
+      </>}
       {user.emailVerified ? <p className="text-sm text-emerald-900">E-mail confirmado.</p> : <>
       <p className="text-sm text-slate-700">Toque em Enviar confirmação e abra o link recebido. Seus registros anteriores serão mantidos.</p>
       <button className={`${button} w-full bg-emerald-700 border-emerald-700 text-white hover:bg-emerald-800`} disabled={busy || wait > 0} onClick={send}>{wait ? `Reenviar em ${wait}s` : 'Enviar confirmação'}</button>

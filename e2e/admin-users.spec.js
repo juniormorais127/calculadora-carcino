@@ -14,10 +14,19 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
     const loadUsers = async () => ({ users: [{ uid: 'test-only', email: 'produtor@example.com', premium: false }, { uid: 'other', email: 'outro@example.com', premium: false }], more: false });
     window.savedPermissions = [];
     const savePermission = async (...args) => { window.savedPermissions.push(args); };
-    createRoot(host).render(React.createElement(AccountContext.Provider, { value: { user: { uid: ADMIN_UID } } }, React.createElement(Panel, { loadUsers, savePermission })));
+    window.savedContacts = [];
+    const saveContact = async (...args) => { window.savedContacts.push(args); };
+    createRoot(host).render(React.createElement(AccountContext.Provider, { value: { user: { uid: ADMIN_UID } } }, React.createElement(Panel, { loadUsers, savePermission, saveContact })));
   });
   await page.getByLabel('Buscar e-mail').fill('produtor@');
   await expect(page.getByText('outro@example.com', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Editar contato de produtor@example.com' }).click();
+  await page.getByLabel('Celular com DDD').fill('(79) 99999-4321');
+  await page.getByRole('button', { name: 'Salvar celular' }).click();
+  await expect(page.getByRole('status')).toContainText('Celular atualizado');
+  expect(await page.evaluate(() => window.savedContacts[0].slice(0, 2))).toEqual(['test-only', '+5579999994321']);
+  await expect(page.getByRole('link', { name: '+5579999994321' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fechar contato' }).click();
   await page.getByRole('button', { name: 'Editar permissões de produtor@example.com' }).click();
   await page.getByLabel('Perfil do usuário', { exact: true }).selectOption('field_technician');
   for (const width of [426, 1440]) {
