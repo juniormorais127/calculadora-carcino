@@ -18,7 +18,7 @@ import VerifyEmailView from "./components/VerifyEmailView.jsx";
 import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
-  const { user } = useAccount();
+  const { user, access, accessLoading } = useAccount();
   const [action] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return { mode: params.get('mode'), code: params.get('oobCode') };
@@ -26,7 +26,7 @@ export default function App() {
   useEffect(() => {
     if (action.mode) window.history.replaceState(null, '', window.location.pathname);
   }, [action]);
-  if (!user || action.mode || !user.emailVerified) return (
+  if (!user || action.mode || !user.emailVerified || accessLoading || !access?.phone) return (
     <main className="min-h-screen bg-slate-50 text-slate-900 px-5 py-8 sm:py-14">
       <div className="mx-auto max-w-md">
         <header className="flex items-center gap-3 mb-6">

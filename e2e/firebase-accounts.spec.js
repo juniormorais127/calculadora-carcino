@@ -41,7 +41,7 @@ async function login(page, account) {
   await page.getByLabel('E-mail', { exact: true }).fill(account.email);
   await page.getByLabel('Senha', { exact: true }).fill(account.password);
   await page.locator('form').getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Confirme seu e-mail para continuar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Complete a verificação da conta' })).toBeVisible();
 }
 test('verificacao obrigatoria protege producao no navegador e Firebase', async ({ browser }, testInfo) => {
   test.setTimeout(90000);
@@ -51,6 +51,16 @@ test('verificacao obrigatoria protege producao no navegador e Firebase', async (
     context = await browser.newContext({ viewport: { width: 426, height: 812 } });
     const page = await context.newPage();
     await login(page, a);
+    await page.getByLabel(/Celular com DDD/).fill('999');
+    await page.getByRole('button', { name: 'Salvar celular' }).click();
+    await expect(page.getByRole('alert')).toContainText('DDD');
+    await page.getByLabel(/Celular com DDD/).fill('(79) 99999-1234');
+    await page.getByRole('button', { name: 'Salvar celular' }).click();
+    await expect(page.getByText('Celular cadastrado:', { exact: false })).toBeVisible();
+    const profile = await request(`accountProfiles/${a.localId}`, a);
+    expect((await profile.json()).fields.phone.stringValue).toBe('+5579999991234');
+    expect((await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=phone`, a, 'PATCH', { fields: { phone: { stringValue: '123' } } })).status).toBe(403);
+    expect((await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=phone&updateMask.fieldPaths=premium`, a, 'PATCH', { fields: { phone: { stringValue: '+5579999991234' }, premium: { booleanValue: true } } })).status).toBe(403);
     await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Viveiros', exact: true })).toBeHidden();
     const [response] = await Promise.all([
@@ -71,7 +81,7 @@ test('verificacao obrigatoria protege producao no navegador e Firebase', async (
     expect((await request(`users/${a.localId}/snapshots/test/chunks/0`, a, 'PATCH', { fields: { text: { stringValue: '{}' } } })).status).toBe(403);
     expect((await request(`users/${a.localId}/state/current`, a)).status).toBe(403);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Confirme seu e-mail para continuar' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Complete a verificação da conta' })).toBeVisible();
     await page.getByRole('button', { name: 'Sair e usar outra conta' }).click();
     await expect(page.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
   } finally {

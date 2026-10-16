@@ -1,4 +1,4 @@
-import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { firestore } from './firebase.js';
 import { SENIOR_UID } from './accountPermissions.js';
 
@@ -11,4 +11,10 @@ export async function registerAccountProfile(user) {
     if (profile.exists()) transaction.update(ref, { ...visit, ...(!profile.data().role || user.uid === SENIOR_UID ? { role: defaultRole } : {}) });
     else transaction.set(ref, { ...visit, role: defaultRole, createdAt: serverTimestamp(), premium: false, expiresAt: null, changedBy: null, changedAt: null });
   });
+}
+
+export async function saveAccountPhone(user, phone) {
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error('Informe um celular válido com código do país e DDD.');
+  await registerAccountProfile(user);
+  await updateDoc(doc(firestore, 'accountProfiles', user.uid), { phone });
 }
