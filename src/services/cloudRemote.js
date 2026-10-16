@@ -1,6 +1,9 @@
 import { collection, doc, getDocFromServer, getDocsFromServer, writeBatch, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { firestore } from './firebase.js';
+import { auth, firestore } from './firebase.js';
+import { getIdTokenResult, reload } from 'firebase/auth';
+import { createSessionVerifier } from './verifiedSession.js';
 import { chunkData, normalizeData } from './cloudData.js';
+const verifySession = createSessionVerifier({ currentUser: () => auth.currentUser, readToken: getIdTokenResult, refreshUser: reload });
 
 export function remoteFor(uid) {
   const head = doc(firestore, 'users', uid, 'state', 'current');
@@ -16,6 +19,7 @@ export function remoteFor(uid) {
   };
   return {
     async read() {
+      await verifySession(uid);
       // A writer may publish during a read; retry instead of returning mixed versions.
       for (let attempt = 0; attempt < 3; attempt++) {
         const manifest = await getDocFromServer(head);
@@ -30,6 +34,7 @@ export function remoteFor(uid) {
       throw new Error('A conta está sendo atualizada em outro aparelho. Tente novamente.');
     },
     async write(data, revision) {
+      await verifySession(uid);
       const chunks = chunkData(data);
       if (chunks.length > 400) throw new Error('A cópia excedeu o limite de sincronização. Exporte um backup em Ajustes.');
       const snapshotId = crypto.randomUUID();

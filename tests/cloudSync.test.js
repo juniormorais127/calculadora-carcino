@@ -32,6 +32,23 @@ test('offline preserva mudanças, que são enviadas ao reconectar', async () => 
   await sync.sync(); assert.equal(state.status.state, 'pending'); assert.equal(state.local.viveiros[0].nome, 'Offline');
   remote.read = read; await sync.sync(); assert.equal(state.cloud.data.viveiros[0].nome, 'Offline');
 });
+
+test('permissao recusada preserva registros e baseline e permite nova tentativa', async () => {
+  const meta = { revision: 2, baseline: serializeData(data('Antes')) };
+  const { state, remote, sync } = fixture(data('Editado'), { revision: 2, data: data('Antes') }, meta);
+  const read = remote.read;
+  remote.read = async () => { throw Object.assign(new Error('denied'), { code: 'permission-denied' }); };
+  await sync.sync();
+  assert.equal(state.status.errorCode, 'permission-denied');
+  assert.match(state.status.message, /Firebase/);
+  assert.equal(state.local.viveiros[0].nome, 'Editado');
+  assert.deepEqual(state.meta, meta);
+  assert.equal(state.writes, 0);
+  remote.read = read;
+  await sync.sync();
+  assert.equal(state.status.state, 'synced');
+  assert.equal(state.cloud.data.viveiros[0].nome, 'Editado');
+});
 test('alterações concorrentes não sobrescrevem a nuvem nem o aparelho', async () => {
   const { state, sync } = fixture(data('Local'), { revision: 2, data: data('Remoto') }, { revision: 1, baseline: serializeData(data('Antes')) });
   await sync.sync(); assert.equal(state.status.state, 'conflict'); assert.equal(state.writes, 0);

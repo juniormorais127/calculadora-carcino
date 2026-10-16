@@ -42,7 +42,12 @@ export function createCloudSync({ remote, readLocal, replaceLocal, readMeta, sav
       if (error.code === 'sync/conflict') {
         report({ state: 'conflict', message: 'Outro aparelho salvou alterações. Exporte seu backup antes de escolher qual versão manter.' });
       } else {
-        report({ state: 'pending', message: 'Cópia local preservada. Não foi possível sincronizar agora; tente novamente quando houver conexão.' });
+        const messages = {
+          'permission-denied': 'O Firebase não autorizou a sincronização desta sessão. Sua cópia local está preservada. Tente sincronizar novamente ou entre de novo na conta.',
+          'auth/email-not-verified': 'Confirme seu e-mail para sincronizar. Sua cópia local está preservada.',
+          'auth/session-changed': 'A conta mudou durante a sincronização. Entre novamente na conta correta. Sua cópia local está preservada.',
+        };
+        report({ state: 'pending', errorCode: error.code || 'sync/unknown', message: messages[error.code] || 'Cópia local preservada. Não foi possível concluir a sincronização agora. Confira a conexão e tente novamente.' });
       }
     }
   };
