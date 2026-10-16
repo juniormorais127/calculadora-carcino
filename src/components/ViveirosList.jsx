@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Layers, Plus, Trash2, Edit3, Calendar, Droplets, Maximize2 } from "lucide-react";
 import { deleteViveiro } from "../services/db.js";
 import { useDatabase } from "./AccountProvider.jsx";
+import PondLocationFields from './PondLocationFields.jsx';
+import { parsePondLocation } from '../services/pondLocation.js';
 
 export default function ViveirosList({ 
   viveiros = [], 
@@ -14,6 +16,8 @@ export default function ViveirosList({
   const db = useDatabase();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingViveiro, setEditingViveiro] = useState(null);
+  const [location, setLocation] = useState({ latitude: '', longitude: '' });
+  const [saveError, setSaveError] = useState('');
 
   const [nome, setNome] = useState("");
   const [areaM2, setAreaM2] = useState(10000);
@@ -34,6 +38,8 @@ export default function ViveirosList({
   };
 
   const handleOpenModal = (v = null) => {
+    setSaveError('');
+    setLocation({ latitude: String(v?.latitude ?? ''), longitude: String(v?.longitude ?? ''), locationAccuracyM: v?.locationAccuracyM ?? null, locationCapturedAt: v?.locationCapturedAt ?? null });
     if (v) {
       setEditingViveiro(v);
       setNome(v.nome);
@@ -60,10 +66,17 @@ export default function ViveirosList({
 
   const handleSave = async (e) => {
     e.preventDefault();
+    let coordinates;
+    try { coordinates = parsePondLocation(location.latitude, location.longitude); }
+    catch (err) { setSaveError(err.message); return; }
+    setSaveError('');
     const vol = Number((Number(areaM2) * Number(profundidadeM)).toFixed(0));
     const dens = Number(areaM2) > 0 ? Number((Number(qtdPovoada) / Number(areaM2)).toFixed(1)) : 0;
 
     const dados = {
+      ...coordinates,
+      locationAccuracyM: coordinates.latitude === null ? null : location.locationAccuracyM ?? null,
+      locationCapturedAt: coordinates.latitude === null ? null : location.locationCapturedAt ?? null,
       nome,
       areaM2: Number(areaM2),
       profundidadeM: Number(profundidadeM),
@@ -172,6 +185,7 @@ export default function ViveirosList({
                 </div>
               </div>
 
+              {Number.isFinite(v.latitude) && Number.isFinite(v.longitude) && <a href={`https://www.google.com/maps/search/?api=1&query=${v.latitude},${v.longitude}`} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 min-h-11 py-3 text-xs font-semibold text-emerald-800 underline underline-offset-4">Ver localização no mapa ({v.latitude.toFixed(6)}, {v.longitude.toFixed(6)})</a>}
               {v.observacoes && (
                 <p className="text-xs text-slate-600 mt-3 italic line-clamp-2">
                     : "{v.observacoes}"
@@ -221,6 +235,8 @@ export default function ViveirosList({
             )}
 
             <form onSubmit={handleSave} className="space-y-4">
+              <PondLocationFields value={location} onChange={setLocation} />
+              {saveError && <p role="alert" className="text-sm text-rose-800">{saveError}</p>}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Nome / Identificação:</label>
                 <input
