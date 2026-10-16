@@ -146,6 +146,10 @@ A autorização para promoções por WhatsApp é opcional, desmarcada inicialmen
 
 ## Satélite e comparação histórica
 
+O mapa enquadra os pontos antes de solicitar imagens, reutiliza até 96 imagens entre mapas e mostra uma prévia disponível enquanto busca maior resolução. A troca rápida de datas aguarda 180 ms antes de solicitar outra versão, reduzindo requisições descartadas. O tempo final também depende do servidor de imagens.
+
+Os mapas do técnico e da administração oferecem **Baixar KML — Google Earth Pro** e **Baixar Shapefile (.zip)**. O técnico exporta seus registros; a administração exporta os pontos atuais e históricos carregados, respeitando o filtro de licenciamento. Coordenadas WGS84 representam pontos, não limites de propriedades. O ZIP contém SHP, SHX, DBF, PRJ, CPG, instruções e CSV com textos completos (DBF tem limites de tamanho). KML preserva os relatórios completos. Datas, autoria, aceite, auditoria e licenciamento declarado acompanham os registros quando disponíveis. Fotos, apelidos e anotações privadas ficam excluídos. Não há exportação das imagens de satélite.
+
 O mapa compartilhado usa Esri World Imagery por padrão, mantendo OpenStreetMap como alternativa. **Comparar imagens históricas** consulta o catálogo público Esri Wayback sob demanda e oferece barra com as versões disponíveis. As datas indicam publicação do mosaico, não captura da fotografia; versões distintas podem ter a mesma imagem local. A comparação mantém o enquadramento e os marcadores. Falha de imagens/histórico não impede consulta dos relatórios ou troca para ruas. Atribuições dos fornecedores permanecem visíveis.
 
 O satélite atual e histórico permitem ampliação até o nível 22, buscando imagens nativas até o nível 19. Se faltar uma imagem em um trecho, a camada tenta os níveis anteriores e recorta a região correspondente, preservando as coordenadas. A requisição `blankTile=false` evita tratar a imagem de “sem cobertura” como fotografia válida. A interface informa quando está ampliando uma imagem de menor resolução; não há criação artificial de detalhes. Falhas de conexão continuam podendo impedir o carregamento.

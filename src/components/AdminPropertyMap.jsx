@@ -6,6 +6,8 @@ import TechnicalVisitMap from './TechnicalVisitMap.jsx';
 import { watchAssistedProducers, watchAssistedVisits } from '../services/assistedProducers.js';
 import { assistedMapPoints } from '../services/assistedMap.js';
 import { ASSISTED_AUDIT_LABELS } from '../services/assistedProducerData.js';
+import MapExportButtons from './MapExportButtons.jsx';
+import { adminMapExportRecords } from '../services/adminMapExport.js';
 
 export default function AdminPropertyMap({ subscribe = watchFieldRecords }) {
   const [farms, setFarms] = useState([]), [visits, setVisits] = useState([]), [inspections, setInspections] = useState([]);
@@ -27,11 +29,14 @@ export default function AdminPropertyMap({ subscribe = watchFieldRecords }) {
   const allPoints = [...points, ...assistedPoints.filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude))];
   const visible = filter === 'all' ? allPoints : allPoints.filter(point => point.licenseStatus === filter);
   const assistedWithoutLocation = assistedPoints.filter(item => !Number.isFinite(item.latitude) || !Number.isFinite(item.longitude)).length;
+  const exportRecords = useMemo(() => adminMapExportRecords(allPoints, visits, inspections, assisted, assistedVisits, filter), [allPoints, visits, inspections, assisted, assistedVisits, filter]);
   return <section className="py-5 pb-16 space-y-5"><div className="space-y-2"><h2 className="text-2xl font-bold">Mapa de propriedades</h2><p className="text-sm text-slate-600 max-w-2xl">Cadastros com coordenadas sincronizadas e registros de campo. Vermelho indica área informada como não licenciada; verde, licenciada; cinza, situação ainda não informada.</p></div>
     {error && <p role="alert" className="text-sm text-rose-800">{error}</p>}
     <label className="block text-sm font-semibold">Filtrar licenciamento<select value={filter} onChange={event => setFilter(event.target.value)} className="mt-1 block min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="all">Todas as situações</option>{Object.entries(LICENSE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <p className="text-sm text-slate-600">{farms.length} propriedade(s) sincronizada(s) · {assisted.length} cadastro(s) assistido(s) · {visible.length} ponto(s) no mapa · {withoutLocation + assistedWithoutLocation} cadastro(s) sem coordenadas.</p>
     <TechnicalVisitMap visits={visible} />
+    <MapExportButtons records={exportRecords} filename="locais-e-visitas-plataforma" />
+    <p className="text-xs text-slate-600">A exportação administrativa inclui os pontos atuais e o histórico de visitas carregado nesta tela, respeitando o filtro de licenciamento. Um local pode aparecer em vários registros de datas diferentes.</p>
     <p className="text-xs text-slate-600">Cada ponto representa um viveiro ou local de visita. O mapa não desenha os limites do imóvel. Cadastros antigos precisam abrir o site e sincronizar para publicar as coordenadas nesta área administrativa.</p>
     <div className="space-y-3">{visible.map(point => <article key={point.id} className="border-b border-slate-200 pb-3 space-y-1"><h3 className="font-bold">{point.farmName} · {point.pondName}</h3><p className="text-sm break-all">{point.clientEmail || 'E-mail ainda não informado'}</p>{point.auditStatus && <p className="text-sm">{ASSISTED_AUDIT_LABELS[point.auditStatus]} · Técnico: {point.technicianName}</p>}<p className="text-sm">{LICENSE_LABELS[point.licenseStatus]}</p><p className="text-xs text-slate-600">{point.latitude}, {point.longitude} · {VISIT_LABELS[point.status] || 'Cadastro sem avaliação técnica'} · {point.visitedOn}</p></article>)}</div>
   </section>;

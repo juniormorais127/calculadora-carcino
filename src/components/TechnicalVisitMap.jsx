@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { LICENSE_LABELS, VISIT_LABELS } from '../services/technicalVisitData.js';
 import { satelliteLayer } from '../services/satelliteLayer.js';
 
-const satelliteUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false';
+const satelliteUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false';
 const satelliteCredit = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
 let archivePromise;
 function loadArchive() {
@@ -17,11 +17,15 @@ function loadArchive() {
 }
 export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
   const host = useRef(null), mapRef = useRef(null), layerRef = useRef(null), markersRef = useRef(null);
+  const lastBounds = useRef('');
   const [error, setError] = useState(false), [basemap, setBasemap] = useState('satellite');
   const [resolutionFallback, setResolutionFallback] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false), [archive, setArchive] = useState([]), [historyIndex, setHistoryIndex] = useState(0), [historyError, setHistoryError] = useState(''), [historyLoading, setHistoryLoading] = useState(false);
   const hasPoints = visits.some(visit => Number.isFinite(visit.latitude) && Number.isFinite(visit.longitude));
-  const release = basemap === 'history' ? archive[historyIndex] : null;
+  const selectedRelease = archive[historyIndex] || null;
+  const [settledRelease, setSettledRelease] = useState(null);
+  useEffect(() => { const timer = setTimeout(() => setSettledRelease(selectedRelease), 180); return () => clearTimeout(timer); }, [selectedRelease]);
+  const release = basemap === 'history' ? settledRelease : null;
   useEffect(() => {
     if (!historyRequest || !hasPoints) return;
     setHistoryOpen(true);
@@ -29,14 +33,15 @@ export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
   }, [historyRequest, hasPoints, archive.length]);
   useEffect(() => {
     if (!hasPoints) return;
-    const map = L.map(host.current, { scrollWheelZoom: false }).setView([-10.9, -37.1], 6);
+    const initialPoints = visits.filter(visit => Number.isFinite(visit.latitude) && Number.isFinite(visit.longitude)).map(visit => [visit.latitude, visit.longitude]);
+    const map = L.map(host.current, { scrollWheelZoom: false }).fitBounds(initialPoints, { padding: [30, 30], maxZoom: 16 });
     mapRef.current = map; markersRef.current = L.layerGroup().addTo(map);
     const observer = new ResizeObserver(() => map.invalidateSize()); observer.observe(host.current);
-    return () => { observer.disconnect(); map.remove(); mapRef.current = null; layerRef.current = null; markersRef.current = null; };
+    return () => { observer.disconnect(); map.remove(); mapRef.current = null; layerRef.current = null; markersRef.current = null; lastBounds.current = ''; };
   }, [hasPoints]);
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || (basemap === 'history' && !release)) return;
     setError(false);
     setResolutionFallback(false);
     if (layerRef.current) map.removeLayer(layerRef.current);
@@ -60,7 +65,8 @@ export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
       popup.textContent = `${visit.farmName} · ${visit.pondName} — ${LICENSE_LABELS[visit.licenseStatus]} — ${VISIT_LABELS[visit.status] || 'Cadastro da propriedade'} — Visita: ${visit.visitedOn}`;
       L.circleMarker(point, { radius: 9, color, weight: 3, fillColor: color, fillOpacity: 0.85 }).addTo(markersRef.current).bindPopup(popup);
     });
-    if (points.length) mapRef.current.fitBounds(points, { padding: [30, 30], maxZoom: 16 });
+    const boundsKey = points.map(point => point.join(',')).sort().join(';');
+    if (points.length && boundsKey !== lastBounds.current) { lastBounds.current = boundsKey; mapRef.current.fitBounds(points, { padding: [30, 30], maxZoom: 16 }); }
   }, [visits, hasPoints]);
   useEffect(() => {
     if (!historyOpen || archive.length) return;

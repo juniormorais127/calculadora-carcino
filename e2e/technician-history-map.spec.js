@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { unzipSync, strFromU8 } from 'fflate';
 test('tecnico abre historico com seus pontos normais e assistidos sem visualizar os pontos de colegas', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 426, height: 812 });
   await page.goto('./'); await page.getByRole('heading', { name: 'Entrar na minha conta' }).waitFor();
@@ -28,5 +30,22 @@ test('tecnico abre historico com seus pontos normais e assistidos sem visualizar
   await page.locator('path.leaflet-interactive').first().click({ force: true });
   await expect(page.locator('.leaflet-popup-content')).toContainText('Fazenda normal');
   await expect(page.getByText('Propriedade privada do colega', { exact: false })).toHaveCount(0);
+  const kmlDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Baixar KML/ }).click();
+  const kmlPath = testInfo.outputPath('visitas.kml');
+  await (await kmlDownload).saveAs(kmlPath);
+  const kml = await readFile(kmlPath, 'utf8');
+  expect(kml).toContain('Fazenda normal');
+  expect(kml).toContain('Propriedade assistida');
+  expect(kml).not.toContain('colega');
+  expect(kml.match(/<Placemark>/g)).toHaveLength(2);
+  const zipDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Baixar Shapefile (.zip)', exact: true }).click();
+  const zipPath = testInfo.outputPath('visitas.zip');
+  await (await zipDownload).saveAs(zipPath);
+  const files = unzipSync(await readFile(zipPath));
+  expect(Object.keys(files)).toHaveLength(7);
+  expect(strFromU8(files['detalhes_completos.csv'])).toContain('Propriedade assistida');
+  expect(strFromU8(files['detalhes_completos.csv'])).not.toContain('colega');
   await page.screenshot({ path: testInfo.outputPath('historico-tecnico-mobile.png'), fullPage: true });
 });
