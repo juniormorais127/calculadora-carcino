@@ -9,6 +9,16 @@ A abertura do site exige login antes de montar o painel. Cadastro e recuperaçã
 de senha ficam disponíveis nessa tela. Sessões já autenticadas abrem o painel;
 ao sair, o aplicativo retorna à tela de login.
 
+Celular cadastrado: além do e-mail confirmado, o painel só abre quando o perfil
+em `accountProfiles/{uid}` traz um celular. Essa exigência vale somente quando o
+perfil pôde ser lido. O Firestore usa cache em memória (`memoryLocalCache`), então
+sem internet — ou quando a consulta ao perfil falha — não há perfil para ler, e o
+app abre em modo local com os registros que já estão no aparelho. Sem essa saída,
+o produtor sem sinal ficaria preso na tela de login, longe dos próprios dados.
+A regra vive em `motivoDoBloqueioDeAcesso` (`src/services/accountPermissions.js`)
+e é coberta por `tests/acessoPainel.test.js`. Se o perfil for lido depois, já com
+o app aberto, e não houver celular, a sessão volta para a tela de cadastro.
+
 Verificação obrigatória: o app não monta os serviços de produção para contas
 com `emailVerified == false`, inclusive contas antigas e Sênior. Exibe botão
 Enviar confirmação (link nativo Firebase) e Já confirmei meu e-mail. O segundo
