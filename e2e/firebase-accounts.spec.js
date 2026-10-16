@@ -128,9 +128,12 @@ test('métricas gravam por conta, reenviam offline e negam leitura geral', async
     expect((await request('accountProfiles?pageSize=10', a)).status).toBe(403);
     const promote = await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=premium`, a, 'PATCH', { fields: { premium: { booleanValue: true } } });
     expect(promote.status).toBe(403);
+    const promoteRole = await request(`accountProfiles/${a.localId}?updateMask.fieldPaths=role`, a, 'PATCH', { fields: { role: { stringValue: 'field_technician' } } });
+    expect(promoteRole.status).toBe(403);
     const profile = (await (await request(`accountProfiles/${a.localId}`, a)).json()).fields;
     expect(profile.email.stringValue).toBe(a.email);
     expect(profile.premium.booleanValue).toBe(false);
+    expect(profile.role.stringValue).toBe('producer');
     const id = await page.evaluate(async () => {
       const { trackPurchase } = await import('/src/services/purchaseTracking.js');
       return trackPurchase('brand', { id: 'test-only', name: 'Métrica temporária', category: 'Ração' });

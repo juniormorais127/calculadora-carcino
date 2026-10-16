@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { expirationMillis, premiumStatus } from '../src/services/accountPermissions.js';
+import { expirationMillis, premiumStatus, accountRole, ACCOUNT_ROLES } from '../src/services/accountPermissions.js';
+
+test('perfil padrão é produtor e técnico não ganha Premium automaticamente', () => {
+  assert.equal(accountRole(null), 'producer');
+  assert.equal(accountRole({ premium: true }), 'producer');
+  assert.equal(accountRole({ role: 'admin' }), 'producer');
+  assert.equal(ACCOUNT_ROLES[accountRole({ role: 'field_technician' })], 'Técnico de campo');
+  assert.equal(premiumStatus({ role: 'field_technician', premium: false }), 'Gratuito');
+});
 
 test('premium precisa de liberação e respeita validade', () => {
   assert.equal(premiumStatus(null), 'Gratuito');

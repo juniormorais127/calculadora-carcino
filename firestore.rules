@@ -7,7 +7,8 @@ service cloud.firestore {
       allow get: if owner(uid) || admin();
       allow list: if admin();
       function validProfile() {
-        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt'])
+        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
+          && request.resource.data.get('role', 'producer') in ['producer', 'field_technician']
           && request.resource.data.email is string && request.resource.data.email.size() <= 320
           && request.resource.data.premium is bool
           && (request.resource.data.expiresAt == null || request.resource.data.expiresAt is timestamp);
@@ -16,11 +17,14 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time && request.resource.data.lastSeenAt == request.time
         && request.resource.data.premium == false && request.resource.data.expiresAt == null
+        && request.resource.data.get('role', 'producer') == 'producer'
         && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
       allow update: if validProfile() && (
-        (owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
+        (owner(uid) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
+          || (!('role' in resource.data) && request.resource.data.role == 'producer'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt', 'role'])))
           && request.resource.data.email == request.auth.token.email && request.resource.data.lastSeenAt == request.time)
-        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt'])
+        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
           && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time));
       allow delete: if admin() || owner(uid);
     }

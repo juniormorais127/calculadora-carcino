@@ -6,7 +6,7 @@ export async function registerAccountProfile(user) {
   await runTransaction(firestore, async transaction => {
     const profile = await transaction.get(ref);
     const visit = { email: user.email, lastSeenAt: serverTimestamp() };
-    if (profile.exists()) transaction.update(ref, visit);
-    else transaction.set(ref, { ...visit, createdAt: serverTimestamp(), premium: false, expiresAt: null, changedBy: null, changedAt: null });
+    if (profile.exists()) transaction.update(ref, { ...visit, ...(!profile.data().role ? { role: 'producer' } : {}) });
+    else transaction.set(ref, { ...visit, role: 'producer', createdAt: serverTimestamp(), premium: false, expiresAt: null, changedBy: null, changedAt: null });
   });
 }

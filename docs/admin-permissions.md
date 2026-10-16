@@ -4,6 +4,14 @@ Minha conta → Painel administrativo → Usuários e permissões. Apenas o UID
 administrativo já configurado pode listar e-mails e editar Premium. Uma permissão
 Premium nunca promove alguém a administrador.
 
+Perfil profissional separado da assinatura: `producer` (Produtor) e
+`field_technician` (Técnico de campo). Novas contas começam como Produtor.
+Só o administrador altera o perfil; usuários antigos sem esse campo são
+tratados como Produtor e podem registrar esse padrão no próximo acesso, sem
+alterar Premium ou validade existentes. O painel permite filtrar por perfil.
+Ser Técnico de campo não concede Premium nem dados de outros produtores.
+Os serviços específicos e a aplicação das restrições serão definidos aos poucos.
+
 Ao entrar ou criar conta no site, o cliente registra `accountProfiles/{uid}`:
 e-mail validado contra o token Firebase, primeiro registro no painel, último
 acesso registrado, Premium, validade e autor/data da última edição administrativa.

@@ -1,3 +1,6 @@
+export const ACCOUNT_ROLES = { producer: 'Produtor', field_technician: 'Técnico de campo' };
+export const accountRole = profile => profile?.role === 'field_technician' ? 'field_technician' : 'producer';
+
 export function premiumStatus(profile, now = Date.now()) {
   if (!profile?.premium) return 'Gratuito';
   const expiry = profile.expiresAt?.toMillis?.() ?? profile.expiresAt;

@@ -19,6 +19,7 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByLabel('Buscar e-mail').fill('produtor@');
   await expect(page.getByText('outro@example.com', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Editar permissões de produtor@example.com' }).click();
+  await page.getByLabel('Perfil do usuário', { exact: true }).selectOption('field_technician');
   for (const width of [426, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -27,11 +28,14 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByLabel('Liberar Premium').check();
   await page.getByRole('button', { name: 'Salvar permissões' }).click();
   await expect(page.getByRole('status')).toContainText('Premium liberado');
-  expect(await page.evaluate(() => window.savedPermissions[0].slice(0, 2))).toEqual(['test-only', { premium: true, expiresAt: null }]);
+  expect(await page.evaluate(() => window.savedPermissions[0].slice(0, 2))).toEqual(['test-only', { role: 'field_technician', premium: true, expiresAt: null }]);
+  await expect(page.getByRole('cell', { name: 'Técnico de campo', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Premium ativo', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Editar permissões de produtor@example.com' }).click();
   await page.getByLabel('Liberar Premium').uncheck();
   await page.getByRole('button', { name: 'Salvar permissões' }).click();
   await expect(page.getByRole('status')).toContainText('acesso gratuito');
-  expect(await page.evaluate(() => window.savedPermissions[1][1])).toEqual({ premium: false, expiresAt: null });
+  expect(await page.evaluate(() => window.savedPermissions[1][1])).toEqual({ role: 'field_technician', premium: false, expiresAt: null });
+  await page.getByLabel('Filtrar por perfil').selectOption('producer');
+  await expect(page.getByText('produtor@example.com', { exact: true })).toBeHidden();
 });
