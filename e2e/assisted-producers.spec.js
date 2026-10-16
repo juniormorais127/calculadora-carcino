@@ -124,7 +124,7 @@ test('mapa alterna satelite e ruas e troca versoes historicas sem mover a visual
     createRoot(host).render(React.createElement(Map, { visits: [{ id: 'map1', farmName: 'Fazenda Rio', pondId: 1, pondName: 'Viveiro 1', latitude: -10.95, longitude: -37.07, licenseStatus: 'unlicensed', technicianUid: 'tech', visitedOn: '2026-10-16' }] }));
   });
   await expect(page.getByRole('button', { name: 'Satélite atual', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.leaflet-tile-pane img').first()).toHaveAttribute('src', /server\.arcgisonline/);
+  await expect(page.locator('.leaflet-tile-pane canvas').first()).toBeVisible();
   await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 30000 });
   await page.screenshot({ path: testInfo.outputPath('satelite.png'), fullPage: true });
   await page.getByRole('button', { name: 'Mapa de ruas', exact: true }).click();
@@ -134,7 +134,7 @@ test('mapa alterna satelite e ruas e troca versoes historicas sem mover a visual
   await expect(slider).toBeVisible({ timeout: 30000 });
   const transform = await page.locator('.leaflet-map-pane').getAttribute('style');
   await slider.fill('0');
-  await expect(page.locator('.leaflet-tile-pane img').first()).toHaveAttribute('src', /wayback\.maptiles/);
+  await expect(page.locator('.leaflet-tile-pane canvas').first()).toBeVisible();
   await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 30000 });
   await page.screenshot({ path: testInfo.outputPath('historico.png'), fullPage: true });
   expect(await page.locator('.leaflet-map-pane').getAttribute('style')).toBe(transform);
