@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { trackPurchase } from '../services/purchaseTracking.js';
 import { 
   Store, 
   MapPin, 
@@ -30,6 +31,8 @@ const ESTADOS = [
 const ESTADOS_EM_DESTAQUE = [ESTADOS[0], ...RANKING_CAMARAO.slice(0, 6)];
 
 export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "TODAS", onVoltarCalculos }) {
+  const measured = useRef(false);
+  useEffect(() => { if (!measured.current) { measured.current = true; void trackPurchase('view'); } }, []);
   const [estadoFiltro, setEstadoFiltro] = useState(estadoInicial);
   const [marcaFiltro, setMarcaFiltro] = useState(marcaInicial);
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -163,6 +166,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
 
                 <button
                   onClick={() => {
+                    void trackPurchase('brand', { id: fab.id, name: fab.nome, category: 'Ração' });
                     setMarcaFiltro(fab.nome.includes("ADM") ? "ADM" : fab.nome.includes("Guabi") ? "Guabi" : "AquaNutri");
                   }}
                   className="mt-3 w-full bg-white hover:bg-slate-100 text-slate-700 font-black text-xs py-2 px-3 rounded-xl border border-slate-200 flex items-center justify-center gap-1.5 transition-all"
@@ -339,6 +343,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                 {/* Botões de Contato / Intermediação */}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                   <a
+                    onClick={() => void trackPurchase('whatsapp', { id: v.id, name: v.empresa, category: 'Vendedor · vários produtos' })}
                     href={`https://wa.me/55${v.whatsapp}?text=${encodeURIComponent(
                       `Olá ${v.nomeContato}! Encontrei seu contato no CarcinoGestão. Gostaria de fazer uma cotação de ração/insumos para minha fazenda de camarão no estado de ${v.estadoNome}.`
                     )}`}
@@ -351,6 +356,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
                   </a>
 
                   <a
+                    onClick={() => void trackPurchase('phone', { id: v.id, name: v.empresa, category: 'Vendedor · vários produtos' })}
                     href={`tel:${v.telefone}`}
                     className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 px-3 rounded-xl text-xs font-bold transition-all"
                   >
@@ -364,6 +370,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
         )}
       </div>
 
+      <p className="text-xs text-slate-600">Contabilizamos acessos e cliques nesta área para medir o interesse nas ofertas e contatos. Um clique não confirma uma compra.</p>
       {/* Card Institucional para Empresas que querem Anunciar a Logo */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-6 shadow-md border border-emerald-500/20 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -112,3 +112,41 @@ test('contas privadas, recuperação em outro aparelho, modo offline e login', a
     await cleanup(a); await cleanup(b);
   }
 });
+
+test('métricas gravam por conta, reenviam offline e negam leitura geral', async ({ browser }) => {
+  test.setTimeout(120000);
+  let a, b, context;
+  const ids = [];
+  try {
+    a = await createAccount(); b = await createAccount();
+    context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, a);
+    const id = await page.evaluate(async () => {
+      const { trackPurchase } = await import('/src/services/purchaseTracking.js');
+      return trackPurchase('brand', { id: 'test-only', name: 'Métrica temporária', category: 'Ração' });
+    });
+    ids.push(id);
+    await expect.poll(async () => (await request(`purchaseEvents/${id}`, a)).status, { timeout: 45000 }).toBe(200);
+    expect((await request(`purchaseEvents/${id}`, b)).status).toBe(403);
+    expect((await request('purchaseEvents?pageSize=10', a)).status).toBe(403);
+    expect((await request(`purchaseEvents/${id}`)).status).toBe(403);
+    await context.setOffline(true);
+    const offlineId = await page.evaluate(async () => {
+      const { trackPurchase } = await import('/src/services/purchaseTracking.js');
+      return trackPurchase('product', { id: 'test-product', name: 'Produto temporário', category: 'Insumos' });
+    });
+    ids.push(offlineId);
+    expect((await request(`purchaseEvents/${offlineId}`, a)).status).toBe(404);
+    await context.setOffline(false);
+    await expect.poll(async () => (await request(`purchaseEvents/${offlineId}`, a)).status, { timeout: 45000 }).toBe(200);
+    await page.evaluate(async () => (await import('/src/services/purchaseTracking.js')).flushPurchaseEvents());
+    const before = (await (await request(`purchaseEvents/${id}`, a)).json()).updateTime;
+    await page.evaluate(async () => (await import('/src/services/purchaseTracking.js')).flushPurchaseEvents());
+    expect((await (await request(`purchaseEvents/${id}`, a)).json()).updateTime).toBe(before);
+  } finally {
+    if (context) await context.close();
+    if (a) for (const id of ids) if (id) await request(`purchaseEvents/${id}`, a, 'DELETE');
+    await cleanup(a); await cleanup(b);
+  }
+});

@@ -5,6 +5,7 @@ import { auth } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
 import { db as guestDb, exportLocalDatabase, importLocalDatabase } from '../services/db.js';
 import { isEmptyData } from '../services/cloudData.js';
+import { isAdmin } from '../services/purchaseMetrics.js';
 
 export function authMessage(error) {
   const messages = {
@@ -26,7 +27,7 @@ function download(data, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const button = 'min-h-11 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700';
-export default function AccountView() {
+export default function AccountView({ onAdmin }) {
   const account = useAccount();
   const { user, database, syncStatus, metadata } = account;
   const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).has('recuperar') ? 'reset' : 'login');
@@ -65,6 +66,7 @@ export default function AccountView() {
   };
   if (user) return <section className="max-w-2xl mx-auto py-5 space-y-5 pb-20">
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
+    {isAdmin(user) && onAdmin && <button className={`${button} bg-emerald-700 text-white`} onClick={onAdmin}>Painel administrativo</button>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="flex gap-2 items-center font-bold"><Cloud className="w-5 h-5 text-emerald-700" />Seus dados de produção</h3>

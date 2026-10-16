@@ -6,8 +6,9 @@ import { db as guestDb, getAccountDatabase, exportLocalDatabase, importLocalData
 import { createCloudSync } from '../services/cloudSync.js';
 import { remoteFor } from '../services/cloudRemote.js';
 import { serializeData } from '../services/cloudData.js';
+import { flushPurchaseEvents } from '../services/purchaseTracking.js';
 
-const AccountContext = createContext(null);
+export const AccountContext = createContext(null);
 const metadata = new Dexie('CarcinoGestaoCloudMetadata');
 metadata.version(1).stores({ accounts: 'uid' });
 export const useAccount = () => useContext(AccountContext);
@@ -18,6 +19,14 @@ function AccountSession({ user, children }) {
   const [syncStatus, setSyncStatus] = useState({ state: user ? 'syncing' : 'local', message: user ? 'Conectando sua conta…' : 'Modo local: dados somente neste navegador.' });
   const [dataVersion, setDataVersion] = useState(0);
   const controller = useRef(null);
+  useEffect(() => {
+    if (!user) return;
+    void flushPurchaseEvents();
+    window.addEventListener('online', flushPurchaseEvents);
+    window.addEventListener('focus', flushPurchaseEvents);
+    const retryMetrics = setInterval(flushPurchaseEvents, 30000);
+    return () => { clearInterval(retryMetrics); window.removeEventListener('online', flushPurchaseEvents); window.removeEventListener('focus', flushPurchaseEvents); };
+  }, [user?.uid]);
   useEffect(() => {
     if (!user) return;
     let timer;

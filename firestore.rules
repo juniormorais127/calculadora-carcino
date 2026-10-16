@@ -2,6 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    function admin() { return request.auth != null && request.auth.uid == 'Dc2sEKML8Lc66cgj8VvSX4Uhhpk1'; }
+    match /purchaseEvents/{eventId} {
+      allow get: if admin() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
+      allow list: if admin();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'kind', 'targetId', 'targetName', 'category', 'occurredAt', 'receivedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.kind in ['view', 'brand', 'whatsapp', 'phone', 'product']
+        && request.resource.data.targetId is string && request.resource.data.targetId.size() <= 120
+        && request.resource.data.targetName is string && request.resource.data.targetName.size() <= 200
+        && request.resource.data.category is string && request.resource.data.category.size() <= 100
+        && request.resource.data.occurredAt is int && request.resource.data.occurredAt > 0
+        && request.resource.data.occurredAt <= request.time.toMillis() + 300000
+        && request.resource.data.receivedAt == request.time;
+      allow delete: if admin() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
     match /users/{uid}/state/current {
       allow read: if owner(uid);
       allow delete: if owner(uid);
