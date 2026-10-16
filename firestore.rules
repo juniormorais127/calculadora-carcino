@@ -62,6 +62,64 @@ service cloud.firestore {
         && request.resource.data.receivedAt == request.time;
       allow delete: if senior() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
+    function fieldTech() { return request.auth != null && request.auth.token.email_verified == true && profileRole(request.auth.uid) == 'field_technician'; }
+    function fieldAccess(uid) {
+      return fieldTech() && exists(/databases/$(database)/documents/fieldAuthorizations/$(uid + '~' + request.auth.uid))
+        && get(/databases/$(database)/documents/fieldAuthorizations/$(uid + '~' + request.auth.uid)).data.active == true;
+    }
+    match /fieldAuthorizations/{id} {
+      allow delete: if request.auth != null && (owner(resource.data.ownerUid) || admin());
+      allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || resource.data.technicianUid == request.auth.uid || admin());
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['ownerUid', 'technicianUid', 'active', 'changedBy', 'changedAt'])
+        && request.resource.data.ownerUid is string && request.resource.data.technicianUid is string
+        && id == request.resource.data.ownerUid + '~' + request.resource.data.technicianUid
+        && request.resource.data.ownerUid != request.resource.data.technicianUid
+        && (verifiedOwner(request.resource.data.ownerUid) || admin())
+        && request.resource.data.active is bool && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time
+        && (!request.resource.data.active || profileRole(request.resource.data.technicianUid) == 'field_technician');
+    }
+    match /fieldFarms/{uid} {
+      allow delete: if owner(uid);
+      allow get: if verifiedOwner(uid) || fieldAccess(uid) || admin();
+      allow create, update: if verifiedOwner(uid) && request.resource.data.keys().hasOnly(['ownerUid', 'name', 'ponds', 'updatedAt'])
+        && request.resource.data.ownerUid == uid && request.resource.data.name is string && request.resource.data.name.size() <= 200
+        && request.resource.data.ponds is list && request.resource.data.ponds.size() <= 2000 && request.resource.data.updatedAt == request.time;
+    }
+    match /technicalVisits/{id} {
+      allow delete: if admin();
+      allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || (fieldTech() && resource.data.technicianUid == request.auth.uid) || admin());
+      allow create: if fieldTech() && request.resource.data.technicianUid == request.auth.uid && fieldAccess(request.resource.data.ownerUid)
+        && request.resource.data.keys().hasOnly(['ownerUid', 'technicianUid', 'technicianEmail', 'farmName', 'pondId', 'pondName', 'visitedOn', 'summary', 'correctLocation', 'latitude', 'longitude', 'previousLatitude', 'previousLongitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'status', 'createdAt', 'decidedAt'])
+        && request.resource.data.technicianEmail == request.auth.token.email
+        && request.resource.data.farmName is string && request.resource.data.farmName.size() <= 200
+        && request.resource.data.pondId is int && request.resource.data.pondId > 0 && request.resource.data.pondName is string && request.resource.data.pondName.size() <= 200
+        && request.resource.data.summary is string && request.resource.data.summary.size() >= 10 && request.resource.data.summary.size() <= 40000
+        && request.resource.data.visitedOn is string && request.resource.data.visitedOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.correctLocation is bool
+        && ((request.resource.data.latitude == null && request.resource.data.longitude == null && request.resource.data.correctLocation == false)
+          || (request.resource.data.latitude is number && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90 && request.resource.data.longitude is number && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180))
+        && (request.resource.data.previousLatitude == null || (request.resource.data.previousLatitude is number && request.resource.data.previousLatitude >= -90 && request.resource.data.previousLatitude <= 90))
+        && (request.resource.data.previousLongitude == null || (request.resource.data.previousLongitude is number && request.resource.data.previousLongitude >= -180 && request.resource.data.previousLongitude <= 180))
+        && request.resource.data.licenseStatus in ['licensed', 'unlicensed', 'unknown']
+        && request.resource.data.licenseNumber is string && request.resource.data.licenseNumber.size() <= 480
+        && request.resource.data.licenseRegisteredOn is string && request.resource.data.licenseExpiresOn is string
+        && (request.resource.data.licenseStatus != 'licensed' || (request.resource.data.licenseNumber.size() > 0
+          && request.resource.data.licenseRegisteredOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.licenseExpiresOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.licenseExpiresOn >= request.resource.data.licenseRegisteredOn))
+        && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time && request.resource.data.decidedAt == null;
+      allow update: if verifiedOwner(resource.data.ownerUid) && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt'])
+        && request.resource.data.status in ['accepted', 'rejected'] && request.resource.data.decidedAt == request.time;
+    }
+    match /technicalNotebooks/{uid}/visits/{id} {
+      allow delete: if owner(uid);
+      allow read: if owner(uid);
+      allow create: if owner(uid) && fieldTech()
+        && getAfter(/databases/$(database)/documents/technicalVisits/$(id)).data.technicianUid == uid
+        && request.resource.data.keys().hasOnly(['notes', 'createdAt']) && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 40000 && request.resource.data.createdAt == request.time;
+    }
     match /users/{uid}/state/current {
       allow read, delete: if verifiedOwner(uid);
       allow create, update: if verifiedOwner(uid)

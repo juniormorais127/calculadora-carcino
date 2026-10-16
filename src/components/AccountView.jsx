@@ -30,7 +30,7 @@ function download(data, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const button = 'min-h-11 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700';
-export default function AccountView() {
+export default function AccountView({ onVisits }) {
   const account = useAccount();
   const { user, database, syncStatus, metadata } = account;
   const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).has('recuperar') ? 'reset' : 'login');
@@ -69,6 +69,7 @@ export default function AccountView() {
   };
   if (user) return <section className="max-w-2xl mx-auto py-5 space-y-5 pb-20">
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
+    {onVisits && <button className={`${button} border border-emerald-700 text-emerald-800`} onClick={onVisits}>Visitas técnicas e autorizações</button>}
     {isAdmin(user, account.access) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}admin/`}>Abrir administração</a>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
     <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus({ ...account.access, role: accountRole(account.access, user.uid) }) : 'Consultando…'}</strong></p>

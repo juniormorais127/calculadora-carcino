@@ -15,6 +15,8 @@ import AccountView from "./components/AccountView.jsx";
 import { ShrimpMarkIcon } from "./components/icons/CustomAquacultureIcons.jsx";
 import PasswordResetView from "./components/PasswordResetView.jsx";
 import VerifyEmailView from "./components/VerifyEmailView.jsx";
+import TechnicalVisitsView from './components/TechnicalVisitsView.jsx';
+import TechnicalVisitBridge from './components/TechnicalVisitBridge.jsx';
 import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
@@ -149,6 +151,7 @@ function ProductionApp() {
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
+        <TechnicalVisitBridge onOpen={() => handleNavigate('visitas')} onReload={loadData} />
         {user && <div role="status" className={`my-3 flex flex-wrap justify-between items-center gap-2 rounded-xl border px-3 py-2 text-xs ${syncStatus.state === 'synced' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
           <span>{syncStatus.message}</span>
           {['conflict', 'pending'].includes(syncStatus.state) && <button onClick={() => syncStatus.state === 'conflict' ? handleNavigate('conta') : sync()} className="min-h-11 font-bold underline underline-offset-2">{syncStatus.state === 'conflict' ? 'Revisar versões' : 'Tentar sincronizar'}</button>}
@@ -186,7 +189,8 @@ function ProductionApp() {
           </div>
         ) : (
           <>
-            {activeTab === "conta" && <AccountView />}
+            {activeTab === "conta" && <AccountView onVisits={() => handleNavigate('visitas')} />}
+            {activeTab === 'visitas' && <TechnicalVisitsView onReload={loadData} />}
             {activeTab === "dashboard" && (
               <Dashboard
                 viveiros={viveiros}

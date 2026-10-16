@@ -1,0 +1,55 @@
+import { describe, test, before, after } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
+import { doc, setDoc, getDoc, getDocs, updateDoc, collection, query, where, serverTimestamp, writeBatch } from 'firebase/firestore';
+
+describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, () => {
+  let env;
+  const db = (uid, verified = true) => env.authenticatedContext(uid, { email: `${uid}@example.com`, email_verified: verified }).firestore();
+  const grant = (actor, active = true, technicianUid = 'techA') => setDoc(doc(db(actor), 'fieldAuthorizations', `client~${technicianUid}`), { ownerUid: 'client', technicianUid, active, changedBy: actor, changedAt: serverTimestamp() });
+  const visit = () => ({ ownerUid: 'client', technicianUid: 'techA', technicianEmail: 'techA@example.com', farmName: 'Fazenda Teste', pondId: 1, pondName: 'Viveiro 1', visitedOn: '2026-10-16', summary: 'Conferida a localizacao e o licenciamento da propriedade.', correctLocation: true, latitude: -10.95, longitude: -37.07, previousLatitude: -10.9, previousLongitude: -37.1, licenseStatus: 'licensed', licenseNumber: 'ABC-123', licenseRegisteredOn: '2026-10-16', licenseExpiresOn: '2027-10-16', status: 'pending', createdAt: serverTimestamp(), decidedAt: null });
+  before(async () => {
+    env = await initializeTestEnvironment({ projectId: 'demo-carcino', firestore: { rules: readFileSync('firestore.rules', 'utf8') } });
+    await env.withSecurityRulesDisabled(async context => {
+      for (const [uid, role] of [['client', 'producer'], ['techA', 'field_technician'], ['techB', 'field_technician'], ['admin', 'administrator'], ['senior', 'senior'], ['stranger', 'producer']]) await setDoc(doc(context.firestore(), 'accountProfiles', uid), { role });
+    });
+  });
+  after(async () => { await env?.cleanup(); });
+  test('autorizacao, proposta, aceite e revogacao respeitam o isolamento entre contas', async () => {
+    await assertFails(grant('stranger'));
+    await assertFails(setDoc(doc(db('client', false), 'fieldAuthorizations', 'client~techA'), { ownerUid: 'client', technicianUid: 'techA', active: true, changedBy: 'client', changedAt: serverTimestamp() }));
+    await assertFails(grant('client', true, 'stranger'));
+    await assertSucceeds(grant('client'));
+    await assertSucceeds(grant('admin', true, 'techB'));
+    await assertSucceeds(setDoc(doc(db('client'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }], updatedAt: serverTimestamp() }));
+    await assertSucceeds(getDoc(doc(db('techA'), 'fieldFarms', 'client')));
+    await assertFails(getDoc(doc(db('stranger'), 'fieldFarms', 'client')));
+    await assertFails(setDoc(doc(db('techA'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Alterado' }));
+    const a = db('techA');
+    const batch = writeBatch(a);
+    batch.set(doc(a, 'technicalVisits', 'visit1'), visit());
+    batch.set(doc(a, 'technicalNotebooks', 'techA', 'visits', 'visit1'), { notes: 'Anotacao que somente o autor pode ler.', createdAt: serverTimestamp() });
+    await assertSucceeds(batch.commit());
+    for (const actor of ['client', 'admin', 'senior', 'techA']) await assertSucceeds(getDoc(doc(db(actor), 'technicalVisits', 'visit1')));
+    await assertFails(getDoc(doc(db('techB'), 'technicalVisits', 'visit1')));
+    await assertFails(getDocs(collection(db('techB'), 'technicalVisits')));
+    await assertSucceeds(getDocs(query(collection(db('techB'), 'technicalVisits'), where('technicianUid', '==', 'techB'))));
+    await assertSucceeds(getDocs(query(collection(db('client'), 'technicalVisits'), where('ownerUid', '==', 'client'))));
+    for (const actor of ['client', 'techB', 'admin', 'senior', 'stranger']) await assertFails(getDoc(doc(db(actor), 'technicalNotebooks', 'techA', 'visits', 'visit1')));
+    await assertSucceeds(getDoc(doc(a, 'technicalNotebooks', 'techA', 'visits', 'visit1')));
+    await assertFails(updateDoc(doc(a, 'technicalVisits', 'visit1'), { status: 'accepted', decidedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db('admin'), 'technicalVisits', 'visit1'), { status: 'accepted', decidedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db('client'), 'technicalVisits', 'visit1'), { status: 'accepted', latitude: 0, decidedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db('client'), 'technicalVisits', 'visit1'), { status: 'accepted', decidedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db('client'), 'technicalVisits', 'visit1'), { status: 'rejected', decidedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(a, 'technicalVisits', 'spoof'), { ...visit(), technicianUid: 'techB' }));
+    await assertFails(setDoc(doc(db('techA', false), 'technicalVisits', 'unverified'), visit()));
+    await assertFails(setDoc(doc(a, 'technicalVisits', 'invalid'), { ...visit(), latitude: 91 }));
+    await assertFails(setDoc(doc(a, 'technicalVisits', 'empty-report'), { ...visit(), summary: '' }));
+    await assertSucceeds(grant('client', false));
+    await assertFails(getDoc(doc(a, 'fieldFarms', 'client')));
+    await assertFails(setDoc(doc(a, 'technicalVisits', 'after-revoke'), visit()));
+    await assertSucceeds(getDoc(doc(a, 'technicalVisits', 'visit1')));
+    await assertFails(getDoc(doc(a, 'users', 'client', 'state', 'current')));
+  });
+});
