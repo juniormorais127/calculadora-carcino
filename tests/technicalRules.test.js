@@ -2,11 +2,16 @@ import { describe, test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc, getDocs, updateDoc, collection, query, where, orderBy, startAt, endAt, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { writeAuthorizationRequest, writeAuthorizationDecision } from './helpers/fieldAuthorization.js';
 
 describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, () => {
   let env;
   const db = (uid, verified = true) => env.authenticatedContext(uid, { email: `${uid}@example.com`, email_verified: verified }).firestore();
-  const grant = (actor, active = true, technicianUid = 'techA') => setDoc(doc(db(actor), 'fieldAuthorizations', `client~${technicianUid}`), { ownerUid: 'client', technicianUid, active, changedBy: actor, changedAt: serverTimestamp() });
+  const grant = async (actor, active = true, technicianUid = 'techA') => {
+    if (!active) return writeAuthorizationDecision(db(actor), actor, 'client', technicianUid, 'revoked');
+    await writeAuthorizationRequest(db(actor), actor, 'client', technicianUid);
+    return writeAuthorizationDecision(db(actor === 'admin' ? 'senior' : 'admin'), actor === 'admin' ? 'senior' : 'admin', 'client', technicianUid);
+  };
   const visit = () => ({ ownerUid: 'client', technicianUid: 'techA', technicianEmail: 'techA@example.com', farmName: 'Fazenda Teste', pondId: 1, pondName: 'Viveiro 1', visitedOn: '2026-10-16', summary: 'Conferida a localizacao e o licenciamento da propriedade.', correctLocation: true, latitude: -10.95, longitude: -37.07, previousLatitude: -10.9, previousLongitude: -37.1, licenseStatus: 'licensed', licenseNumber: 'ABC-123', licenseRegisteredOn: '2026-10-16', licenseExpiresOn: '2027-10-16', status: 'pending', createdAt: serverTimestamp(), decidedAt: null });
   before(async () => {
     env = await initializeTestEnvironment({ projectId: 'demo-carcino', firestore: { rules: readFileSync('firestore.rules', 'utf8') } });
@@ -25,7 +30,10 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(grant('client', true, 'stranger'));
     await assertSucceeds(grant('client'));
     await assertSucceeds(grant('admin', true, 'techB'));
-    await assertSucceeds(setDoc(doc(db('client'), 'fieldFarms', 'client'), { ownerUid: 'client', ownerEmail: 'client@example.com', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }], updatedAt: serverTimestamp() }));
+    const farmStore = db('client'), farmBatch = writeBatch(farmStore);
+    farmBatch.set(doc(farmStore, 'propertyNames', 'fazenda-teste'), { source: 'farm', sourceId: 'client', ownerUid: 'client' });
+    farmBatch.set(doc(farmStore, 'fieldFarms', 'client'), { ownerUid: 'client', ownerEmail: 'client@example.com', name: 'Fazenda Teste', ponds: [{ id: 1, name: 'Viveiro 1', latitude: -10.9, longitude: -37.1 }], updatedAt: serverTimestamp() });
+    await assertSucceeds(farmBatch.commit());
     await assertSucceeds(getDoc(doc(db('techA'), 'fieldFarms', 'client')));
     await assertFails(getDoc(doc(db('stranger'), 'fieldFarms', 'client')));
     await assertFails(setDoc(doc(db('techA'), 'fieldFarms', 'client'), { ownerUid: 'client', name: 'Alterado' }));
@@ -97,5 +105,10 @@ describe('regras de visitas tecnicas e privacidade', { skip: !process.env.FIREST
     await assertFails(updateDoc(doc(db('admin'), 'accountProfiles', 'nameOwner'), { fullName: 'Outro Nome' }));
     await assertFails(updateDoc(doc(db('nameOwner'), 'accountNames', 'nameOwner'), { fullName: 'Outro Nome' }));
     await assertSucceeds(setDoc(doc(db('techB'), 'technicianIdentities', 'techB'), { ...identity, fullName: 'Nome techB', creaNumber: '', employmentType: 'private', organizationName: '' }));
+    await assertSucceeds(writeAuthorizationRequest(a, 'techA', 'client', 'techA'));
+    await assertSucceeds(writeAuthorizationDecision(db('admin'), 'admin', 'client', 'techA', 'changes_requested'));
+    await assertSucceeds(writeAuthorizationRequest(a, 'techA', 'client', 'techA', null, 'Ajustado o objetivo solicitado pela auditoria.'));
+    await assertFails(writeAuthorizationDecision(a, 'techA', 'client', 'techA'));
+    await assertSucceeds(writeAuthorizationDecision(db('admin'), 'admin', 'client', 'techA'));
   });
 });

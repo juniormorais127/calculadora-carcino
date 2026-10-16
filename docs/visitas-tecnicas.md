@@ -2,9 +2,10 @@
 
 O cliente abre **Minha conta → Visitas técnicas e autorizações**. Técnicos de
 campo têm a seção **Meus atendimentos**, onde encontram seu código de conta.
-Esse código pode ser autorizado pelo cliente ou pela administração. A
-administração também dispõe da aba **Visitas e licenciamento**, com o e-mail
-do cliente e o código do técnico para criar a autorização.
+Esse código pode ser informado pelo cliente ou pela administração para solicitar
+uma autorização. O pedido permanece pendente até a auditoria na aba
+**Autorizações**, com justificativa obrigatória para aprovar, recusar ou solicitar
+ajustes. O próprio solicitante e o técnico atendente não podem aprovar o pedido.
 
 A autorização permite consultar somente a projeção compartilhada do cadastro:
 nome da propriedade, identificação dos viveiros e coordenadas. O cliente deve
@@ -33,7 +34,7 @@ mesma propriedade. O dono da propriedade consulta os relatórios que recebeu.
 O mapa usa pontos das visitas e o último registro de cada técnico por viveiro.
 Exibe o licenciamento informado pelo técnico, com o estado de aceite do cliente.
 Isso não corresponde a uma validação oficial do licenciamento. O mapa usa
-Leaflet e mosaicos do OpenStreetMap, com atribuição, carregados apenas quando
+Leaflet, satélite Esri e mosaicos do OpenStreetMap, com atribuição, carregados apenas quando
 existem pontos; o fundo depende de internet.
 
 ## Verificação
@@ -109,3 +110,40 @@ cadastros já publicados na projeção compartilhada também são incluídos na 
 Dados que existem somente em backup/local ou ainda não foram projetados exigem
 acesso e sincronização pelo cliente. O aceite de uma notificação não concede
 acesso automático aos dados privados da conta.
+## Cadastro assistido e auditoria administrativa
+
+Em **Visitas técnicas → Meus atendimentos**, um técnico identificado pode usar **Cadastrar produtor sem acesso ao aplicativo**. Nome completo e e-mail do produtor são opcionais. Sem nome, exige-se um apelido, gravado exclusivamente em `technicalNotebooks/{tecnico}/assistedClients/{cadastro}`; nem administração, outros técnicos ou produtor leem esse apelido.
+
+São obrigatórios celular, nome exclusivo da propriedade, endereço/comunidade, município, UF e declaração de autorização presencial. GPS/coordenadas e referência complementam o endereço. O contato permanece explicitamente não verificado por SMS.
+
+`assistedProducers` preserva autor, data, decisões e versões analisadas em `auditHistory`. Administração/Sênior encontra **Auditoria de cadastros** no portal administrativo. As ações finais são **Aprovar cadastro**, **Recusar cadastro** e **Solicitar ajustes ao técnico**, sempre com justificativa. O técnico corrige os dados solicitados e reenvia a mesma ficha, incrementando a revisão e retornando ao estado pendente; a versão anterior permanece no histórico. Há link de e-mail para contato com o técnico. O autor não pode auditar o próprio cadastro. Uma recusa definitiva permanece preservada.
+
+Em **Usuários e permissões**, administração/Sênior pode conceder **Autorizar suporte técnico e auditar cadastros assistidos** a um usuário dentro de sua hierarquia de gestão. Essa permissão abre **Autorizações e auditoria** na área de visitas e permite analisar pedidos e fichas assistidas, sem dar gestão de usuários ou acesso a notas privadas. Administração e Sênior já têm esse acesso. Revogar a permissão remove a capacidade de analisar novos pedidos no servidor.
+
+`fieldAuthorizations` mantém `active: false` enquanto o pedido está pendente, recusado, revogado ou aguardando ajustes. Somente a auditoria independente pode aprovar; cada envio e decisão gera um evento imutável em `history`. Os pedidos corrigidos voltam à fila pendente. Revogação pelo cliente ou pessoa autorizada é imediata. O aceite de cada relatório pelo produtor continua sendo uma etapa separada da autorização do atendimento.
+
+### Fotos locais e guia da visita
+
+O formulário permanece com os campos atuais, para expansão após entrevistas com técnicos. Fotografias podem ser anexadas durante o preenchimento e ficam em banco IndexedDB separado (`CarcinoGestao-visit-photos-{uid}`), exclusivamente no navegador/aparelho do técnico. Esse banco não entra na sincronização nem no backup de produção. Limite: 8 fotos JPG/PNG/WebP, até 8 MB por arquivo e 40 MB por visita. Fotos de rascunho são associadas ao identificador da visita após seu envio; a guia permite adicionar/remover fotos locais posteriormente.
+
+**Guia da visita e fotos neste aparelho** gera PDF local com dados públicos do relatório e fotos opcionais. O técnico decide se entrega ao cliente. Apelidos privados e anotações do caderno não entram no PDF. A limpeza do navegador pode apagar as fotos, por isso a interface orienta baixar a guia. Nenhuma imagem de visita é enviada ao Firestore, Storage ou serviço de mapas.
+
+Antes de o produtor ativar o acesso, o técnico autor pode registrar atendimentos, coordenadas e avaliações do licenciamento. Depois da ativação, novos atendimentos exigem autorização explícita do cliente ou administração, utilizando `fieldAuthorizations`. Os atendimentos já registrados permanecem no histórico e aguardam decisão individual do cliente. Anotações privadas são separadas em `technicalNotebooks/{tecnico}/assistedVisits` e não são acessíveis ao administrador.
+
+Após aprovação administrativa, o produtor recebe do técnico um código aleatório de 128 bits, válido por 30 dias. Em sua própria conta com e-mail verificado, usa **Receber cadastro feito pelo técnico** na área de visitas. A vinculação consome o código, associa o cadastro à conta e preserva o histórico. O prazo limita o código, não o cadastro; técnico ou administração pode renová-lo antes da vinculação, invalidando o anterior. Não existe login telefônico ou envio de SMS nesta entrega; a autenticação continua por e-mail e senha. O técnico não cria nem armazena senhas do cliente.
+
+O produtor aceita ou contesta os dados e cada atendimento separadamente. Essas decisões não importam dados automaticamente sobre a produção existente e não concedem acesso ao técnico. O cadastro assistido fica acessível como ficha de atendimento vinculada à conta.
+
+## Nomes exclusivos
+
+`propertyNames/{nomeNormalizado}` reserva nomes no servidor. A normalização é idêntica no cliente e nas regras: caixa, acentos portugueses, sinais e espaços não distinguem nomes. Criação assistida e publicação de propriedades usam transações; a disputa simultânea pelo mesmo nome não cria dois cadastros ativos. A reserva acompanha a vinculação do produtor e permite que ele publique sua propriedade com o mesmo nome.
+
+Ao abrir a administração, os nomes de propriedades antigas são reservados e o diretório é atualizado. Conflitos antigos ou falhas de reserva geram aviso administrativo; nenhum registro anterior é apagado ou renomeado automaticamente. Nomes antigos permanecem reservados após renomeação para evitar reutilização acidental. O formulário de identificação em Ajustes também confere a reserva antes de gravar um nome na conta; precisa de conexão para confirmar a exclusividade.
+
+## Ofertas regionais
+
+A autorização para promoções por WhatsApp é opcional, desmarcada inicialmente, específica para ração e produtos da região e não condiciona atendimento. Registra versão do texto, escolha inicial, responsável e horário. O produtor pode alterar a preferência; técnico/suporte podem apenas registrar sua retirada. Alterações exigem evento imutável em `consentHistory`. Nenhum fornecedor recebe acesso aos cadastros e nenhum disparo automático ou serviço de marketing foi implementado.
+
+## Satélite e comparação histórica
+
+O mapa compartilhado usa Esri World Imagery por padrão, mantendo OpenStreetMap como alternativa. **Comparar imagens históricas** consulta o catálogo público Esri Wayback sob demanda e oferece barra com as versões disponíveis. As datas indicam publicação do mosaico, não captura da fotografia; versões distintas podem ter a mesma imagem local. A comparação mantém o enquadramento e os marcadores. Falha de imagens/histórico não impede consulta dos relatórios ou troca para ruas. Atribuições dos fornecedores permanecem visíveis.

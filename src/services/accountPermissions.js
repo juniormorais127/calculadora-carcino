@@ -32,3 +32,6 @@ export function expirationMillis(date) {
   if (!Number.isFinite(millis)) throw new Error('Informe uma data válida.');
   return millis;
 }
+export function canAuditTechnicalSupport(user, profile) {
+  return !!user && (user.uid === SENIOR_UID || ['senior', 'administrator'].includes(profile?.role) || profile?.canAuthorizeTechnicalSupport === true);
+}

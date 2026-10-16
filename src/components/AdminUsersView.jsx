@@ -16,7 +16,7 @@ export async function readUsers(cursor) {
   return { users: result.docs.map(doc => ({ ...doc.data(), uid: doc.id })), cursor: result.docs.at(-1), more: result.size === 200 };
 }
 export async function writePermission(uid, data, adminUid) {
-  await updateDoc(doc(firestore, 'accountProfiles', uid), { role: data.role, premium: data.premium, expiresAt: data.premium && data.expiresAt ? Timestamp.fromMillis(data.expiresAt) : null, changedBy: adminUid, changedAt: serverTimestamp() });
+  await updateDoc(doc(firestore, 'accountProfiles', uid), { role: data.role, premium: data.premium, canAuthorizeTechnicalSupport: data.canAuthorizeTechnicalSupport === true, expiresAt: data.premium && data.expiresAt ? Timestamp.fromMillis(data.expiresAt) : null, changedBy: adminUid, changedAt: serverTimestamp() });
 }
 export async function writeContact(uid, phone, adminUid) {
   await updateDoc(doc(firestore, 'accountProfiles', uid), { phone, changedBy: adminUid, changedAt: serverTimestamp() });
@@ -36,6 +36,7 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
   const [selected, setSelected] = useState(null);
   const [contact, setContact] = useState(null);
   const [enabled, setEnabled] = useState(false);
+  const [supportAuditor, setSupportAuditor] = useState(false);
   const [expiry, setExpiry] = useState('');
   const [reload, setReload] = useState(0);
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
   function edit(profile) {
     if (!canManageUser(user, access, profile)) return;
     setSelected(profile); setEnabled(profile.premium); setError(''); setMessage('');
+    setSupportAuditor(profile.canAuthorizeTechnicalSupport === true);
     setRole(accountRole(profile, profile.uid));
     setExpiry(profile.expiresAt?.toDate ? new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).format(profile.expiresAt.toDate()) : '');
   }
@@ -67,8 +69,8 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
       const premium = role === 'senior' || enabled;
       const expiresAt = premium && role !== 'senior' ? expirationMillis(expiry) : null;
       if (enabled && expiresAt && expiresAt <= Date.now()) throw new Error('A validade precisa ser uma data futura.');
-      await savePermission(selected.uid, { role, premium, expiresAt }, user.uid);
-      setUsers(old => old.map(profile => profile.uid === selected.uid ? { ...profile, role, premium, expiresAt: expiresAt ? Timestamp.fromMillis(expiresAt) : null } : profile));
+      await savePermission(selected.uid, { role, premium, expiresAt, canAuthorizeTechnicalSupport: supportAuditor }, user.uid);
+      setUsers(old => old.map(profile => profile.uid === selected.uid ? { ...profile, role, premium, canAuthorizeTechnicalSupport: supportAuditor, expiresAt: expiresAt ? Timestamp.fromMillis(expiresAt) : null } : profile));
       setMessage(`Permissão de ${selected.email} atualizada: ${ACCOUNT_ROLES[role]} · ${role === 'senior' ? 'acesso completo' : enabled ? 'Premium liberado' : 'acesso gratuito'}.`);
       setSelected(null);
     } catch (err) { setError(err.code ? 'Não foi possível salvar. Verifique a conexão e a conta administrativa.' : err.message); }
@@ -101,6 +103,8 @@ export default function AdminUsersView({ loadUsers = readUsers, savePermission =
       <label htmlFor="account-role" className="block text-sm font-semibold text-slate-700">Perfil do usuário</label><select id="account-role" value={role} onChange={e => setRole(e.target.value)} disabled={busy} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">{assignableRoles(user, access, selected).map(id => <option key={id} value={id}>{ACCOUNT_ROLES[id]}</option>)}</select>
       <p className="text-xs text-slate-600">Sênior tem acesso completo, sem prazo, e gerencia administradores. Administrador gerencia somente produtores e técnicos de campo. Para os demais perfis, Premium e validade são separados.</p>
       <label className="flex items-center gap-3 min-h-11 text-sm font-semibold"><input type="checkbox" className="w-5 h-5 accent-emerald-700" checked={role === 'senior' || enabled} onChange={e => setEnabled(e.target.checked)} disabled={busy || role === 'senior'} />Liberar Premium</label>
+      <label className="flex items-center gap-3 min-h-11 text-sm font-semibold"><input type="checkbox" className="w-5 h-5 accent-emerald-700" checked={['senior', 'administrator'].includes(role) || supportAuditor} disabled={busy || ['senior', 'administrator'].includes(role)} onChange={e => setSupportAuditor(e.target.checked)} />Autorizar suporte técnico e auditar cadastros assistidos</label>
+      <p className="text-xs text-slate-600">Essa permissão libera a aba Autorizações na área de visitas, com dados dos pedidos e cadastros assistidos. Não libera gestão de usuários nem leitura de anotações privadas. Não é permitido aprovar o próprio pedido ou atendimento.</p>
       <label className="block text-sm font-semibold text-slate-700">Válido até (opcional)<input type="date" value={expiry} disabled={!enabled || busy || role === 'senior'} onChange={e => setExpiry(e.target.value)} className="mt-1 block min-h-11 rounded-xl border border-slate-300 px-3 disabled:opacity-50" /></label>
       <p className="text-xs text-slate-600">Sem data: acesso sem prazo. Com data: vale até o fim do dia em Fortaleza. Desmarque Premium para revogar a permissão.</p>
       <div className="flex flex-wrap gap-3"><button className={`${button} bg-emerald-700 border-emerald-700 text-white hover:bg-emerald-800`} disabled={busy}>Salvar permissões</button><button className={button} type="button" disabled={busy} onClick={() => setSelected(null)}>Cancelar edição</button></div>

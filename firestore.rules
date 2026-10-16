@@ -10,11 +10,35 @@ service cloud.firestore {
     }
     function senior() { return request.auth != null && (primarySenior(request.auth.uid) || profileRole(request.auth.uid) == 'senior'); }
     function admin() { return request.auth != null && (senior() || profileRole(request.auth.uid) == 'administrator'); }
+    function supportAuditor() { return request.auth != null && request.auth.token.email_verified == true && (admin() || get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.get('canAuthorizeTechnicalSupport', false) == true); }
+    function propertyKey(name) {
+      return name.lower().replace('[áàâãä]', 'a').replace('[éèêë]', 'e').replace('[íìîï]', 'i').replace('[óòôõö]', 'o').replace('[úùûü]', 'u').replace('ç', 'c').replace('ñ', 'n').replace('[^a-z0-9]+', '-').replace('^-|-$', '');
+    }
+    match /propertyNames/{key} {
+      allow get: if request.auth != null && request.auth.token.email_verified == true;
+      function validReservation() {
+        return request.resource.data.keys().hasOnly(['source', 'sourceId', 'ownerUid']) && key.size() >= 2 && key.size() <= 200
+          && ((request.resource.data.source == 'farm' && (verifiedOwner(request.resource.data.sourceId) || admin())
+            && request.resource.data.ownerUid == request.resource.data.sourceId
+            && propertyKey(getAfter(/databases/$(database)/documents/fieldFarms/$(request.resource.data.sourceId)).data.name) == key)
+          || (request.resource.data.source == 'assisted' && identifiedFieldTech() && request.resource.data.ownerUid == null
+            && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.sourceId)).data.technicianUid == request.auth.uid
+            && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.sourceId)).data.propertyKey == key));
+      }
+      allow create: if validReservation();
+      allow update: if (validReservation() && resource.data.source == 'assisted' && request.resource.data.source == 'assisted'
+          && get(/databases/$(database)/documents/assistedProducers/$(resource.data.sourceId)).data.auditStatus == 'rejected'
+          && get(/databases/$(database)/documents/assistedProducers/$(resource.data.sourceId)).data.technicianUid == request.auth.uid)
+        || (request.auth != null && request.auth.token.email_verified == true && resource.data.source == 'assisted' && resource.data.ownerUid == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid']) && request.resource.data.ownerUid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(resource.data.sourceId)).data.ownerUid == request.auth.uid);
+    }
     match /accountProfiles/{uid} {
       allow get: if owner(uid) || admin();
       allow list: if admin();
       function validProfile() {
-        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role', 'phone', 'fullName'])
+        return request.resource.data.keys().hasOnly(['email', 'createdAt', 'lastSeenAt', 'premium', 'expiresAt', 'changedBy', 'changedAt', 'role', 'phone', 'fullName', 'canAuthorizeTechnicalSupport'])
+          && (!('canAuthorizeTechnicalSupport' in request.resource.data) || request.resource.data.canAuthorizeTechnicalSupport is bool)
           && (!('fullName' in request.resource.data) || request.resource.data.fullName == getAfter(/databases/$(database)/documents/accountNames/$(uid)).data.fullName)
           && request.resource.data.get('role', 'producer') in ['producer', 'field_technician', 'administrator', 'senior']
           && (!primarySenior(uid) || request.resource.data.get('role', 'producer') == 'senior')
@@ -27,6 +51,7 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time && request.resource.data.lastSeenAt == request.time
         && request.resource.data.premium == false && request.resource.data.expiresAt == null
+        && request.resource.data.get('canAuthorizeTechnicalSupport', false) == false
         && (request.resource.data.get('role', 'producer') == 'producer' || (primarySenior(uid) && request.resource.data.role == 'senior'))
         && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
       allow update: if validProfile() && (
@@ -46,7 +71,7 @@ service cloud.firestore {
         || ((senior() || (admin() && !primarySenior(uid)
               && resource.data.get('role', 'producer') in ['producer', 'field_technician']
               && request.resource.data.role in ['producer', 'field_technician']))
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt', 'role'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium', 'expiresAt', 'changedBy', 'changedAt', 'role', 'canAuthorizeTechnicalSupport'])
           && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time));
       allow delete: if owner(uid) || (senior() && !primarySenior(uid));
     }
@@ -94,24 +119,54 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/fieldAuthorizations/$(uid + '~' + request.auth.uid)).data.active == true;
     }
     match /fieldAuthorizations/{id} {
-      allow delete: if request.auth != null && (owner(resource.data.ownerUid) || admin());
-      allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || resource.data.technicianUid == request.auth.uid || admin());
-      allow create, update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['ownerUid', 'technicianUid', 'active', 'changedBy', 'changedAt'])
+      allow get: if request.auth != null && (!exists(/databases/$(database)/documents/fieldAuthorizations/$(id)) || resource.data.ownerUid == request.auth.uid || resource.data.technicianUid == request.auth.uid || supportAuditor());
+      allow list: if request.auth != null && (resource.data.ownerUid == request.auth.uid || resource.data.technicianUid == request.auth.uid || supportAuditor());
+      function validRequest() {
+        return request.resource.data.keys().hasOnly(['ownerUid', 'technicianUid', 'assistedId', 'active', 'status', 'requestNote', 'requestedBy', 'requestedAt', 'auditNote', 'auditName', 'auditedBy', 'auditedAt', 'changedBy', 'changedAt', 'eventId'])
         && request.resource.data.ownerUid is string && request.resource.data.technicianUid is string
         && id == request.resource.data.ownerUid + '~' + request.resource.data.technicianUid
         && request.resource.data.ownerUid != request.resource.data.technicianUid
-        && (verifiedOwner(request.resource.data.ownerUid) || admin())
-        && request.resource.data.active is bool && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time
-        && (!request.resource.data.active || profileRole(request.resource.data.technicianUid) == 'field_technician');
+        && (verifiedOwner(request.resource.data.ownerUid) || admin() || (identifiedFieldTech() && request.resource.data.technicianUid == request.auth.uid
+          && ((request.resource.data.assistedId is string && get(/databases/$(database)/documents/assistedProducers/$(request.resource.data.assistedId)).data.ownerUid == request.resource.data.ownerUid && get(/databases/$(database)/documents/assistedProducers/$(request.resource.data.assistedId)).data.technicianUid == request.auth.uid)
+            || (exists(/databases/$(database)/documents/fieldAuthorizations/$(id)) && resource.data.technicianUid == request.auth.uid && resource.data.ownerUid == request.resource.data.ownerUid))))
+        && profileRole(request.resource.data.technicianUid) == 'field_technician'
+        && request.resource.data.active == false && request.resource.data.status == 'pending'
+        && request.resource.data.requestNote is string && request.resource.data.requestNote.size() >= 10 && request.resource.data.requestNote.size() <= 8000
+        && request.resource.data.requestedBy == request.auth.uid && request.resource.data.requestedAt == request.time
+        && request.resource.data.auditNote == '' && request.resource.data.auditName == '' && request.resource.data.auditedBy == null && request.resource.data.auditedAt == null
+        && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time
+        && getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)/history/$(request.resource.data.eventId)).data.status == 'pending';
+      }
+      allow create: if validRequest();
+      allow update: if (validRequest() && resource.data.active == false && resource.data.get('status', '') != 'pending' && request.resource.data.ownerUid == resource.data.ownerUid && request.resource.data.technicianUid == resource.data.technicianUid)
+        || (request.auth != null && request.auth.token.email_verified == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'status', 'auditNote', 'auditName', 'auditedBy', 'auditedAt', 'changedBy', 'changedAt', 'eventId'])
+          && ((supportAuditor() && request.auth.uid != resource.data.technicianUid && request.auth.uid != resource.data.get('requestedBy', '') && resource.data.get('status', '') == 'pending' && request.resource.data.status in ['approved', 'rejected', 'changes_requested'])
+            || ((verifiedOwner(resource.data.ownerUid) || supportAuditor()) && request.resource.data.status == 'revoked'))
+          && request.resource.data.active == (request.resource.data.status == 'approved')
+          && (!request.resource.data.active || profileRole(resource.data.technicianUid) == 'field_technician')
+          && request.resource.data.auditNote is string && request.resource.data.auditNote.size() >= 10 && request.resource.data.auditNote.size() <= 8000
+          && request.resource.data.auditName == get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.get('fullName', '')
+          && request.resource.data.auditedBy == request.auth.uid && request.resource.data.auditedAt == request.time && request.resource.data.changedBy == request.auth.uid && request.resource.data.changedAt == request.time
+          && getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)/history/$(request.resource.data.eventId)).data.status == request.resource.data.status);
+      match /history/{eventId} {
+        function authorization() { return get(/databases/$(database)/documents/fieldAuthorizations/$(id)).data; }
+        allow read: if request.auth != null && (authorization().ownerUid == request.auth.uid || authorization().technicianUid == request.auth.uid || supportAuditor());
+        allow create: if request.auth != null && request.resource.data.keys().hasOnly(['status', 'note', 'by', 'at']) && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time
+          && getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)).data.eventId == eventId
+          && getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)).data.status == request.resource.data.status
+          && getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)).data.changedBy == request.auth.uid
+          && (request.resource.data.note == getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)).data.auditNote || request.resource.data.note == getAfter(/databases/$(database)/documents/fieldAuthorizations/$(id)).data.requestNote);
+      }
     }
     match /fieldFarms/{uid} {
       allow delete: if owner(uid);
       allow list: if admin();
       allow get: if verifiedOwner(uid) || fieldAccess(uid) || admin();
       allow create, update: if verifiedOwner(uid) && request.resource.data.keys().hasOnly(['ownerUid', 'ownerEmail', 'name', 'ponds', 'updatedAt'])
+        && getAfter(/databases/$(database)/documents/propertyNames/$(propertyKey(request.resource.data.name))).data.ownerUid == uid
         && (!('ownerEmail' in request.resource.data) || request.resource.data.ownerEmail == request.auth.token.email.lower())
-        && request.resource.data.ownerUid == uid && request.resource.data.name is string && request.resource.data.name.size() <= 200
+        && request.resource.data.ownerUid == uid && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 200
         && request.resource.data.ponds is list && request.resource.data.ponds.size() <= 2000 && request.resource.data.updatedAt == request.time;
     }
     match /propertyDirectory/{uid} {
@@ -180,6 +235,155 @@ service cloud.firestore {
       allow read, delete: if owner(uid);
       allow create: if owner(uid) && fieldTech() && getAfter(/databases/$(database)/documents/fieldInspectionReports/$(id)).data.technicianUid == uid
         && request.resource.data.keys().hasOnly(['notes', 'createdAt']) && request.resource.data.notes is string && request.resource.data.notes.size() <= 40000 && request.resource.data.createdAt == request.time;
+    }
+    match /assistedProducers/{id} {
+      function related() { return request.auth != null && (resource.data.technicianUid == request.auth.uid || resource.data.ownerUid == request.auth.uid || supportAuditor()); }
+      function validLocation(data) {
+        return (data.latitude == null && data.longitude == null) || (data.latitude is number && data.latitude >= -90 && data.latitude <= 90 && data.longitude is number && data.longitude >= -180 && data.longitude <= 180);
+      }
+      allow read: if related();
+      allow create: if identifiedFieldTech()
+        && request.resource.data.keys().hasOnly(['fullName', 'phone', 'email', 'propertyName', 'propertyKey', 'revision', 'auditEventId', 'technicianEmail', 'address', 'city', 'state', 'reference', 'marketingConsent', 'initialMarketingConsent', 'marketingChangedBy', 'marketingChangedAt', 'marketingNoticeVersion', 'latitude', 'longitude', 'presentialConsent', 'technicianUid', 'technicianName', 'createdAt', 'auditStatus', 'auditBy', 'auditName', 'auditNote', 'auditedAt', 'activationCode', 'activationExpiresAt', 'ownerUid', 'claimedAt', 'clientDecision', 'clientDecidedAt'])
+        && request.resource.data.revision == 1 && request.resource.data.auditEventId == null && request.resource.data.technicianEmail == request.auth.token.email
+        && request.resource.data.propertyKey == propertyKey(request.resource.data.propertyName)
+        && getAfter(/databases/$(database)/documents/propertyNames/$(request.resource.data.propertyKey)).data.source == 'assisted'
+        && getAfter(/databases/$(database)/documents/propertyNames/$(request.resource.data.propertyKey)).data.sourceId == id
+        && request.resource.data.technicianUid == request.auth.uid
+        && request.resource.data.technicianName == get(/databases/$(database)/documents/technicianIdentities/$(request.auth.uid)).data.fullName
+        && request.resource.data.fullName is string && (request.resource.data.fullName == '' || (request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')))
+        && (request.resource.data.fullName != '' || getAfter(/databases/$(database)/documents/technicalNotebooks/$(request.auth.uid)/assistedClients/$(id)).data.alias.size() >= 2)
+        && request.resource.data.phone is string && request.resource.data.phone.matches('^[+][1-9][0-9]{7,14}$')
+        && request.resource.data.email is string && request.resource.data.email.size() <= 320
+        && request.resource.data.propertyName is string && request.resource.data.propertyName.size() >= 2 && request.resource.data.propertyName.size() <= 800
+        && request.resource.data.address is string && request.resource.data.address.size() >= 5 && request.resource.data.address.size() <= 2000
+        && request.resource.data.city is string && request.resource.data.city.size() >= 2 && request.resource.data.city.size() <= 400
+        && request.resource.data.state is string && request.resource.data.state.matches('^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$')
+        && request.resource.data.reference is string && request.resource.data.reference.size() <= 1200
+        && request.resource.data.marketingConsent is bool && request.resource.data.initialMarketingConsent == request.resource.data.marketingConsent
+        && request.resource.data.marketingChangedBy == request.auth.uid && request.resource.data.marketingChangedAt == request.time && request.resource.data.marketingNoticeVersion == 'regional-offers-v1'
+        && validLocation(request.resource.data) && request.resource.data.presentialConsent == true
+        && request.resource.data.createdAt == request.time && request.resource.data.auditStatus == 'pending'
+        && request.resource.data.auditBy == null && request.resource.data.auditName == '' && request.resource.data.auditNote == '' && request.resource.data.auditedAt == null
+        && request.resource.data.ownerUid == null && request.resource.data.claimedAt == null && request.resource.data.clientDecision == 'pending' && request.resource.data.clientDecidedAt == null
+        && request.resource.data.activationCode.matches('^[a-f0-9]{32}$')
+        && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.producerId == id
+        && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.expiresAt == request.resource.data.activationExpiresAt;
+      allow update: if request.auth != null && (
+        (supportAuditor() && request.auth.token.email_verified == true && request.auth.uid != resource.data.technicianUid && resource.data.auditStatus == 'pending' && resource.data.ownerUid == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['auditStatus', 'auditBy', 'auditName', 'auditNote', 'auditedAt', 'auditEventId'])
+          && request.resource.data.auditStatus in ['approved', 'rejected', 'changes_requested'] && request.resource.data.auditBy == request.auth.uid
+          && request.resource.data.auditName == get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.fullName
+          && request.resource.data.auditNote is string && request.resource.data.auditNote.size() >= 10 && request.resource.data.auditNote.size() <= 8000 && request.resource.data.auditedAt == request.time
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)/auditHistory/$(request.resource.data.auditEventId)).data.snapshot == resource.data
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)/auditHistory/$(request.resource.data.auditEventId)).data.status == request.resource.data.auditStatus)
+        || (identifiedFieldTech() && resource.data.technicianUid == request.auth.uid && resource.data.auditStatus == 'changes_requested' && resource.data.ownerUid == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'email', 'propertyName', 'propertyKey', 'address', 'city', 'state', 'reference', 'latitude', 'longitude', 'presentialConsent', 'marketingConsent', 'initialMarketingConsent', 'marketingChangedBy', 'marketingChangedAt', 'revision', 'auditStatus', 'auditBy', 'auditName', 'auditNote', 'auditedAt', 'auditEventId', 'activationCode', 'activationExpiresAt'])
+          && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.auditStatus == 'pending'
+          && request.resource.data.auditBy == null && request.resource.data.auditName == '' && request.resource.data.auditNote == '' && request.resource.data.auditedAt == null && request.resource.data.auditEventId == null
+          && request.resource.data.fullName is string && (request.resource.data.fullName == '' || (request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')))
+          && (request.resource.data.fullName != '' || getAfter(/databases/$(database)/documents/technicalNotebooks/$(request.auth.uid)/assistedClients/$(id)).data.alias.size() >= 2)
+          && request.resource.data.phone is string && request.resource.data.phone.matches('^[+][1-9][0-9]{7,14}$')
+          && request.resource.data.email is string && request.resource.data.email.size() <= 320
+          && request.resource.data.propertyName is string && request.resource.data.propertyName.size() >= 2 && request.resource.data.propertyName.size() <= 800 && request.resource.data.propertyKey == propertyKey(request.resource.data.propertyName)
+          && getAfter(/databases/$(database)/documents/propertyNames/$(request.resource.data.propertyKey)).data.sourceId == id
+          && request.resource.data.address is string && request.resource.data.address.size() >= 5 && request.resource.data.address.size() <= 2000
+          && request.resource.data.city is string && request.resource.data.city.size() >= 2 && request.resource.data.city.size() <= 400
+          && request.resource.data.state is string && request.resource.data.state.matches('^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$')
+          && request.resource.data.reference is string && request.resource.data.reference.size() <= 1200 && validLocation(request.resource.data) && request.resource.data.presentialConsent == true
+          && request.resource.data.marketingConsent is bool && request.resource.data.initialMarketingConsent == request.resource.data.marketingConsent && request.resource.data.marketingChangedBy == request.auth.uid && request.resource.data.marketingChangedAt == request.time
+          && request.resource.data.activationCode != resource.data.activationCode && request.resource.data.activationCode.matches('^[a-f0-9]{32}$')
+          && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.producerId == id
+          && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.expiresAt == request.resource.data.activationExpiresAt)
+        || ((supportAuditor() || (identifiedFieldTech() && resource.data.technicianUid == request.auth.uid)) && resource.data.auditStatus == 'approved' && resource.data.ownerUid == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activationCode', 'activationExpiresAt'])
+          && request.resource.data.activationCode != resource.data.activationCode && request.resource.data.activationCode.matches('^[a-f0-9]{32}$')
+          && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.producerId == id
+          && getAfter(/databases/$(database)/documents/assistedActivations/$(request.resource.data.activationCode)).data.expiresAt == request.resource.data.activationExpiresAt)
+        || (request.auth.token.email_verified == true && request.auth.uid != resource.data.technicianUid && resource.data.auditStatus == 'approved' && resource.data.ownerUid == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid', 'claimedAt']) && request.resource.data.ownerUid == request.auth.uid && request.resource.data.claimedAt == request.time
+          && get(/databases/$(database)/documents/assistedActivations/$(resource.data.activationCode)).data.claimedUid == null
+          && get(/databases/$(database)/documents/assistedActivations/$(resource.data.activationCode)).data.expiresAt > request.time
+          && getAfter(/databases/$(database)/documents/assistedActivations/$(resource.data.activationCode)).data.claimedUid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/propertyNames/$(resource.data.propertyKey)).data.ownerUid == request.auth.uid)
+        || (verifiedOwner(resource.data.ownerUid) && resource.data.clientDecision == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientDecision', 'clientDecidedAt'])
+          && request.resource.data.clientDecision in ['accepted', 'rejected'] && request.resource.data.clientDecidedAt == request.time)
+        || ((verifiedOwner(resource.data.ownerUid) || (request.auth.token.email_verified == true && (supportAuditor() || (fieldTech() && resource.data.technicianUid == request.auth.uid)) && request.resource.data.marketingConsent == false))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['marketingConsent', 'marketingChangedBy', 'marketingChangedAt', 'marketingEventId'])
+          && request.resource.data.marketingConsent is bool && request.resource.data.marketingChangedBy == request.auth.uid && request.resource.data.marketingChangedAt == request.time
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)/consentHistory/$(request.resource.data.marketingEventId)).data.enabled == request.resource.data.marketingConsent
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)/consentHistory/$(request.resource.data.marketingEventId)).data.actorUid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)/consentHistory/$(request.resource.data.marketingEventId)).data.occurredAt == request.time)
+      );
+      match /auditHistory/{eventId} {
+        allow read: if request.auth != null && (supportAuditor() || get(/databases/$(database)/documents/assistedProducers/$(id)).data.technicianUid == request.auth.uid || get(/databases/$(database)/documents/assistedProducers/$(id)).data.ownerUid == request.auth.uid);
+        allow create: if supportAuditor() && request.auth.token.email_verified == true
+          && request.resource.data.keys().hasOnly(['status', 'note', 'by', 'name', 'reviewedAt', 'snapshot'])
+          && request.resource.data.by == request.auth.uid && request.resource.data.reviewedAt == request.time
+          && request.resource.data.name == get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.fullName
+          && request.resource.data.snapshot == get(/databases/$(database)/documents/assistedProducers/$(id)).data
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.auditEventId == eventId
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.auditNote == request.resource.data.note
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.auditStatus == request.resource.data.status;
+      }
+      match /consentHistory/{eventId} {
+        allow read: if request.auth != null && (get(/databases/$(database)/documents/assistedProducers/$(id)).data.ownerUid == request.auth.uid || supportAuditor());
+        allow create: if (verifiedOwner(get(/databases/$(database)/documents/assistedProducers/$(id)).data.ownerUid)
+            || (request.auth != null && request.auth.token.email_verified == true && request.resource.data.enabled == false && (supportAuditor() || (fieldTech() && get(/databases/$(database)/documents/assistedProducers/$(id)).data.technicianUid == request.auth.uid))))
+          && request.resource.data.keys().hasOnly(['enabled', 'actorUid', 'occurredAt', 'noticeVersion'])
+          && request.resource.data.enabled is bool && request.resource.data.actorUid == request.auth.uid && request.resource.data.occurredAt == request.time && request.resource.data.noticeVersion == 'regional-offers-v1'
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.marketingEventId == eventId
+          && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.marketingConsent == request.resource.data.enabled;
+      }
+      match /visits/{visitId} {
+        function producer() { return get(/databases/$(database)/documents/assistedProducers/$(id)).data; }
+        allow read: if request.auth != null && (producer().technicianUid == request.auth.uid || producer().ownerUid == request.auth.uid || supportAuditor());
+        allow create: if identifiedFieldTech() && producer().technicianUid == request.auth.uid && producer().auditStatus != 'rejected'
+          && (producer().ownerUid == null || fieldAccess(producer().ownerUid))
+          && request.resource.data.keys().hasOnly(['technicianUid', 'visitedOn', 'summary', 'latitude', 'longitude', 'licenseStatus', 'licenseNumber', 'licenseRegisteredOn', 'licenseExpiresOn', 'status', 'createdAt', 'decidedAt'])
+          && request.resource.data.technicianUid == request.auth.uid && validLocation(request.resource.data)
+          && request.resource.data.summary is string && request.resource.data.summary.size() >= 10 && request.resource.data.summary.size() <= 40000
+          && request.resource.data.visitedOn is string && request.resource.data.visitedOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.licenseStatus in ['licensed', 'unlicensed', 'unknown'] && request.resource.data.licenseNumber is string && request.resource.data.licenseNumber.size() <= 480
+          && request.resource.data.licenseRegisteredOn is string && request.resource.data.licenseExpiresOn is string
+          && (request.resource.data.licenseStatus != 'licensed' || (request.resource.data.licenseNumber.size() > 0 && request.resource.data.licenseRegisteredOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.licenseExpiresOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.licenseExpiresOn >= request.resource.data.licenseRegisteredOn))
+          && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time && request.resource.data.decidedAt == null;
+        allow update: if verifiedOwner(producer().ownerUid) && resource.data.status == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt'])
+          && request.resource.data.status in ['accepted', 'rejected'] && request.resource.data.decidedAt == request.time;
+      }
+    }
+    match /assistedActivations/{code} {
+      function producer() { return get(/databases/$(database)/documents/assistedProducers/$(resource.data.producerId)).data; }
+      allow get: if request.auth != null && request.auth.token.email_verified == true
+        && producer().auditStatus == 'approved' && producer().activationCode == code && resource.data.expiresAt > request.time
+        && (resource.data.claimedUid == null || resource.data.claimedUid == request.auth.uid);
+      allow create: if request.auth != null && code.matches('^[a-f0-9]{32}$')
+        && request.resource.data.keys().hasOnly(['producerId', 'fullName', 'propertyName', 'expiresAt', 'claimedUid', 'claimedAt'])
+        && (supportAuditor() || (identifiedFieldTech() && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.producerId)).data.technicianUid == request.auth.uid))
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.producerId)).data.activationCode == code
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.producerId)).data.fullName == request.resource.data.fullName
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.producerId)).data.propertyName == request.resource.data.propertyName
+        && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
+        && request.resource.data.claimedUid == null && request.resource.data.claimedAt == null;
+      allow update: if request.auth != null && request.auth.token.email_verified == true
+        && producer().auditStatus == 'approved' && producer().activationCode == code && producer().ownerUid == null && producer().technicianUid != request.auth.uid
+        && resource.data.claimedUid == null && resource.data.expiresAt > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedUid', 'claimedAt'])
+        && request.resource.data.claimedUid == request.auth.uid && request.resource.data.claimedAt == request.time
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(resource.data.producerId)).data.ownerUid == request.auth.uid;
+    }
+    match /technicalNotebooks/{uid}/assistedVisits/{id} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && fieldTech()
+        && request.resource.data.keys().hasOnly(['producerId', 'notes', 'createdAt']) && request.resource.data.notes is string && request.resource.data.notes.size() <= 40000 && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(request.resource.data.producerId)/visits/$(id)).data.technicianUid == uid;
+    }
+    match /technicalNotebooks/{uid}/assistedClients/{id} {
+      allow read: if owner(uid);
+      allow create, update: if owner(uid) && identifiedFieldTech()
+        && request.resource.data.keys().hasOnly(['alias', 'createdAt']) && request.resource.data.alias is string && request.resource.data.alias.size() <= 400 && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.technicianUid == uid && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.auditStatus == 'pending';
     }
     match /users/{uid}/state/current {
       allow read, delete: if verifiedOwner(uid);

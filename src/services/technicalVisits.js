@@ -2,7 +2,8 @@ import { collection, doc, getDoc, getDocs, query, where, orderBy, startAt, endAt
 import { firestore } from './firebase.js';
 import { validateVisitReport, validateIndependentVisit } from './technicalVisitData.js';
 import { validateTechnicianIdentity } from './technicianIdentity.js';
-import { propertySearchKey } from './propertyDirectory.js';
+import { propertySearchKey, propertyNameKey } from './propertyDirectory.js';
+import { requestTechnicalAuthorization, decideTechnicalAuthorization } from './technicalAuthorizations.js';
 
 export async function searchRegisteredProperties(text) {
   const prefix = propertySearchKey(text);
@@ -12,14 +13,17 @@ export async function searchRegisteredProperties(text) {
 }
 export async function syncPropertyDirectory() {
   const farms = await getDocs(collection(firestore, 'fieldFarms'));
-  for (let start = 0; start < farms.docs.length; start += 100) {
-    const batch = writeBatch(firestore);
-    farms.docs.slice(start, start + 100).forEach(item => {
+  const conflicts = [];
+  for (const item of farms.docs) {
+    try { await runTransaction(firestore, async batch => {
       const farm = item.data();
+      const propertyKey = propertyNameKey(farm.name), nameRef = doc(firestore, 'propertyNames', propertyKey), reserved = await batch.get(nameRef);
+      if (reserved.exists() && reserved.data().ownerUid !== item.id) throw new Error('Nome repetido');
+      if (!reserved.exists()) batch.set(nameRef, { source: 'farm', sourceId: item.id, ownerUid: item.id });
       batch.set(doc(firestore, 'propertyDirectory', item.id), { ownerUid: item.id, name: farm.name, nameSearch: propertySearchKey(farm.name), updatedAt: serverTimestamp() });
-    });
-    await batch.commit();
+    }); } catch { conflicts.push(item.data().name); }
   }
+  return conflicts;
 }
 
 export async function saveTechnicianIdentity(user, value) {
@@ -62,20 +66,26 @@ export function watchFieldRecords(name, field, uid, next, error) {
 export async function authorizeTechnician(ownerUid, technicianUid, actorUid, active = true) {
   const uid = technicianUid.trim();
   if (!/^[a-zA-Z0-9_-]{1,128}$/.test(uid) || uid === ownerUid) throw new Error('Confira o código do técnico. Ele deve ser de outra conta.');
-  await setDoc(doc(firestore, 'fieldAuthorizations', authorizationId(ownerUid, uid)), { ownerUid, technicianUid: uid, active, changedBy: actorUid, changedAt: serverTimestamp() });
+  if (active) await requestTechnicalAuthorization(ownerUid, uid, actorUid);
+  else await decideTechnicalAuthorization({ uid: actorUid }, authorizationId(ownerUid, uid), 'revoked', 'Autorização de atendimento revogada pelo responsável.');
 }
 export async function readSharedFarm(ownerUid) {
   const snapshot = await getDoc(doc(firestore, 'fieldFarms', ownerUid));
   return snapshot.exists() ? snapshot.data() : null;
 }
 export async function publishSharedFarm(user, farmProfile, ponds) {
-  const name = String(farmProfile?.nomeFazenda || 'Propriedade sem nome').slice(0, 200);
-  const batch = writeBatch(firestore);
+  if (!farmProfile?.nomeFazenda?.trim()) return;
+  const name = farmProfile.nomeFazenda.trim();
+  const propertyKey = propertyNameKey(name);
+  await runTransaction(firestore, async batch => {
+  const nameRef = doc(firestore, 'propertyNames', propertyKey), reserved = await batch.get(nameRef);
+  if (reserved.exists() && reserved.data().ownerUid !== user.uid) throw new Error('Este nome de propriedade já está cadastrado. Use outro nome ou vincule o cadastro assistido existente antes de salvar.');
+  if (!reserved.exists()) batch.set(nameRef, { source: 'farm', sourceId: user.uid, ownerUid: user.uid });
   batch.set(doc(firestore, 'fieldFarms', user.uid), { ownerUid: user.uid, ownerEmail: user.email.toLowerCase(),
-    name: String(farmProfile?.nomeFazenda || 'Propriedade sem nome').slice(0, 200),
+    name,
     ponds: ponds.map(pond => ({ id: pond.id, name: String(pond.nome).slice(0, 200), latitude: pond.latitude ?? null, longitude: pond.longitude ?? null })), updatedAt: serverTimestamp() });
   batch.set(doc(firestore, 'propertyDirectory', user.uid), { ownerUid: user.uid, name, nameSearch: propertySearchKey(name), updatedAt: serverTimestamp() });
-  await batch.commit();
+  });
 }
 export async function submitTechnicalVisit(user, farm, pond, input) {
   const value = validateVisitReport(input);

@@ -1,0 +1,25 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { watchLocalVisitPhotos, saveLocalVisitPhotos, validateVisitPhotoFiles } from '../services/localVisitPhotos.js';
+import { downloadVisitGuide } from '../services/visitGuide.js';
+const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
+export default function LocalVisitPhotos({ uid, storageKey, onBusyChange }) {
+  const [files, setFiles] = useState([]), [urls, setUrls] = useState([]), [busy, setBusy] = useState(true), [error, setError] = useState('');
+  const picker = useRef(null), onBusy = useRef(onBusyChange); onBusy.current = onBusyChange;
+  useEffect(() => { setBusy(true); setError(''); setFiles([]);
+    const stop = watchLocalVisitPhotos(uid, storageKey, value => { setFiles(value); setBusy(false); }, () => { setError('Não foi possível abrir as fotos locais deste aparelho.'); setBusy(false); });
+    return () => { stop(); onBusy.current?.(false); };
+  }, [uid, storageKey]);
+  useEffect(() => { onBusy.current?.(busy); }, [busy]);
+  useEffect(() => { const previews = files.map(file => URL.createObjectURL(file.blob)); setUrls(previews); return () => previews.forEach(url => URL.revokeObjectURL(url)); }, [files]);
+  async function save(value) {
+    setBusy(true); setError('');
+    try { await saveLocalVisitPhotos(uid, storageKey, value); setFiles(value); }
+    catch { setError('As fotos não foram salvas. Libere espaço no aparelho e tente novamente. Os dados da visita são separados das imagens.'); }
+    finally { setBusy(false); }
+  }
+  return <div className="space-y-3 border-t border-slate-200 pt-4"><h4 className="font-semibold text-sm">Fotos da visita — somente neste aparelho</h4><p className="text-xs text-slate-600">As imagens ficam no armazenamento deste navegador, separadas da sincronização. Não sobem para o site e não aparecem em outros aparelhos. Limpar os dados do navegador pode apagá-las; baixe a guia se quiser guardá-las.</p><input ref={picker} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" aria-label="Selecionar fotos locais da visita" onChange={async event => { const selected = Array.from(event.target.files || []); event.target.value = ''; if (!selected.length) return; setBusy(true); setError(''); try { const value = await validateVisitPhotoFiles(selected); if (files.length + value.length > 8) throw new Error('Guarde no máximo 8 fotos por visita.'); if (files.reduce((n, f) => n + f.blob.size, 0) + value.reduce((n, f) => n + f.blob.size, 0) > 40 * 1024 * 1024) throw new Error('As fotos devem somar no máximo 40 MB.'); await save([...files, ...value]); } catch (err) { setError(err.message); setBusy(false); } }} /><button type="button" className={button} disabled={busy} onClick={() => picker.current?.click()}>{busy ? 'Preparando fotos locais…' : 'Anexar fotos da propriedade neste aparelho'}</button>{error && <p role="alert" className="text-sm text-rose-900">{error}</p>}<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{files.map((file, index) => <figure key={`${file.name}:${index}`} className="min-w-0 space-y-1"><img src={urls[index]} alt={`Foto da visita: ${file.name}`} className="h-24 w-full object-cover rounded-lg" /><figcaption className="truncate text-xs">{file.name}</figcaption><button type="button" className={button} disabled={busy} aria-label={`Remover foto ${index + 1}`} onClick={() => void save(files.filter((_, i) => i !== index))}>Remover</button></figure>)}</div></div>;
+}
+export function VisitGuide({ user, visit, storageKey }) {
+  const [includePhotos, setIncludePhotos] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [photoBusy, setPhotoBusy] = useState(false), [open, setOpen] = useState(false);
+  return <details onToggle={event => setOpen(event.currentTarget.open)} className="space-y-3 border-t border-slate-200 pt-3"><summary className="min-h-11 py-2 cursor-pointer font-semibold text-sm">Guia da visita e fotos neste aparelho</summary>{open && <><LocalVisitPhotos uid={user.uid} storageKey={storageKey} onBusyChange={setPhotoBusy} /><p className="text-xs text-slate-600">A guia contém o relatório compartilhado e as fotos escolhidas. Apelidos e anotações privadas não entram no PDF. Você decide se entrega a guia ao cliente.</p><label className="flex items-center gap-3 min-h-11 text-sm"><input type="checkbox" checked={includePhotos} onChange={e => setIncludePhotos(e.target.checked)} className="size-5 accent-emerald-700" />Incluir as fotos deste aparelho na guia</label><button type="button" className={button} disabled={busy || photoBusy} onClick={async () => { setBusy(true); setError(''); try { await downloadVisitGuide(user, visit, storageKey, includePhotos); } catch { setError('Não foi possível gerar a guia. Confira as fotos ou tente gerar sem imagens.'); } finally { setBusy(false); } }}>{busy ? 'Gerando guia…' : 'Baixar guia da visita em PDF'}</button>{error && <p role="alert" className="text-sm text-rose-900">{error}</p>}</>}</details>;
+}

@@ -2,12 +2,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import { liveQuery } from 'dexie';
 import { useAccount } from './AccountProvider.jsx';
 import { applyAcceptedVisit, publishSharedFarm, watchFieldRecords } from '../services/technicalVisits.js';
+import { watchAssistedProducers, watchAssistedVisits } from '../services/assistedProducers.js';
 
 export default function TechnicalVisitBridge({ onOpen, onReload }) {
   const { user, database, syncStatus } = useAccount();
   const [visits, setVisits] = useState([]), [error, setError] = useState('');
   const [inspections, setInspections] = useState([]);
   const [directInspections, setDirectInspections] = useState([]);
+  const [assisted, setAssisted] = useState([]), [assistedVisits, setAssistedVisits] = useState({});
+  useEffect(() => watchAssistedProducers('client', user.uid, setAssisted, () => setError('Não foi possível consultar seus cadastros assistidos.')), [user.uid]);
+  useEffect(() => {
+    setAssistedVisits({});
+    const stops = assisted.map(item => watchAssistedVisits(item.id, values => setAssistedVisits(previous => ({ ...previous, [item.id]: values })), () => setError('Não foi possível consultar alguns atendimentos assistidos.')));
+    return () => stops.forEach(stop => stop());
+  }, [assisted]);
   const lastProjection = useRef('');
   const callbacks = useRef({ onReload }); callbacks.current = { onReload };
   const synced = syncStatus.state === 'synced';
@@ -24,7 +32,7 @@ export default function TechnicalVisitBridge({ onOpen, onReload }) {
         if (signature === lastProjection.current) return;
         timer = setTimeout(async () => {
           try { await publishSharedFarm(user, value.farm, value.ponds); if (!stopped) lastProjection.current = signature; }
-          catch { if (!stopped) setError('Não foi possível atualizar os dados compartilhados com os técnicos. Tente sincronizar novamente.'); }
+          catch (err) { if (!stopped) setError(err.code ? 'Não foi possível atualizar os dados compartilhados com os técnicos. Tente sincronizar novamente.' : err.message); }
         }, 600);
       }, error: () => setError('Não foi possível consultar os viveiros para as visitas técnicas.'),
     });
@@ -45,6 +53,6 @@ export default function TechnicalVisitBridge({ onOpen, onReload }) {
     })();
     return () => { stopped = true; };
   }, [database, visits, synced]);
-  const pending = visits.filter(visit => visit.status === 'pending').length + [...new Map([...inspections, ...directInspections].map(item => [item.id, item])).values()].filter(visit => visit.status === 'pending').length;
-  return <>{pending > 0 && <div role="status" className="my-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950"><span>{pending} visita(s) técnica(s) aguardando seu aceite. Confira o relatório e os ajustes propostos.</span><button className="min-h-11 font-semibold underline underline-offset-4" onClick={onOpen}>Revisar visitas</button></div>}{error && <p role="alert" className="my-3 text-sm text-rose-800">{error}</p>}</>;
+  const pending = visits.filter(visit => visit.status === 'pending').length + [...new Map([...inspections, ...directInspections].map(item => [item.id, item])).values()].filter(visit => visit.status === 'pending').length + assisted.filter(item => item.clientDecision === 'pending').length + Object.values(assistedVisits).flat().filter(visit => visit.status === 'pending').length;
+  return <>{pending > 0 && <div role="status" className="my-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950"><span>{pending} cadastro(s) ou atendimento(s) aguardando seu aceite. Confira os dados e os relatórios.</span><button className="min-h-11 font-semibold underline underline-offset-4" onClick={onOpen}>Revisar visitas</button></div>}{error && <p role="alert" className="my-3 text-sm text-rose-800">{error}</p>}</>;
 }

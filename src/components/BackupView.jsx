@@ -3,6 +3,8 @@ import { Settings, Download, Upload, Trash2, Smartphone, ShieldCheck, Database, 
 import { exportLocalDatabase, importLocalDatabase, seedInitialDataIfEmpty, clearLocalDatabase } from "../services/db.js";
 import { useAccount, useDatabase } from "./AccountProvider.jsx";
 import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
+import { publishSharedFarm } from '../services/technicalVisits.js';
+import { propertyNameKey } from '../services/propertyDirectory.js';
 
 export default function BackupView({ 
   farmProfile, 
@@ -13,19 +15,22 @@ export default function BackupView({
 }) {
   const db = useDatabase();
   const { user } = useAccount() || {};
-  const [nomeFazenda, setNomeFazenda] = useState(farmProfile?.nomeFazenda || "Fazenda de Carcinicultura");
+  const [nomeFazenda, setNomeFazenda] = useState(farmProfile?.nomeFazenda || '');
+  const [profileBusy, setProfileBusy] = useState(false), [profileError, setProfileError] = useState('');
   const [produtor, setProdutor] = useState(farmProfile?.produtor || "Produtor Rural");
   const [localizacao, setLocalizacao] = useState(farmProfile?.localizacao || "Litoral");
   const [mensagem, setMensagem] = useState("");
 
   useEffect(() => {
-    setNomeFazenda(farmProfile?.nomeFazenda || "Fazenda de Carcinicultura");
+    setNomeFazenda(farmProfile?.nomeFazenda || '');
     setProdutor(farmProfile?.produtor || "Produtor Rural");
     setLocalizacao(farmProfile?.localizacao || "Litoral");
   }, [farmProfile]);
 
   const handleExportarPdf = async () => {
     try {
+      propertyNameKey(nomeFazenda);
+      if (user) await publishSharedFarm(user, { nomeFazenda }, viveiros);
       if (farmProfile?.id) {
         await db.configuracoes.update(farmProfile.id, {
           nomeFazenda,
@@ -65,6 +70,10 @@ export default function BackupView({
 
   const handleSalvarPerfil = async (e) => {
     e.preventDefault();
+    setProfileBusy(true); setProfileError('');
+    try {
+    propertyNameKey(nomeFazenda);
+    if (user) await publishSharedFarm(user, { nomeFazenda }, viveiros);
     if (farmProfile?.id) {
       await db.configuracoes.update(farmProfile.id, {
         nomeFazenda,
@@ -84,6 +93,8 @@ export default function BackupView({
     setMensagem("Perfil da fazenda atualizado com sucesso!");
     setTimeout(() => setMensagem(""), 3000);
     onReload();
+    } catch (error) { setProfileError(error.code ? 'Não foi possível conferir o nome da propriedade. Verifique a conexão e tente novamente; seus dados anteriores foram preservados.' : error.message); }
+    finally { setProfileBusy(false); }
   };
 
   const handleExport = async () => {
@@ -165,6 +176,8 @@ export default function BackupView({
                 type="text"
                 required
                 value={nomeFazenda}
+                minLength={2}
+                maxLength={200}
                 onChange={(e) => setNomeFazenda(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 font-bold text-sm focus:border-emerald-500 focus:outline-none"
               />
@@ -195,13 +208,15 @@ export default function BackupView({
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
               type="submit"
+              disabled={profileBusy}
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer"
             >
-              Salvar Dados da Fazenda
+              {profileBusy ? 'Conferindo nome…' : 'Salvar Dados da Fazenda'}
             </button>
 
             <button
               type="button"
+              disabled={profileBusy}
               onClick={handleExportarPdf}
               className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               title="Salvar dados da fazenda em formato PDF"
@@ -210,6 +225,8 @@ export default function BackupView({
               <span>Salvar em PDF</span>
             </button>
           </div>
+          <p className="text-xs text-slate-600">O nome é obrigatório e exclusivo no sistema. Maiúsculas, acentos e espaços não criam um nome diferente. É necessário estar conectado para confirmar o nome.</p>
+          {profileError && <p role="alert" className="text-sm text-rose-900">{profileError}</p>}
         </form>
       </div>
 
