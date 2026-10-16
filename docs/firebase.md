@@ -9,6 +9,22 @@ A abertura do site exige login antes de montar o painel. Cadastro e recuperaçã
 de senha ficam disponíveis nessa tela. Sessões já autenticadas abrem o painel;
 ao sair, o aplicativo retorna à tela de login.
 
+Verificação obrigatória: o app não monta os serviços de produção para contas
+com `emailVerified == false`, inclusive contas antigas e Sênior. Exibe botão
+Enviar confirmação (link nativo Firebase) e Já confirmei meu e-mail. O segundo
+recarrega o usuário e força renovação do token; `onIdTokenChanged` propaga a nova
+identidade ao app mesmo se o SDK reutilizar o mesmo objeto de usuário.
+O envio usa `VITE_PUBLIC_SITE_URL` ou a URL pública GitHub Pages por padrão;
+ao trocar de domínio, ajustar essa variável e autorizar o domínio no Firebase.
+O controle tem reenvio com intervalo visual de 60 segundos e limites Firebase.
+Não há código numérico ou marca de verificação editável pelo cliente.
+
+A sincronização de produção fica pausada até verificar. Regras exigem o claim
+assinado `email_verified == true` também para ler, criar, alterar ou apagar
+manifesto e snapshots. IndexedDB e registros existentes não são apagados.
+O portal de gestão separado conserva seu controle Sênior/Administrador, sem
+montar serviços de produção. Confirmação de e-mail não altera cargo ou Premium.
+
 Recuperação: o modelo em `password-reset-email.html` usa `%LINK%` como destino
 do botão. **Pendente de liberação pelo suporte Firebase**: o console recusou
 a gravação com “As atualizações de modelos de e-mail não estão disponíveis
@@ -50,7 +66,13 @@ afeta a conta e sincroniza com a nuvem; o texto de confirmação informa isso.
 - `$env:FIREBASE_LIVE_TEST='1'; npx playwright test e2e/firebase-accounts.spec.js --project=chromium`:
   opt-in para contas descartáveis, dados sintéticos e verificações das regras no
   projeto real, com limpeza em `finally`. Não usa contas de produtores.
-- `npx playwright test e2e/onboarding-flow.spec.js e2e/ajuda.spec.js --project=chromium`.
+- `npx playwright test e2e/verification-gate.spec.js e2e/login-screen.spec.js --project=chromium`.
+
+O teste real usa contas sem confirmação: exige tela de verificação, valida
+aceitação do envio pelo Firebase e recusa de acesso à produção no servidor.
+Não confirma recebimento em uma caixa postal nem usa um e-mail real de produtor.
+A transição visual para conta verificada é exercitada com identidade simulada;
+a entrega do e-mail e o clique real precisam ser conferidos pelo destinatário.
 
 As regras em `firestore.rules` foram publicadas pelo console. Alterações futuras
 podem ser publicadas por `firebase deploy --only firestore:rules`, com autenticação

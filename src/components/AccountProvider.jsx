@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Dexie, { liveQuery } from 'dexie';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onIdTokenChanged, signOut } from 'firebase/auth';
 import { auth } from '../services/firebase.js';
 import { db as guestDb, getAccountDatabase, exportLocalDatabase, importLocalDatabase } from '../services/db.js';
 import { createCloudSync } from '../services/cloudSync.js';
@@ -47,7 +47,7 @@ function AccountSession({ user, children, syncProduction }) {
     return () => { clearInterval(retryMetrics); window.removeEventListener('online', flushPurchaseEvents); window.removeEventListener('focus', flushPurchaseEvents); };
   }, [user?.uid]);
   useEffect(() => {
-    if (!user || !syncProduction) return;
+    if (!user || !syncProduction || !user.emailVerified) return;
     let timer;
     let disposed = false;
     const sync = createCloudSync({
@@ -88,7 +88,7 @@ function AccountSession({ user, children, syncProduction }) {
       controller.current = null;
       window.removeEventListener('online', schedule); window.removeEventListener('offline', schedule); window.removeEventListener('focus', schedule);
     };
-  }, [database, user?.uid, syncProduction]);
+  }, [database, user?.uid, user?.emailVerified, syncProduction]);
   const value = {
     user, database, syncStatus, dataVersion, access, accessError, accessLoading,
     sync: () => controller.current?.sync(),
@@ -100,8 +100,8 @@ function AccountSession({ user, children, syncProduction }) {
 }
 
 export default function AccountProvider({ children, syncProduction = true }) {
-  const [user, setUser] = useState(undefined);
-  useEffect(() => onAuthStateChanged(auth, setUser, () => setUser(null)), []);
+  const [{ user }, setIdentity] = useState({ user: undefined });
+  useEffect(() => onIdTokenChanged(auth, user => setIdentity({ user }), () => setIdentity({ user: null })), []);
   if (user === undefined) return <div role="status" className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 p-6">Preparando o acesso ao CarcinoGestão…</div>;
   return <AccountSession key={user?.uid || 'local'} user={user} syncProduction={syncProduction}>{children}</AccountSession>;
 }

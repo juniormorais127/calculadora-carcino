@@ -14,6 +14,7 @@ import { useAccount } from "./components/AccountProvider.jsx";
 import AccountView from "./components/AccountView.jsx";
 import { ShrimpMarkIcon } from "./components/icons/CustomAquacultureIcons.jsx";
 import PasswordResetView from "./components/PasswordResetView.jsx";
+import VerifyEmailView from "./components/VerifyEmailView.jsx";
 import { CheckCircle2, X } from "lucide-react";
 
 export default function App() {
@@ -25,14 +26,14 @@ export default function App() {
   useEffect(() => {
     if (action.mode) window.history.replaceState(null, '', window.location.pathname);
   }, [action]);
-  if (!user || action.mode) return (
+  if (!user || action.mode || !user.emailVerified) return (
     <main className="min-h-screen bg-slate-50 text-slate-900 px-5 py-8 sm:py-14">
       <div className="mx-auto max-w-md">
         <header className="flex items-center gap-3 mb-6">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white"><ShrimpMarkIcon className="h-8 w-8" /></div>
           <div><h1 className="text-xl font-bold tracking-tight">CarcinoGestão</h1><p className="text-sm text-slate-600">Gestão da sua produção de camarão</p></div>
         </header>
-        {action.mode ? <PasswordResetView mode={action.mode} code={action.code} /> : <AccountView />}
+        {action.mode ? <PasswordResetView mode={action.mode} code={action.code} /> : user ? <VerifyEmailView /> : <AccountView />}
       </div>
     </main>
   );

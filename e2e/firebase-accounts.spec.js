@@ -41,76 +41,42 @@ async function login(page, account) {
   await page.getByLabel('E-mail', { exact: true }).fill(account.email);
   await page.getByLabel('Senha', { exact: true }).fill(account.password);
   await page.locator('form').getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Minha conta', exact: true })).toBeVisible();
-  await expect(page.getByText('Dados salvos na sua conta.', { exact: true })).toBeVisible({ timeout: 45000 });
+  await expect(page.getByRole('heading', { name: 'Confirme seu e-mail para continuar' })).toBeVisible();
 }
-async function addPond(page, name) {
-  await page.getByRole('button', { name: 'Viveiros', exact: true }).click();
-  await page.getByRole('button', { name: 'Novo Viveiro', exact: true }).click();
-  await page.getByPlaceholder('Ex: Viveiro 01 - Berçário').fill(name);
-  await page.getByRole('button', { name: 'Salvar Viveiro', exact: true }).click();
-  await expect(page.getByText(name, { exact: true })).toBeVisible();
-}
-test('contas privadas, recuperação em outro aparelho, modo offline e login', async ({ browser }, testInfo) => {
-  test.setTimeout(180000);
-  let a, b;
-  const contexts = [];
+test('verificacao obrigatoria protege producao no navegador e Firebase', async ({ browser }, testInfo) => {
+  test.setTimeout(90000);
+  let a, context;
   try {
-    a = await createAccount(); b = await createAccount();
-    const contextA = await browser.newContext({ viewport: { width: 426, height: 812 } }); contexts.push(contextA);
-    const pageA = await contextA.newPage();
-    const errors = []; pageA.on('pageerror', error => errors.push(error.message));
-    await pageA.goto('./');
-    await pageA.getByRole('button', { name: 'Criar conta gratuita' }).click();
-    await pageA.getByLabel('E-mail', { exact: true }).fill('nao-enviar@example.invalid');
-    await pageA.getByLabel('Senha', { exact: true }).fill('SenhaTeste123!');
-    await pageA.getByLabel('Confirmar senha').fill('OutraSenha123!');
-    await pageA.locator('form').getByRole('button', { name: 'Criar conta', exact: true }).click();
-    await expect(pageA.getByRole('alert')).toHaveText('As senhas precisam ser iguais.');
-    await pageA.screenshot({ path: testInfo.outputPath('login-mobile.png'), fullPage: true });
-    await login(pageA, a);
-    await addPond(pageA, 'Privado A');
-    await expect(pageA.getByText('Dados salvos na sua conta.', { exact: true })).toBeVisible({ timeout: 45000 });
-
-    // Server-side isolation, independent of what the interface displays.
-    expect((await request(`users/${a.localId}/state/current`, b)).status).toBe(403);
-    expect((await request(`users/${a.localId}/state/current`)).status).toBe(403);
-    expect((await request(`users/${a.localId}/snapshots/invasao/chunks/0`, b, 'PATCH', { fields: { text: { stringValue: 'denied' } } })).status).toBe(403);
-
-    const contextB = await browser.newContext({ viewport: { width: 1440, height: 900 } }); contexts.push(contextB);
-    const pageB = await contextB.newPage(); await login(pageB, b);
-    await pageB.getByRole('button', { name: 'Viveiros', exact: true }).click();
-    await expect(pageB.getByText('Privado A', { exact: true })).toBeHidden();
-    await addPond(pageB, 'Privado B');
-    await expect(pageB.getByText('Dados salvos na sua conta.', { exact: true })).toBeVisible({ timeout: 45000 });
-    await pageB.getByRole('button', { name: 'Minha conta', exact: true }).click();
-    await pageB.screenshot({ path: testInfo.outputPath('conta-desktop.png'), fullPage: true });
-
-    const secondA = await browser.newContext({ viewport: { width: 426, height: 812 } }); contexts.push(secondA);
-    const device = await secondA.newPage(); await login(device, a);
-    await device.getByRole('button', { name: 'Viveiros', exact: true }).click();
-    await expect(device.getByText('Privado A', { exact: true })).toBeVisible();
-    await expect(device.getByText('Privado B', { exact: true })).toBeHidden();
-    await secondA.setOffline(true);
-    await addPond(device, 'Criado sem internet A');
-    await expect(device.getByText(/Sem internet. Alterações salvas/)).toBeVisible();
-    await secondA.setOffline(false);
-    await expect(device.getByText('Dados salvos na sua conta.', { exact: true })).toBeVisible({ timeout: 45000 });
-    await pageA.getByRole('button', { name: 'Minha conta', exact: true }).click();
-    await pageA.getByRole('button', { name: 'Sincronizar agora', exact: true }).click();
-    await expect(pageA.getByRole('status').filter({ hasText: 'Dados salvos na sua conta.' }).first()).toBeVisible({ timeout: 45000 });
-    await pageA.getByRole('button', { name: 'Viveiros', exact: true }).click();
-    await expect(pageA.getByText('Criado sem internet A', { exact: true })).toBeVisible();
-    await pageA.getByRole('button', { name: 'Minha conta', exact: true }).click();
-    await pageA.getByRole('button', { name: 'Sair da conta', exact: true }).click();
-    await expect(pageA.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
-    await expect(pageA.getByRole('button', { name: 'Viveiros', exact: true })).toBeHidden();
-    await expect(pageA.getByText('Privado A', { exact: true })).toBeHidden();
-    await expect(pageA.getByText('Criado sem internet A', { exact: true })).toBeHidden();
-    expect(errors).toEqual([]);
+    a = await createAccount();
+    context = await browser.newContext({ viewport: { width: 426, height: 812 } });
+    const page = await context.newPage();
+    await login(page, a);
+    await expect(page.getByRole('button', { name: 'Biometria', exact: true })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Viveiros', exact: true })).toBeHidden();
+    const [response] = await Promise.all([
+      page.waitForResponse(r => r.url().includes('accounts:sendOobCode')),
+      page.getByRole('button', { name: /Enviar confirma/ }).click(),
+    ]);
+    expect(response.status(), JSON.stringify(await response.json())).toBe(200);
+    await expect(page.getByRole('status')).toContainText('Enviamos o link');
+    await expect(page.getByRole('button', { name: /Reenviar em/ })).toBeDisabled();
+    for (const width of [426, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({ path: testInfo.outputPath(`verificacao-${width}.png`), fullPage: true });
+    }
+    await page.getByRole('button', { name: /confirmei meu e-mail/ }).click();
+    await expect(page.getByRole('status')).toContainText('ainda');
+    const manifest = { fields: { revision: { integerValue: '1' }, snapshotId: { stringValue: 'test' }, chunks: { integerValue: '1' }, previousSnapshotId: { nullValue: null }, updatedAt: { timestampValue: new Date().toISOString() } } };
+    expect((await request(`users/${a.localId}/state/current`, a, 'PATCH', manifest)).status).toBe(403);
+    expect((await request(`users/${a.localId}/snapshots/test/chunks/0`, a, 'PATCH', { fields: { text: { stringValue: '{}' } } })).status).toBe(403);
+    expect((await request(`users/${a.localId}/state/current`, a)).status).toBe(403);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Confirme seu e-mail para continuar' })).toBeVisible();
+    await page.getByRole('button', { name: 'Sair e usar outra conta' }).click();
+    await expect(page.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
   } finally {
-    await Promise.all(contexts.map(context => context.close()));
-    await cleanup(a); await cleanup(b);
+    if (context) await context.close();
+    await cleanup(a);
   }
 });
 

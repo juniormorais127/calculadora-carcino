@@ -12,6 +12,7 @@ export const firebaseConfig = {
   appId: '1:596153233528:web:577906d9c8e766412d7d8d',
 };
 const app = initializeApp(firebaseConfig);
+export const publicSiteUrl = import.meta.env.VITE_PUBLIC_SITE_URL || 'https://juniormorais127.github.io/calculadora-carcino/';
 export const auth = getAuth(app);
 auth.languageCode = 'pt-BR';
 // The offline copy lives in a separate Dexie database for each UID.
