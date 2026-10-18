@@ -23,6 +23,11 @@ test('local property report keeps text and photos after reload and generates off
   await page.reload(); await mount();
   await page.getByRole('button', { name: /Propriedade offline/ }).click();
   await expect(page.getByLabel('Relat\u00f3rio e testes realizados')).toHaveValue('Visita e testes realizados no local.');
+  await page.getByLabel('Relat\u00f3rio e testes realizados').fill('Teste atualizado e salvo automaticamente.');
+  await expect(page.getByText('Relat\u00f3rio salvo neste aparelho.', { exact: true })).toBeVisible();
+  await page.reload(); await mount();
+  await page.getByRole('button', { name: /Propriedade offline/ }).click();
+  await expect(page.getByLabel('Relat\u00f3rio e testes realizados')).toHaveValue('Teste atualizado e salvo automaticamente.');
   await expect(page.getByAltText('Foto da visita: property.png')).toBeVisible();
   await page.getByText('Guia da visita e fotos neste aparelho', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Baixar guia da visita em PDF' })).toBeEnabled();
