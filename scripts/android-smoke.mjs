@@ -34,8 +34,8 @@ try {
   await page.getByRole('button', { name: 'Usar GPS do celular' }).click();
   await new Promise(resolve => setTimeout(resolve, 1500));
   execFileSync('adb', ['emu', 'geo', 'fix', '-37.0731', '-10.9472']);
-  await expect(page.getByLabel('Latitude', { exact: true })).toHaveValue(/-10\.9472/, { timeout: 30000 });
-  await expect(page.getByLabel('Longitude', { exact: true })).toHaveValue(/-37\.0731/);
+  await expect.poll(async () => Number(await page.getByLabel('Latitude', { exact: true }).inputValue()), { timeout: 30000 }).toBeCloseTo(-10.9472, 4);
+  await expect.poll(async () => Number(await page.getByLabel('Longitude', { exact: true }).inputValue())).toBeCloseTo(-37.0731, 4);
   await device.screenshot({ path: 'android-evidence/field-report-offline.png' });
   await page.getByText('Guia da visita e fotos neste aparelho', { exact: true }).click();
   await page.getByRole('button', { name: 'Baixar guia da visita em PDF' }).click();
@@ -44,6 +44,10 @@ try {
   await device.screenshot({ path: 'android-evidence/android-pdf-share.png' });
   await device.shell('input keyevent 4');
   await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true }, null, 2));
+} catch (error) {
+  await device.screenshot({ path: 'android-evidence/failure.png' });
+  await writeFile('android-evidence/failure.txt', String(error.stack || error));
+  throw error;
 } finally {
   await device.shell('svc wifi enable'); await device.shell('svc data enable'); await device.close();
 }
