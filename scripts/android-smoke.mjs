@@ -1,5 +1,6 @@
 import { _android as android, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 await mkdir('android-evidence', { recursive: true });
 const [device] = await android.devices();
 if (!device) throw new Error('Android emulator unavailable');
@@ -27,8 +28,22 @@ try {
   await page.evaluate(() => window.__androidDiagnostics.showNotebook());
   await page.getByRole('button', { name: /Propriedade de teste/ }).click();
   await expect(page.getByAltText('Foto da visita: property-test.jpg')).toBeVisible();
+  await device.shell(`pm grant ${pkg} android.permission.ACCESS_COARSE_LOCATION`);
+  await device.shell(`pm grant ${pkg} android.permission.ACCESS_FINE_LOCATION`);
+  await device.shell('settings put secure location_mode 3');
+  await page.getByRole('button', { name: 'Usar GPS do celular' }).click();
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  execFileSync('adb', ['emu', 'geo', 'fix', '-37.0731', '-10.9472']);
+  await expect(page.getByLabel('Latitude', { exact: true })).toHaveValue(/-10\.9472/, { timeout: 30000 });
+  await expect(page.getByLabel('Longitude', { exact: true })).toHaveValue(/-37\.0731/);
   await device.screenshot({ path: 'android-evidence/field-report-offline.png' });
-  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true }, null, 2));
+  await page.getByText('Guia da visita e fotos neste aparelho', { exact: true }).click();
+  await page.getByRole('button', { name: 'Baixar guia da visita em PDF' }).click();
+  await expect.poll(() => page.evaluate(() => window.__androidDiagnostics.documents()), { timeout: 30000 }).toContainEqual(expect.stringMatching(/guia-visita-.*\.pdf/));
+  await expect.poll(async () => String(await device.shell('dumpsys activity activities')), { timeout: 15000 }).toContain('ChooserActivity');
+  await device.screenshot({ path: 'android-evidence/android-pdf-share.png' });
+  await device.shell('input keyevent 4');
+  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true }, null, 2));
 } finally {
   await device.shell('svc wifi enable'); await device.shell('svc data enable'); await device.close();
 }

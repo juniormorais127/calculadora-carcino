@@ -30,14 +30,11 @@ jobs:
           VITE_ANDROID_TEST: 'true'
           VITE_BASE_PATH: /
       - name: Chave exclusiva para testes
+        env:
+          ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.ANDROID_TEST_KEYSTORE_BASE64 }}
         run: |
-          if [ ! -f android/app/carcino-test.keystore ]; then
-            keytool -genkeypair -keystore android/app/carcino-test.keystore -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CarcinoGestao Test ONLY"
-          fi
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Chave-publica-somente-testes
-          path: android/app/carcino-test.keystore
+          test -n "$ANDROID_TEST_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_TEST_KEYSTORE_BASE64" | base64 --decode > android/app/carcino-test.keystore
       - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug --no-daemon
       - run: mkdir -p apk && cp android/app/build/outputs/apk/debug/app-debug.apk apk/CarcinoGestao-teste.apk && sha256sum apk/CarcinoGestao-teste.apk > apk/SHA256.txt
       - uses: actions/upload-artifact@v4

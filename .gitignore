@@ -2,6 +2,8 @@ node_modules
 dist
 apk/
 android-evidence/
+.android-test/
+android/app/carcino-test.keystore
 .env
 .DS_Store
 *.log

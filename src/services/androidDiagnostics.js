@@ -8,6 +8,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import FieldNotebook from '../components/FieldNotebook.jsx';
 window.__androidDiagnostics = {
+  async documents() { return (await Filesystem.readdir({ path: 'CarcinoGestao', directory: Directory.Documents })).files.map(file => file.name); },
   showNotebook() {
     document.getElementById('root').style.display = 'none';
     const host = document.createElement('div'); host.style.padding = '16px'; document.body.append(host);
@@ -18,7 +19,7 @@ window.__androidDiagnostics = {
     canvas.getContext('2d').fillRect(0, 0, 600, 400);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
     await saveLocalVisitPhotos('android-test', 'notebook:test', [{ name: 'property-test.jpg', type: blob.type, blob }]);
-    await saveLocalReport('android-test', { id: 'test', farmName: 'Propriedade de teste', summary: 'Relatorio local offline', latitude: -10.95, longitude: -37.07 });
+    await saveLocalReport('android-test', { id: 'test', farmName: 'Propriedade de teste', visitedOn: '2026-10-18', status: 'local', licenseStatus: 'unknown', summary: 'Relatorio local offline', latitude: -10.95, longitude: -37.07 });
     const pdf = new jsPDF(); pdf.text('Relatorio de teste offline', 20, 20); pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 20, 40, 160, 107);
     await Filesystem.writeFile({ path: 'CarcinoGestao/smoke.pdf', directory: Directory.Documents, data: await blobBase64(pdf.output('blob')), recursive: true });
     return this.read();

@@ -10,11 +10,11 @@ export async function downloadVisitGuide(user, visit, storageKey, includePhotos)
     for (const row of lines) { if (y > 277) { pdf.addPage(); y = 22; } pdf.text(row, 18, y); y += size === 16 ? 9 : 6; }
     y += 3;
   }
-  line('CarcinoGestão — Guia de visita técnica', 16);
+  line(visit.status === 'local' ? 'CarcinoGestão — Relatório local da propriedade' : 'CarcinoGestão — Guia de visita técnica', 16);
   line(`Propriedade: ${visit.farmName || visit.propertyName}`);
   if (visit.clientName) line(`Produtor: ${visit.clientName}`);
   if (visit.address) line(`Endereço: ${visit.address}`);
-  line(`Técnico: ${visit.technicianName || user.email}`);
+  line(`${visit.status === 'local' ? 'Responsável pelo registro' : 'Técnico'}: ${visit.technicianName || user.email}`);
   if (visit.creaNumber) line(`CREA: ${visit.creaNumber}`);
   line(`Data da visita: ${visit.visitedOn}`);
   line(`Situação: ${visit.status === 'local' ? 'Relatório local — não enviado para aceite ou auditoria' : VISIT_LABELS[visit.status] || 'Aguardando análise do produtor'}`);
