@@ -13,6 +13,7 @@ import AccountNameEditor from './AccountNameEditor.jsx';
 import TechnicianIdentityEditor from './TechnicianIdentityEditor.jsx';
 import { saveTechnicianIdentity } from '../services/technicalVisits.js';
 import { saveDeviceFile } from '../services/deviceFiles.js';
+import FieldNotebook from './FieldNotebook.jsx';
 
 export function authMessage(error) {
   const messages = {
@@ -83,6 +84,7 @@ export default function AccountView({ onVisits }) {
       <h3 className="font-bold">Meu contato</h3>
       <PhoneEditor phone={account.access?.phone} onSave={phone => saveAccountPhone(user, phone)} />
     </div>
+    {accountRole(account.access, user.uid) !== 'field_technician' && <FieldNotebook key={user.uid} user={user} technicianName={account.access?.fullName} />}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="flex gap-2 items-center font-bold"><Cloud className="w-5 h-5 text-emerald-700" />Seus dados de produção</h3>
       <p className="text-sm text-slate-700">Cada login possui registros independentes. Ao entrar em outro aparelho, sua cópia da nuvem será recuperada. Sem internet, você pode continuar usando a cópia deste aparelho.</p>

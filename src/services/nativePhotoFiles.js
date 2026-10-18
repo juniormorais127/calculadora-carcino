@@ -1,13 +1,13 @@
 import { blobBase64 } from './deviceFiles.js';
 // Injected filesystem makes failures/rollback testable without an Android bridge.
-export function nativePhotoFiles(filesystem, directory) {
+export function nativePhotoFiles(filesystem, directory, encode = blobBase64) {
   return {
     async write(uid, files) {
       const created = [], entries = [];
       try {
         for (const file of files) {
           const path = `visit-photos/${uid}/${crypto.randomUUID()}.bin`;
-          await filesystem.writeFile({ path, directory, recursive: true, data: await blobBase64(file.blob) });
+          await filesystem.writeFile({ path, directory, recursive: true, data: await encode(file.blob) });
           created.push(path); entries.push({ name: file.name, type: file.type, path });
         }
         return entries;
