@@ -3,8 +3,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import AccountProvider from "./components/AccountProvider.jsx";
 import "./index.css";
+import { isNativeApp } from './services/deviceFiles.js';
+if (import.meta.env.VITE_ANDROID_TEST === 'true' && isNativeApp()) import('./services/androidDiagnostics.js');
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+if (import.meta.env.PROD && !isNativeApp() && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(reg => {
       reg.update();

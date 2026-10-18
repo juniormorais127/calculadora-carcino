@@ -1,13 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
+import { isNativeApp } from '../services/deviceFiles.js';
 
 export default function PondLocationFields({ value, onChange }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const request = useRef(0);
   useEffect(() => () => { request.current++; }, []);
-  function locate() {
+  async function locate() {
     setError('');
+    if (isNativeApp()) {
+      const id = ++request.current; setBusy(true);
+      try {
+        const { Geolocation } = await import('@capacitor/geolocation');
+        const permission = await Geolocation.requestPermissions({ permissions: ['location'] });
+        if (permission.location !== 'granted' && permission.coarseLocation !== 'granted') throw new Error('Permita o GPS nas configurações do aplicativo ou informe as coordenadas manualmente.');
+        const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+        if (id === request.current) onChange({ latitude: String(position.coords.latitude), longitude: String(position.coords.longitude), locationAccuracyM: position.coords.accuracy, locationCapturedAt: new Date(position.timestamp).toISOString() });
+      } catch (err) { if (id === request.current) setError(err.message || 'Não foi possível obter o GPS. Preencha manualmente.'); }
+      finally { if (id === request.current) setBusy(false); }
+      return;
+    }
     if (!navigator.geolocation) { setError('GPS indisponível neste navegador. Informe as coordenadas manualmente.'); return; }
     const id = ++request.current;
     setBusy(true);

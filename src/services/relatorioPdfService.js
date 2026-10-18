@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { saveDeviceFile } from './deviceFiles.js';
 import { calculateToxicAmmonia } from "./calculatorService.js";
 
 /**
@@ -31,7 +32,7 @@ function calcularDOC(dataPovoamento) {
  * @param {Boolean} [dados.baixar=true] se true, dispara download no navegador
  * @returns {jsPDF} instancia do jsPDF
  */
-export function gerarRelatorioFazendaPdf({
+export async function gerarRelatorioFazendaPdf({
   farmProfile,
   viveiros = [],
   biometrias = [],
@@ -489,7 +490,7 @@ export function gerarRelatorioFazendaPdf({
   // Salvar / Baixar
   if (baixar && typeof window !== "undefined") {
     const nomeLimpo = nomeFazenda.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
-    doc.save(`relatorio-fazenda-${nomeLimpo}-${dataArquivo}.pdf`);
+    await saveDeviceFile(doc.output('blob'), `relatorio-fazenda-${nomeLimpo}-${dataArquivo}.pdf`);
   }
 
   return doc;

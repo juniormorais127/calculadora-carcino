@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { gerarRelatorioFazendaPdf } from "../src/services/relatorioPdfService.js";
 
 test("relatório em PDF da fazenda", async (t) => {
-  await t.test("gera PDF com dados completos da fazenda", () => {
+  await t.test("gera PDF com dados completos da fazenda", async () => {
     const mockFarmProfile = {
       nomeFazenda: "Fazenda Maré Alta",
       produtor: "João Silva",
@@ -63,7 +63,7 @@ test("relatório em PDF da fazenda", async (t) => {
       }
     ];
 
-    const doc = gerarRelatorioFazendaPdf({
+    const doc = await gerarRelatorioFazendaPdf({
       farmProfile: mockFarmProfile,
       viveiros: mockViveiros,
       biometrias: mockBiometrias,
@@ -79,8 +79,8 @@ test("relatório em PDF da fazenda", async (t) => {
     assert.ok(doc.getNumberOfPages() >= 1, "Deve conter ao menos 1 página");
   });
 
-  await t.test("gera PDF mesmo com base vazia sem estourar erros", () => {
-    const doc = gerarRelatorioFazendaPdf({
+  await t.test("gera PDF mesmo com base vazia sem estourar erros", async () => {
+    const doc = await gerarRelatorioFazendaPdf({
       farmProfile: null,
       viveiros: [],
       biometrias: [],

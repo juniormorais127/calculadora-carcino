@@ -5,6 +5,7 @@ import { useAccount, useDatabase } from "./AccountProvider.jsx";
 import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
 import { publishSharedFarm } from '../services/technicalVisits.js';
 import { propertyNameKey } from '../services/propertyDirectory.js';
+import { saveDeviceFile } from '../services/deviceFiles.js';
 
 export default function BackupView({ 
   farmProfile, 
@@ -48,7 +49,7 @@ export default function BackupView({
         });
       }
 
-      gerarRelatorioFazendaPdf({
+      await gerarRelatorioFazendaPdf({
         farmProfile: {
           nomeFazenda,
           produtor,
@@ -100,13 +101,8 @@ export default function BackupView({
   const handleExport = async () => {
     const json = await exportLocalDatabase(db);
     const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
     const dataStr = new Date().toISOString().split("T")[0];
-    a.href = url;
-    a.download = `backup-carcinogestao-${dataStr}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await saveDeviceFile(blob, `backup-carcinogestao-${dataStr}.json`);
   };
 
   const handleImport = async (e) => {

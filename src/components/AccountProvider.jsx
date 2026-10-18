@@ -10,6 +10,9 @@ import { flushPurchaseEvents } from '../services/purchaseTracking.js';
 import { registerAccountProfile } from '../services/accountProfiles.js';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../services/firebase.js';
+import { isNativeApp } from '../services/deviceFiles.js';
+const nativeProfiles = new Dexie('CarcinoGestao-native-account-cache');
+nativeProfiles.version(1).stores({ profiles: '&uid' });
 
 export const AccountContext = createContext(null);
 const metadata = new Dexie('CarcinoGestaoCloudMetadata');
@@ -33,12 +36,19 @@ function AccountSession({ user, children, syncProduction }) {
   useEffect(() => {
     if (!user) return;
     let disposed = false;
+    let receivedServerProfile = false;
+    if (isNativeApp()) void nativeProfiles.profiles.get(user.uid).then(cached => {
+      if (!disposed && !receivedServerProfile && cached?.profile) { setAccess(cached.profile); setAccessLoading(false); }
+    }).catch(() => {});
     const register = () => {
       if (navigator.onLine) void registerAccountProfile(user).catch(() => { if (!disposed) setAccessError('Não foi possível atualizar o cadastro. Tente novamente com internet.'); });
     };
     register();
     const unsubscribe = onSnapshot(doc(firestore, 'accountProfiles', user.uid), snapshot => {
+      if (isNativeApp() && snapshot.metadata.fromCache && !snapshot.exists()) return;
+      receivedServerProfile = true;
       setAccess(snapshot.exists() ? snapshot.data() : null); setAccessError(''); setAccessLoading(false);
+      if (isNativeApp()) void nativeProfiles.profiles.put({ uid: user.uid, profile: snapshot.exists() ? snapshot.data() : null }).catch(() => {});
     }, () => { setAccessError('Não foi possível consultar sua permissão de acesso.'); setAccessLoading(false); });
     window.addEventListener('online', register);
     return () => { disposed = true; unsubscribe(); window.removeEventListener('online', register); };

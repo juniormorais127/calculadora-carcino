@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { saveDeviceFile } from '../services/deviceFiles.js';
 const button = 'min-h-11 rounded-xl border border-emerald-700 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
 export default function MapExportButtons({ records, filename = 'locais-carcinogestao', loading = false }) {
   const [busy, setBusy] = useState(''), [error, setError] = useState(''), [message, setMessage] = useState('');
@@ -9,8 +10,7 @@ export default function MapExportButtons({ records, filename = 'locais-carcinoge
       const api = await import('../services/mapExport.js');
       const data = format === 'kml' ? api.mapKml(records) : await api.mapShapefileZip(records);
       const blob = new Blob([data], { type: format === 'kml' ? 'application/vnd.google-earth.kml+xml' : 'application/zip' });
-      const url = URL.createObjectURL(blob), link = document.createElement('a');
-      link.href = url; link.download = `${filename}-${new Date().toISOString().slice(0, 10)}.${format === 'kml' ? 'kml' : 'zip'}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      await saveDeviceFile(blob, `${filename}-${new Date().toISOString().slice(0, 10)}.${format === 'kml' ? 'kml' : 'zip'}`);
       setMessage(`${count} registro(s) exportado(s). ${format === 'kml' ? 'Abra o KML no Google Earth Pro.' : 'Extraia o ZIP mantendo os arquivos juntos. O CSV inclui os relatórios completos.'}`);
     } catch (err) { setError(err.message || 'Não foi possível gerar o arquivo. Tente novamente.'); }
     finally { setBusy(''); }

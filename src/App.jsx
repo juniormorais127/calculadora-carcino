@@ -19,6 +19,7 @@ import TechnicalVisitsView from './components/TechnicalVisitsView.jsx';
 import TechnicalVisitBridge from './components/TechnicalVisitBridge.jsx';
 import { accountRole, motivoDoBloqueioDeAcesso } from './services/accountPermissions.js';
 import { CheckCircle2, X } from "lucide-react";
+import { isNativeApp } from './services/deviceFiles.js';
 
 export default function App() {
   const { user, access, accessLoading, accessError } = useAccount();
@@ -70,6 +71,20 @@ function ProductionApp() {
   const [intencaoPosViveiro, setIntencaoPosViveiro] = useState(null); // "biometria" | "agua" | null
   const [novoViveiroCriadoId, setNovoViveiroCriadoId] = useState(null);
   const [feedbackBanner, setFeedbackBanner] = useState(null);
+
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    let disposed = false, listener;
+    import('@capacitor/app').then(async ({ App: NativeApp }) => {
+      listener = await NativeApp.addListener('backButton', () => {
+        if (openModalBiometria || openModalAgua || openModalViveiro) { setOpenModalBiometria(false); setOpenModalAgua(false); setOpenModalViveiro(false); }
+        else if (activeTab !== (technician ? 'visitas' : 'dashboard')) setActiveTab(technician ? 'visitas' : 'dashboard');
+        else void NativeApp.minimizeApp();
+      });
+      if (disposed) listener.remove();
+    });
+    return () => { disposed = true; listener?.remove(); };
+  }, [activeTab, technician, openModalBiometria, openModalAgua, openModalViveiro]);
 
   const loadData = async () => {
     setError("");

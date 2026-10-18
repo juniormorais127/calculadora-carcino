@@ -1,5 +1,6 @@
 import { readLocalVisitPhotos } from './localVisitPhotos.js';
 import { LICENSE_LABELS, VISIT_LABELS } from './technicalVisitData.js';
+import { saveDeviceFile } from './deviceFiles.js';
 export async function downloadVisitGuide(user, visit, storageKey, includePhotos) {
   const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF(); let y = 22;
@@ -16,7 +17,7 @@ export async function downloadVisitGuide(user, visit, storageKey, includePhotos)
   line(`Técnico: ${visit.technicianName || user.email}`);
   if (visit.creaNumber) line(`CREA: ${visit.creaNumber}`);
   line(`Data da visita: ${visit.visitedOn}`);
-  line(`Situação: ${VISIT_LABELS[visit.status] || 'Aguardando análise do produtor'}`);
+  line(`Situação: ${visit.status === 'local' ? 'Relatório local — não enviado para aceite ou auditoria' : VISIT_LABELS[visit.status] || 'Aguardando análise do produtor'}`);
   line('Relatório do atendimento', 13); line(visit.summary);
   if (Number.isFinite(visit.latitude)) line(`Coordenadas: ${visit.latitude}, ${visit.longitude}`);
   line(LICENSE_LABELS[visit.licenseStatus]);
@@ -36,5 +37,5 @@ export async function downloadVisitGuide(user, visit, storageKey, includePhotos)
       } finally { bitmap.close(); }
     }
   }
-  pdf.save(`guia-visita-${visit.visitedOn}-${visit.id || 'tecnica'}.pdf`);
+  await saveDeviceFile(pdf.output('blob'), `guia-visita-${visit.visitedOn}-${visit.id || 'tecnica'}.pdf`);
 }

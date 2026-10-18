@@ -12,6 +12,7 @@ import { saveAccountPhone, saveAccountName } from '../services/accountProfiles.j
 import AccountNameEditor from './AccountNameEditor.jsx';
 import TechnicianIdentityEditor from './TechnicianIdentityEditor.jsx';
 import { saveTechnicianIdentity } from '../services/technicalVisits.js';
+import { saveDeviceFile } from '../services/deviceFiles.js';
 
 export function authMessage(error) {
   const messages = {
@@ -28,9 +29,7 @@ export function authMessage(error) {
   return messages[error.code] || 'Não foi possível concluir. Tente novamente em alguns instantes.';
 }
 function download(data, name) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-  const link = document.createElement('a'); link.href = url; link.download = name; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return saveDeviceFile(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), name);
 }
 const button = 'min-h-11 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700';
 export default function AccountView({ onVisits }) {

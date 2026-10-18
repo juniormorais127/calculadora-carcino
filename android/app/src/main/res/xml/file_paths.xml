@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path name="reports" path="Documents/CarcinoGestao/" />
+    <external-path name="public_reports" path="Documents/CarcinoGestao/" />
+    <cache-path name="my_cache_images" path="." />
+</paths>

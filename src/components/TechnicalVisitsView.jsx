@@ -16,6 +16,7 @@ import AssistedProducers from './AssistedProducers.jsx';
 import TechnicalAuthorizations from './TechnicalAuthorizations.jsx';
 import LocalVisitPhotos, { VisitGuide } from './LocalVisitPhotos.jsx';
 import { bindLocalVisitPhotos } from '../services/localVisitPhotos.js';
+import FieldNotebook from './FieldNotebook.jsx';
 
 const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
 const input = 'mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-emerald-700';
@@ -145,6 +146,7 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
     {tab === 'technician' && !identified && <p className="text-sm font-semibold text-amber-900">Salve sua foto e o tipo de atendimento acima para liberar o envio de visitas e notificações. O CREA é opcional.</p>}
     {!administrative && <AssistedProducers key={`assisted:${tab}`} mode={tab === 'technician' ? 'technician' : 'client'} identified={identified} authorizedOwners={grants.filter(item => item.active).map(item => item.ownerUid)} />}
     {!administrative && <TechnicalAuthorizations mode={tab === 'technician' ? 'technician' : 'client'} />}
+    {tab === 'technician' && <FieldNotebook key={user.uid} user={user} technicianName={access?.fullName} />}
     {tab === 'technician' && <div className="space-y-3"><button className={`${button} bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy || !identified} onClick={() => {
       if (independent) { focusForm(); return; }
       setPropertyName(''); setRecipientUid(null); setClientEmail(''); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown'); setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn(''); setPondId('');

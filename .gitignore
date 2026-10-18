@@ -1,5 +1,7 @@
 node_modules
 dist
+apk/
+android-evidence/
 .env
 .DS_Store
 *.log
