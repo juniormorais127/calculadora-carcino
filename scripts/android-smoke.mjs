@@ -16,6 +16,24 @@ try {
     return page;
   }
   let page = await open();
+  await page.evaluate(() => { sessionStorage.setItem('android-origin-check', 'same-app'); window.__androidDiagnostics.showAccount('administrator'); });
+  await page.getByRole('link', { name: 'Abrir administra\u00e7\u00e3o', exact: true }).click();
+  await page.waitForURL('**/admin/index.html');
+  await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('android-origin-check'))).toBe('same-app');
+  await page.waitForFunction(() => !!window.__androidDiagnostics);
+  await page.evaluate(() => window.__androidDiagnostics.showAdmin('producer'));
+  await expect(page.getByRole('heading', { name: 'Acesso restrito' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Usu\u00e1rios e permiss\u00f5es', exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.__androidDiagnostics.showAdmin('administrator'));
+  await expect(page.getByRole('button', { name: 'Usu\u00e1rios e permiss\u00f5es', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Interesse em compras', exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.__androidDiagnostics.showAdmin('senior'));
+  await expect(page.getByRole('button', { name: 'Interesse em compras', exact: true })).toBeVisible();
+  await device.screenshot({ path: 'android-evidence/admin-senior.png' });
+  await page.getByRole('link', { name: 'Site dos produtores' }).click();
+  await expect(page.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
+  await page.waitForFunction(() => !!window.__androidDiagnostics);
   const written = await page.evaluate(() => window.__androidDiagnostics.write());
   expect(written.count).toBe(1); expect(written.nativeCount).toBe(1); expect(written.otherAccount).toBe(0); expect(written.pdfBytes).toBeGreaterThan(1000);
   await device.screenshot({ path: 'android-evidence/login-phone.png' });
@@ -43,7 +61,7 @@ try {
   await expect.poll(async () => String(await device.shell('dumpsys activity activities')), { timeout: 15000 }).toContain('ChooserActivity');
   await device.screenshot({ path: 'android-evidence/android-pdf-share.png' });
   await device.shell('input keyevent 4');
-  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true }, null, 2));
+  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true, adminNavigation: true, adminRoleGates: true }, null, 2));
 } catch (error) {
   await device.screenshot({ path: 'android-evidence/failure.png' });
   await writeFile('android-evidence/failure.txt', String(error.stack || error));

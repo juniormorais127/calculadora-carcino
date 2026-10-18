@@ -1,5 +1,7 @@
 # Aplicativo Android de testes
 
+Na versão 1.0.1-teste (versionCode 2), o link de administração aponta explicitamente para `admin/index.html`. O servidor local do Capacitor trata `/admin/` como rota de SPA e devolve a entrada principal, por isso o caminho com nome do arquivo é necessário no APK. O teste Android verifica a navegação pelo botão real, manutenção da origem, retorno ao aplicativo e controles visuais de administrador/sênior com dados sintéticos, sem mudar permissões de contas reais. As regras do servidor continuam protegendo os dados administrativos.
+
 O APK usa Capacitor e inclui os arquivos do sistema dentro do aplicativo, sem depender de carregar o site para abrir. O identificador é `br.com.carcinogestao.app`. O primeiro login, a verificação de e-mail, as consultas remotas, a auditoria e o envio de visitas exigem internet. A produção já recuperada permanece na base local por conta. O perfil previamente consultado pode ser usado para abrir a área local offline; as regras do servidor continuam decidindo qualquer operação remota.
 
 ## Fotos e relatórios

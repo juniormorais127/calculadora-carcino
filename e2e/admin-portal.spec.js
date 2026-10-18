@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('portal administrativo separado tem login próprio e links corretos', async ({ page }, testInfo) => {
   for (const width of [426, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('./admin/');
+    await page.goto('./admin/index.html');
     await expect(page).toHaveTitle('Administração | CarcinoGestão');
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible();
     await expect(page.getByLabel('E-mail administrativo')).toBeVisible();
