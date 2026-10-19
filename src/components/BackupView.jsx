@@ -7,6 +7,7 @@ import { publishSharedFarm } from '../services/technicalVisits.js';
 import { propertyNameKey } from '../services/propertyDirectory.js';
 import { saveDeviceFile } from '../services/deviceFiles.js';
 import { AndroidDownloadSettings } from './AppUpdates.jsx';
+import AboutSettings from './AboutSettings.jsx';
 
 export default function BackupView({ 
   farmProfile, 
@@ -159,6 +160,7 @@ export default function BackupView({
       )}
 
       <AndroidDownloadSettings />
+      <AboutSettings />
 
       {/* Perfil da Fazenda */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
