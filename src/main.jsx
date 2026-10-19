@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import AccountProvider from "./components/AccountProvider.jsx";
 import "./index.css";
 import { isNativeApp } from './services/deviceFiles.js';
+import AppUpdatesProvider, { AppUpdateNotice } from './components/AppUpdates.jsx';
 if (import.meta.env.VITE_ANDROID_TEST === 'true' && isNativeApp()) import('./services/androidDiagnostics.js');
 
 if (import.meta.env.PROD && !isNativeApp() && 'serviceWorker' in navigator) {
@@ -18,6 +19,6 @@ if (import.meta.env.PROD && !isNativeApp() && 'serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AccountProvider><App /></AccountProvider>
+    <AppUpdatesProvider><AppUpdateNotice /><AccountProvider><App /></AccountProvider></AppUpdatesProvider>
   </React.StrictMode>
 );

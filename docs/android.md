@@ -1,5 +1,13 @@
 # Aplicativo Android de testes
 
+## Download e avisos de atualização
+
+Em **Ajustes → Aplicativo Android**, tanto o site quanto o APK oferecem o download e o caminho de instalação: Arquivos → Downloads → CarcinoGestao-teste.apk → Atualizar. O site permanece utilizável pelo navegador, sem instalação obrigatória. Somente o Android nativo consulta `App.getInfo()` e exibe o aviso se o `versionCode` publicado for maior que a compilação instalada. Versão igual, compilação mais recente no aparelho e navegador não recebem o aviso. A verificação acontece na abertura, retorno ao aplicativo, foco/conexão e a cada seis horas em primeiro plano; eventos próximos são agrupados por 60 segundos. Não há push, instalação automática nem bloqueio do uso offline. Erros de conexão não geram falso aviso de atualização.
+
+O catálogo público é `public/android-release.json`, consultado por HTTPS com `cache: no-store`. URLs aceitas são exclusivamente APKs do repositório oficial. A publicação Android gera códigos crescentes (`1000 + GITHUB_RUN_NUMBER`), conserva a assinatura, valida no emulador, publica uma release e só então atualiza o catálogo após conferir que o APK pode ser baixado publicamente. Um segundo deploy do Pages disponibiliza o catálogo atualizado. Builds antigos não sobrescrevem uma compilação mais nova já publicada; somente builds do branch master são anunciados.
+
+APKs anteriores à implementação do verificador precisam de uma primeira atualização manual para passar a receber os avisos futuros. O aviso orienta instalar por cima, sem desinstalar nem limpar os dados, preservando o armazenamento local. Não remover os assets de releases antigas enquanto usuários puderem precisar deles.
+
 Na versão 1.0.1-teste (versionCode 2), o link de administração aponta explicitamente para `admin/index.html`. O servidor local do Capacitor trata `/admin/` como rota de SPA e devolve a entrada principal, por isso o caminho com nome do arquivo é necessário no APK. O teste Android verifica a navegação pelo botão real, manutenção da origem, retorno ao aplicativo e controles visuais de administrador/sênior com dados sintéticos, sem mudar permissões de contas reais. As regras do servidor continuam protegendo os dados administrativos.
 
 O APK usa Capacitor e inclui os arquivos do sistema dentro do aplicativo, sem depender de carregar o site para abrir. O identificador é `br.com.carcinogestao.app`. O primeiro login, a verificação de e-mail, as consultas remotas, a auditoria e o envio de visitas exigem internet. A produção já recuperada permanece na base local por conta. O perfil previamente consultado pode ser usado para abrir a área local offline; as regras do servidor continuam decidindo qualquer operação remota.

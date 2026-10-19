@@ -6,6 +6,7 @@ import { gerarRelatorioFazendaPdf } from "../services/relatorioPdfService.js";
 import { publishSharedFarm } from '../services/technicalVisits.js';
 import { propertyNameKey } from '../services/propertyDirectory.js';
 import { saveDeviceFile } from '../services/deviceFiles.js';
+import { AndroidDownloadSettings } from './AppUpdates.jsx';
 
 export default function BackupView({ 
   farmProfile, 
@@ -156,6 +157,8 @@ export default function BackupView({
           {mensagem}
         </div>
       )}
+
+      <AndroidDownloadSettings />
 
       {/* Perfil da Fazenda */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">

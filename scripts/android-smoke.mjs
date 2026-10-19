@@ -34,6 +34,23 @@ try {
   await page.getByRole('link', { name: 'Site dos produtores' }).click();
   await expect(page.getByRole('heading', { name: 'Entrar na minha conta' })).toBeVisible();
   await page.waitForFunction(() => !!window.__androidDiagnostics);
+  const updateCheck = await page.evaluate(() => window.__androidDiagnostics.realUpdateCheck());
+  expect(updateCheck.release.versionCode).toBeGreaterThan(0);
+  if (process.env.ANDROID_VERSION_CODE) expect(updateCheck.installed.versionCode).toBe(Number(process.env.ANDROID_VERSION_CODE));
+  await page.evaluate(() => window.__androidDiagnostics.showUpdates('equal'));
+  await expect(page.getByText('Seu aplicativo est\u00e1 atualizado.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.__androidDiagnostics.showUpdates('newer'));
+  const updateNotice = page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true });
+  await expect(updateNotice).toBeVisible();
+  await updateNotice.getByText('Como instalar a atualiza\u00e7\u00e3o', { exact: true }).click();
+  await expect(updateNotice.getByText(/Downloads/)).toBeVisible();
+  await device.screenshot({ path: 'android-evidence/update-notice.png' });
+  await page.evaluate(() => window.__androidDiagnostics.showUpdates('older'));
+  await expect(page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.__androidDiagnostics.showUpdates('web'));
+  await expect(page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Baixar APK Android', exact: true })).toBeEnabled();
   const written = await page.evaluate(() => window.__androidDiagnostics.write());
   expect(written.count).toBe(1); expect(written.nativeCount).toBe(1); expect(written.otherAccount).toBe(0); expect(written.pdfBytes).toBeGreaterThan(1000);
   await device.screenshot({ path: 'android-evidence/login-phone.png' });
@@ -61,7 +78,7 @@ try {
   await expect.poll(async () => String(await device.shell('dumpsys activity activities')), { timeout: 15000 }).toContain('ChooserActivity');
   await device.screenshot({ path: 'android-evidence/android-pdf-share.png' });
   await device.shell('input keyevent 4');
-  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true, adminNavigation: true, adminRoleGates: true }, null, 2));
+  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true, adminNavigation: true, adminRoleGates: true, androidUpdateCheck: updateCheck, updateNoticeVersionGates: true }, null, 2));
 } catch (error) {
   await device.screenshot({ path: 'android-evidence/failure.png' });
   await writeFile('android-evidence/failure.txt', String(error.stack || error));

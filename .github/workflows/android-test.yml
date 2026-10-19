@@ -10,6 +10,9 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    outputs:
+      version_code: ${{ steps.version.outputs.code }}
+      version_name: ${{ steps.version.outputs.name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,6 +28,8 @@ jobs:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - run: npm ci
       - run: npm test
+      - run: node scripts/android-version.mjs
+        id: version
       - run: npm run android:sync
         env:
           VITE_ANDROID_TEST: 'true'
@@ -61,3 +66,33 @@ jobs:
           name: Android-evidencias
           path: android-evidence/
           if-no-files-found: ignore
+  publish:
+    needs: apk
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    concurrency:
+      group: android-release-channel
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ANDROID_VERSION_CODE: ${{ needs.apk.outputs.version_code }}
+      ANDROID_VERSION_NAME: ${{ needs.apk.outputs.version_name }}
+      APK_SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: CarcinoGestao-APK-teste
+          path: apk
+      - run: node scripts/android-publish.mjs
+        id: release
+      - run: gh workflow run pages.yml --ref master
+        if: steps.release.outputs.metadata_changed == 'true'

@@ -11,6 +11,8 @@ import AccountView from '../components/AccountView.jsx';
 import AdminPortal from '../components/AdminPortal.jsx';
 import { AccountContext } from '../components/AccountProvider.jsx';
 import { getAccountDatabase } from './db.js';
+import AppUpdatesProvider, { AppUpdateNotice, AndroidDownloadSettings } from '../components/AppUpdates.jsx';
+import { androidUpdateApi } from './androidUpdates.js';
 let diagnosticRoot, host;
 function mount(element) {
   diagnosticRoot?.unmount();
@@ -23,6 +25,19 @@ function accountFixture(role) {
   return { user: { uid: 'android-admin-test', email: 'test@example.test', emailVerified: true }, access: { role, fullName: 'Test account', phone: '+5579999999999' }, accessLoading: false, database: getAccountDatabase('android-admin-test'), metadata: { accounts: { get: async () => null } }, syncStatus: { state: 'local', message: 'Test fixture' }, logout: async () => {}, sync: async () => {} };
 }
 window.__androidDiagnostics = {
+  async realUpdateCheck() {
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+    try { return { installed: await androidUpdateApi.installed(), release: await androidUpdateApi.release(controller.signal) }; }
+    finally { clearTimeout(timer); }
+  },
+  async showUpdates(mode) {
+    const info = await androidUpdateApi.installed();
+    const installed = mode === 'web' ? null : info;
+    const release = { schema: 1, appId: 'br.com.carcinogestao.app', versionName: info.versionName, versionCode: info.versionCode + (mode === 'equal' ? 0 : mode === 'older' ? -1 : 1), downloadUrl: 'https://github.com/juniormorais127/calculadora-carcino/releases/download/android-teste-1.0.1/CarcinoGestao-teste.apk' };
+    const api = { installed: async () => installed, release: async () => release, open: androidUpdateApi.open, onResume: async () => () => {} };
+    mount(React.createElement(AppUpdatesProvider, { api }, React.createElement(AppUpdateNotice), React.createElement(AndroidDownloadSettings)));
+    return info;
+  },
   showAccount(role) { mount(React.createElement(AccountContext.Provider, { value: accountFixture(role) }, React.createElement(AccountView))); },
   showAdmin(role) { mount(React.createElement(AccountContext.Provider, { value: accountFixture(role) }, React.createElement(AdminPortal))); },
   async documents() { return (await Filesystem.readdir({ path: 'CarcinoGestao', directory: Directory.Documents })).files.map(file => file.name); },
