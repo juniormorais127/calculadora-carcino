@@ -1,5 +1,7 @@
 # Aplicativo Android de testes
 
+Gerar e publicar um novo APK somente quando o responsável solicitar explicitamente. O workflow Android é manual (`workflow_dispatch`); alterações no código continuam publicando o site, mas não geram APKs. O aviso no aplicativo consulta apenas versões Android já publicadas.
+
 ## Download e avisos de atualização
 
 Em **Ajustes → Aplicativo Android**, tanto o site quanto o APK oferecem o download e o caminho de instalação: Arquivos → Downloads → CarcinoGestao-teste.apk → Atualizar. O site permanece utilizável pelo navegador, sem instalação obrigatória. Somente o Android nativo consulta `App.getInfo()` e exibe o aviso se o `versionCode` publicado for maior que a compilação instalada. Versão igual, compilação mais recente no aparelho e navegador não recebem o aviso. A verificação acontece na abertura, retorno ao aplicativo, foco/conexão e a cada seis horas em primeiro plano; eventos próximos são agrupados por 60 segundos. Não há push, instalação automática nem bloqueio do uso offline. Erros de conexão não geram falso aviso de atualização.

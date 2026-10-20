@@ -1,9 +1,6 @@
 name: APK Android de testes
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths: ['android/**', 'capacitor.config.json', 'src/**', 'package*.json', 'scripts/android-*.mjs', '.github/workflows/android-test.yml']
 permissions:
   contents: read
 jobs:
