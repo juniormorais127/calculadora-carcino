@@ -37,6 +37,12 @@ function AccountSession({ user, children, syncProduction }) {
     if (!user) return;
     let disposed = false;
     let receivedServerProfile = false;
+    const profileTimeout = setTimeout(() => {
+      if (!disposed && !receivedServerProfile) {
+        setAccessError('A consulta ao cadastro demorou mais que o esperado. Os dados locais continuam disponíveis; tente sincronizar novamente quando a conexão estabilizar.');
+        setAccessLoading(false);
+      }
+    }, 12000);
     if (isNativeApp()) void nativeProfiles.profiles.get(user.uid).then(cached => {
       if (!disposed && !receivedServerProfile && cached?.profile) { setAccess(cached.profile); setAccessLoading(false); }
     }).catch(() => {});
@@ -47,11 +53,12 @@ function AccountSession({ user, children, syncProduction }) {
     const unsubscribe = onSnapshot(doc(firestore, 'accountProfiles', user.uid), snapshot => {
       if (isNativeApp() && snapshot.metadata.fromCache && !snapshot.exists()) return;
       receivedServerProfile = true;
+      clearTimeout(profileTimeout);
       setAccess(snapshot.exists() ? snapshot.data() : null); setAccessError(''); setAccessLoading(false);
       if (isNativeApp()) void nativeProfiles.profiles.put({ uid: user.uid, profile: snapshot.exists() ? snapshot.data() : null }).catch(() => {});
-    }, () => { setAccessError('Não foi possível consultar sua permissão de acesso.'); setAccessLoading(false); });
+    }, () => { clearTimeout(profileTimeout); setAccessError('Não foi possível consultar sua permissão de acesso.'); setAccessLoading(false); });
     window.addEventListener('online', register);
-    return () => { disposed = true; unsubscribe(); window.removeEventListener('online', register); };
+    return () => { disposed = true; clearTimeout(profileTimeout); unsubscribe(); window.removeEventListener('online', register); };
   }, [user?.uid]);
   const database = useMemo(() => user ? getAccountDatabase(user.uid) : guestDb, [user?.uid]);
   const [syncStatus, setSyncStatus] = useState({ state: user ? 'syncing' : 'local', message: user ? 'Conectando sua conta…' : 'Modo local: dados somente neste navegador.' });
@@ -118,9 +125,14 @@ function AccountSession({ user, children, syncProduction }) {
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
-export default function AccountProvider({ children, syncProduction = true }) {
+export default function AccountProvider({ children, syncProduction = true, observeAuth = onIdTokenChanged }) {
   const [{ user }, setIdentity] = useState({ user: undefined });
-  useEffect(() => onIdTokenChanged(auth, user => setIdentity({ user }), () => setIdentity({ user: null })), []);
-  if (user === undefined) return <div role="status" className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 p-6">Preparando o acesso ao CarcinoGestão…</div>;
+  const [startupError, setStartupError] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setStartupError(true), 12000);
+    const stop = observeAuth(auth, user => { clearTimeout(timer); setStartupError(false); setIdentity({ user }); }, () => { clearTimeout(timer); setStartupError(true); });
+    return () => { clearTimeout(timer); stop(); };
+  }, [observeAuth]);
+  if (user === undefined) return <main className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 p-6"><div className="max-w-md space-y-4">{startupError ? <><h1 className="text-xl font-bold text-slate-900">Não foi possível concluir o acesso</h1><p role="alert">A sessão demorou mais que o esperado para responder. Verifique a conexão e tente abrir novamente. Seus registros neste aparelho foram preservados.</p><button type="button" className="min-h-12 rounded-xl bg-emerald-800 px-4 py-3 font-semibold text-white" onClick={() => window.location.reload()}>Tentar novamente</button></> : <p role="status">Preparando o acesso ao CarcinoGestão…</p>}</div></main>;
   return <AccountSession key={user?.uid || 'local'} user={user} syncProduction={syncProduction}>{children}</AccountSession>;
 }
