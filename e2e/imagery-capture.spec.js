@@ -19,10 +19,11 @@ test('historical capture metadata follows the displayed release and never substi
     const host = document.createElement('div'); host.className = 'p-4 max-w-4xl'; document.body.append(host);
     createRoot(host).render(React.createElement(Map, { visits: [{ id: 'test', latitude: -10.95, longitude: -37.07, farmName: 'Fixture' }] }));
   });
-  await expect(page.getByRole('button', { name: 'Satélite nítido', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Satélite atual', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Comparar imagens históricas', exact: true }).click();
   const slider = page.getByRole('slider', { name: 'Data da versão histórica do mapa' });
-  await slider.fill('0');
+  await page.getByLabel('Consultar mapa até a data', { exact: true }).fill('2014-02-20');
+  await page.getByRole('button', { name: 'Carregar data', exact: true }).click();
   await expect(page.getByText('Versão exibida: publicada em 2014-02-20.', { exact: false })).toBeVisible();
   await expect(page.locator('canvas.leaflet-tile-loaded').first()).toBeVisible();
   const check = page.getByRole('button', { name: 'Consultar captura no centro do mapa', exact: true });

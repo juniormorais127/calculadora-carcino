@@ -44,7 +44,7 @@ test('zoom alto reaproveita imagem anterior quando satelite nao tem cobertura de
   await page.screenshot({ path: testInfo.outputPath('zoom-fallback-desktop.png'), fullPage: true });
   const initialCount = zooms.length;
   await page.getByRole('button', { name: 'Mapa de ruas', exact: true }).click();
-  await page.getByRole('button', { name: 'Satélite nítido', exact: true }).click();
+  await page.getByRole('button', { name: 'Satélite atual', exact: true }).click();
   await expect(page.locator('canvas.leaflet-tile-loaded').first()).toBeVisible();
   expect(zooms.length).toBe(initialCount);
   await page.getByRole('button', { name: 'Zoom out' }).click();
