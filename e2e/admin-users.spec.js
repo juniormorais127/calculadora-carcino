@@ -23,7 +23,7 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByRole('button', { name: 'Editar contato de produtor@example.com' }).click();
   await page.getByLabel('Celular com DDD').fill('(79) 99999-4321');
   await page.getByRole('button', { name: 'Salvar celular' }).click();
-  await expect(page.getByRole('status')).toContainText('Celular atualizado');
+  await expect(page.getByRole('status').filter({ hasText: 'Celular atualizado' })).toBeVisible();
   expect(await page.evaluate(() => window.savedContacts[0].slice(0, 2))).toEqual(['test-only', '+5579999994321']);
   await expect(page.getByRole('link', { name: '+5579999994321' })).toBeVisible();
   await page.getByRole('button', { name: 'Fechar contato' }).click();
@@ -37,7 +37,7 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByLabel('Liberar Premium').check();
   await page.getByLabel('Autorizar suporte técnico e auditar cadastros assistidos').check();
   await page.getByRole('button', { name: 'Salvar permissões' }).click();
-  await expect(page.getByRole('status')).toContainText('Premium liberado');
+  await expect(page.getByRole('status').filter({ hasText: 'Premium liberado' })).toBeVisible();
   expect(await page.evaluate(() => window.savedPermissions[0].slice(0, 2))).toEqual(['test-only', { role: 'field_technician', premium: true, expiresAt: null, canAuthorizeTechnicalSupport: true }]);
   await expect(page.getByRole('cell', { name: 'Técnico de campo', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Premium ativo', exact: true })).toBeVisible();
@@ -45,7 +45,7 @@ test('administrador busca por email, libera e revoga Premium', async ({ page }, 
   await page.getByLabel('Liberar Premium').uncheck();
   await page.getByLabel('Autorizar suporte técnico e auditar cadastros assistidos').uncheck();
   await page.getByRole('button', { name: 'Salvar permissões' }).click();
-  await expect(page.getByRole('status')).toContainText('acesso gratuito');
+  await expect(page.getByRole('status').filter({ hasText: 'acesso gratuito' })).toBeVisible();
   expect(await page.evaluate(() => window.savedPermissions[1][1])).toEqual({ role: 'field_technician', premium: false, expiresAt: null, canAuthorizeTechnicalSupport: false });
   await page.getByLabel('Filtrar por perfil').selectOption('producer');
   await expect(page.getByText('produtor@example.com', { exact: true })).toBeHidden();

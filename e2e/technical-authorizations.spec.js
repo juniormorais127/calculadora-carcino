@@ -14,7 +14,7 @@ test('auditoria da assistencia mantem pedido pendente ate decisao e permite soli
       async decideTechnicalAuthorization(user, id, decision, note) { Object.assign(records[0], { status: decision, active: decision === 'approved', auditNote: note }); emit(); },
       async requestTechnicalAuthorization() { Object.assign(records[0], { status: 'pending', active: false }); emit(); },
     };
-    function Fixture() { const [mode, setMode] = React.useState('audit'); window.setAuthorizationMode = setMode; return React.createElement(AccountContext.Provider, { value: { user: { uid: mode === 'audit' ? 'reviewer' : 'tech' } } }, React.createElement(View, { key: mode, mode, api })); }
+    function Fixture() { const [mode, setMode] = React.useState('audit'); window.setAuthorizationMode = setMode; return React.createElement(AccountContext.Provider, { value: { user: { uid: mode === 'audit' ? 'reviewer' : 'tech' } } }, React.createElement('div', { 'data-authorization-mode': mode }, React.createElement(View, { key: mode, mode, api }))); }
     window.readAuthorizationFixture = () => records[0]; document.getElementById('root').style.display = 'none'; const host = document.createElement('div'); host.className = 'p-4 max-w-3xl'; document.body.appendChild(host); createRoot(host).render(React.createElement(Fixture));
   });
   expect(await page.evaluate(() => window.readAuthorizationFixture().active)).toBe(false);
@@ -23,12 +23,14 @@ test('auditoria da assistencia mantem pedido pendente ate decisao e permite soli
   await page.getByRole('button', { name: 'Solicitar ajustes ao técnico', exact: true }).click();
   expect(await page.evaluate(() => window.readAuthorizationFixture().active)).toBe(false);
   await page.evaluate(() => window.setAuthorizationMode('technician'));
+  await expect(page.locator('[data-authorization-mode="technician"]')).toBeVisible();
   await page.getByLabel('Situação do pedido').selectOption('all');
   await page.getByRole('button', { name: 'Ver pedido e histórico' }).click();
   await page.getByLabel('Descreva os ajustes ou o novo pedido').fill('Objetivo: conferir localizacao e orientar manejo da propriedade.');
   await page.getByRole('button', { name: 'Reenviar pedido para auditoria' }).click();
   expect(await page.evaluate(() => window.readAuthorizationFixture().active)).toBe(false);
   await page.evaluate(() => window.setAuthorizationMode('audit'));
+  await expect(page.locator('[data-authorization-mode="audit"]')).toBeVisible();
   await page.getByRole('button', { name: 'Ver pedido e histórico' }).click();
   await page.getByLabel('Justificativa da auditoria').fill('Objetivo detalhado e autorizacao conferida com o produtor.');
   await page.getByRole('button', { name: 'Aprovar assistência' }).click();
