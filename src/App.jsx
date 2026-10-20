@@ -9,7 +9,8 @@ import CalculadorasHub from "./components/CalculadorasHub.jsx";
 import BackupView from "./components/BackupView.jsx";
 import SanidadeView from "./components/SanidadeView.jsx";
 import MercadoView from "./components/MercadoView.jsx";
-import { initializeDatabase, seedInitialDataIfEmpty } from "./services/db.js";
+import { seedInitialDataIfEmpty } from "./services/db.js";
+import useLocalProduction from './components/useLocalProduction.js';
 import { useAccount } from "./components/AccountProvider.jsx";
 import AccountView from "./components/AccountView.jsx";
 import { ShrimpMarkIcon } from "./components/icons/CustomAquacultureIcons.jsx";
@@ -54,16 +55,11 @@ export default function App() {
 }
 
 function ProductionApp() {
-  const { database: db, user, access, syncStatus, dataVersion, sync } = useAccount();
+  const { database: db, user, access, syncStatus, dataVersion, sync, markLocalReady } = useAccount();
   const technician = accountRole(access, user.uid) === 'field_technician';
   const [activeTab, setActiveTab] = useState(() => technician ? 'visitas' : 'dashboard');
   const [technicalDirty, setTechnicalDirty] = useState(false);
-  const [viveiros, setViveiros] = useState([]);
-  const [biometrias, setBiometrias] = useState([]);
-  const [qualidadeAgua, setQualidadeAgua] = useState([]);
-  const [farmProfile, setFarmProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { viveiros, biometrias, qualidadeAgua, farmProfile, loading, error, hasData, loadData, retry } = useLocalProduction(db, dataVersion, markLocalReady);
 
   // Modais acionados do Dashboard
   const [openModalBiometria, setOpenModalBiometria] = useState(false);
@@ -88,31 +84,6 @@ function ProductionApp() {
     });
     return () => { disposed = true; listener?.remove(); };
   }, [activeTab, technician, openModalBiometria, openModalAgua, openModalViveiro]);
-
-  const loadData = async () => {
-    setError("");
-    try {
-      await initializeDatabase(db);
-      const allViveiros = await db.viveiros.toArray();
-      const allBiometrias = await db.biometrias.toArray();
-      const allAgua = await db.qualidadeAgua.toArray();
-      const config = await db.configuracoes.where("chave").equals("perfilFazenda").first();
-
-      setViveiros(allViveiros);
-      setBiometrias(allBiometrias);
-      setQualidadeAgua(allAgua);
-      setFarmProfile(config || null);
-    } catch (err) {
-      console.error("Erro ao carregar dados do Dexie:", err);
-      setError("Não foi possível acessar o armazenamento local. Verifique as permissões do navegador e tente novamente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [dataVersion]);
 
   useEffect(() => {
     if (feedbackBanner) {
@@ -180,7 +151,7 @@ function ProductionApp() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
         <Navigation activeTab={activeTab} setActiveTab={handleNavigate} professional={technician} />
         {technician && activeTab !== 'visitas' && <div className="my-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 py-3"><span className="text-sm font-semibold text-slate-800">Área do técnico de campo</span><button className="min-h-11 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" onClick={() => handleNavigate('visitas')}>Registrar visita técnica</button></div>}
-        <TechnicalVisitBridge onOpen={() => handleNavigate('visitas')} onReload={loadData} />
+        {hasData && <TechnicalVisitBridge onOpen={() => handleNavigate('visitas')} onReload={loadData} />}
         {user && <div role="status" className={`my-3 flex flex-wrap justify-between items-center gap-2 rounded-xl border px-3 py-2 text-xs ${syncStatus.state === 'synced' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
           <span>{syncStatus.message}</span>
           {['conflict', 'pending'].includes(syncStatus.state) && <button onClick={() => syncStatus.state === 'conflict' ? handleNavigate('conta') : sync()} className="min-h-11 font-bold underline underline-offset-2">{syncStatus.state === 'conflict' ? 'Revisar versões' : 'Tentar sincronizar'}</button>}
@@ -206,12 +177,13 @@ function ProductionApp() {
           </div>
         )}
 
-        {error ? (
+        {error && hasData && <div role="alert" className="my-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><p>{error}</p><button onClick={retry} className="mt-2 min-h-11 font-semibold underline">Tentar novamente</button></div>}
+        {error && !hasData ? (
           <div role="alert" className="my-8 rounded-xl border border-rose-100 bg-rose-50 p-5">
             <p>{error}</p>
-            <button onClick={loadData} className="mt-4 rounded-lg bg-slate-100 px-4 py-3 font-semibold">Tentar novamente</button>
+            <button onClick={retry} className="mt-4 rounded-lg bg-slate-100 px-4 py-3 font-semibold">Tentar novamente</button>
           </div>
-        ) : loading ? (
+        ) : loading && !hasData ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-3">
             <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-sm font-semibold text-slate-600">Carregando banco de dados local...</p>

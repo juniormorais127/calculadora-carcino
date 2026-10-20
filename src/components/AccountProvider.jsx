@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Dexie, { liveQuery } from 'dexie';
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import { auth } from '../services/firebase.js';
@@ -21,6 +21,8 @@ export const useAccount = () => useContext(AccountContext);
 export const useDatabase = () => useAccount()?.database || guestDb;
 
 function AccountSession({ user, children, syncProduction }) {
+  const [localReady, setLocalReady] = useState(false);
+  const markLocalReady = useCallback(() => setLocalReady(true), []);
   const [access, setAccess] = useState(null);
   const [accessLoading, setAccessLoading] = useState(!!user);
   const [accessError, setAccessError] = useState('');
@@ -73,7 +75,7 @@ function AccountSession({ user, children, syncProduction }) {
     return () => { clearInterval(retryMetrics); window.removeEventListener('online', flushPurchaseEvents); window.removeEventListener('focus', flushPurchaseEvents); };
   }, [user?.uid]);
   useEffect(() => {
-    if (!user || !syncProduction || !user.emailVerified) return;
+    if (!user || !syncProduction || !user.emailVerified || !localReady) return;
     let timer;
     let disposed = false;
     const sync = createCloudSync({
@@ -114,9 +116,9 @@ function AccountSession({ user, children, syncProduction }) {
       controller.current = null;
       window.removeEventListener('online', schedule); window.removeEventListener('offline', schedule); window.removeEventListener('focus', schedule);
     };
-  }, [database, user?.uid, user?.emailVerified, syncProduction]);
+  }, [database, user?.uid, user?.emailVerified, syncProduction, localReady]);
   const value = {
-    user, database, syncStatus, dataVersion, access, accessError, accessLoading, technicianIdentity, identityLoading, identityError,
+    user, database, syncStatus, dataVersion, access, accessError, accessLoading, technicianIdentity, identityLoading, identityError, markLocalReady,
     sync: () => controller.current?.sync(),
     useCloud: () => controller.current?.useCloud(),
     logout: () => signOut(auth),
