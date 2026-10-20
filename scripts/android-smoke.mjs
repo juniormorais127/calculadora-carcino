@@ -54,8 +54,16 @@ try {
   await page.evaluate(() => window.__androidDiagnostics.showMeasurementMap());
   await page.getByRole('button', { name: 'Caminho', exact: true }).click();
   const measurementMap = page.getByLabel('Mapa das visitas e do licenciamento', { exact: true });
-  await measurementMap.tap({ position: { x: 70, y: 100 } });
-  await measurementMap.tap({ position: { x: 220, y: 100 } });
+  // Android WebViews attach without Playwright's hasTouch flag. Dispatch real
+  // touch input through CDP rather than locator.tap(), which rejects that flag.
+  const touchSession = await page.context().newCDPSession(page);
+  for (const x of [70, 220]) {
+    await measurementMap.scrollIntoViewIfNeeded();
+    const box = await measurementMap.boundingBox();
+    await touchSession.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + x, y: box.y + 100 }] });
+    await touchSession.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+  await touchSession.detach();
   await expect(page.getByText(/Dist\u00e2ncia total:/)).toBeVisible();
   await page.getByRole('button', { name: 'Concluir medi\u00e7\u00e3o', exact: true }).click();
   await expect(page.getByText(/2 de 200 pontos/)).toBeVisible();
