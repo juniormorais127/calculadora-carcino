@@ -55,6 +55,7 @@ export const checklistFor = type => [...GENERAL_CHECKLIST, ...(ACTIVITY_CHECKLIS
 export function emptyLicensingData() { return Object.fromEntries(LICENSING_FIELDS.map(field => [field.id, field.id === 'licenseType' ? 'LS' : ''])); }
 export function missingLicensingFields(data, section) { return (section ? LICENSING_SECTIONS.find(item => item.id === section)?.fields || [] : LICENSING_FIELDS).filter(field => field.required && !String(data[field.id] ?? '').trim()); }
 export function prefillLicensingData({ profile = {}, identity = {}, user = {}, property = {} } = {}) {
+  profile ||= {}; identity ||= {}; user ||= {}; property ||= {};
   const firstPond = property.ponds?.find(pond => Number.isFinite(pond.latitude) && Number.isFinite(pond.longitude));
   return { ...emptyLicensingData(), technicianName: profile.fullName || identity.fullName || '', technicianCouncil: identity.creaNumber || '', technicianPhone: profile.phone || '', technicianEmail: user.email || '', technicianCompany: identity.organizationName || (identity.employmentType === 'private' ? 'Atendimento particular' : ''), propertyName: property.name || property.propertyName || '', clientName: property.fullName || '', clientPhone: property.phone || '', clientEmail: property.email || property.ownerEmail || '', propertyStreet: property.address || '', propertyCity: property.city || '', propertyState: property.state || '', latitude: String(firstPond?.latitude ?? property.latitude ?? ''), longitude: String(firstPond?.longitude ?? property.longitude ?? '') };
 }

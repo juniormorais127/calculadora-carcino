@@ -11,7 +11,7 @@ test('área técnica separa tópicos e salva rascunho com obrigatórios pendente
     const value={user:{uid:'tech-fixture',email:'ana@example.com',emailVerified:true},access:{role:'field_technician',fullName:'Ana Maria Silva',phone:'+5579999999999'},technicianIdentity:null,database:{},identityLoading:false};
     document.getElementById('root').style.display='none';const host=document.createElement('div');host.className='max-w-6xl mx-auto p-4';document.body.append(host);createRoot(host).render(React.createElement(AccountContext.Provider,{value},React.createElement(Workspace,{professionalApi:api})));
   });
-  await page.getByLabel('Abrir tópico',{exact:true}).selectOption('licensing');
+  await page.getByRole('combobox',{name:'Abrir tópico',exact:true}).selectOption('licensing');
   await expect(page.getByRole('heading',{name:'Licenciamento Adema',exact:true})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Monitoramento ambiental',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Novo processo de licenciamento',exact:true}).click();
@@ -24,15 +24,15 @@ test('área técnica separa tópicos e salva rascunho com obrigatórios pendente
   await page.getByRole('button',{name:'Salvar processo / rascunho',exact:true}).click();
   await expect(page.getByText('Fazenda Azul',{exact:true})).toBeVisible();
   expect((await page.evaluate(()=>window.professionalWrites))[0].input.stage).toBe('draft');
-  await page.getByLabel('Abrir tópico',{exact:true}).selectOption('environment');
+  await page.getByRole('combobox',{name:'Abrir tópico',exact:true}).selectOption('environment');
   await page.getByRole('button',{name:'Solo e sedimento',exact:true}).click();
   await page.getByRole('button',{name:'Registrar coleta / ensaio',exact:true}).click();
-  await page.getByLabel('PropriedadeObrigatório',{exact:false}).fill('Fazenda Azul');
+  await page.getByRole('textbox',{name:/Propriedade/}).fill('Fazenda Azul');
   await page.getByLabel('Resultado',{exact:true}).first().fill('7,2');
   await page.getByRole('button',{name:'Adicionar outro parâmetro',exact:true}).click();
   await page.getByLabel('Parâmetro',{exact:true}).last().fill('Teste personalizado');
   await page.getByLabel('Resultado',{exact:true}).last().fill('Arenoso');
-  for(const width of [426,1440]){await page.setViewportSize({width,height:900});await page.screenshot({path:testInfo.outputPath(`professional-${width}.png`),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+  for(const width of [426,1440]){await page.setViewportSize({width,height:900});await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:testInfo.outputPath(`professional-${width}.png`),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
   await page.getByRole('button',{name:'Salvar coleta',exact:true}).click();
   await expect(page.getByText('Fazenda Azul · Ponto de coleta',{exact:true})).toBeVisible();
   const writes=await page.evaluate(()=>window.professionalWrites);expect(writes.at(-1).kind).toBe('environmentalTests');expect(writes.at(-1).input.type).toBe('soil');

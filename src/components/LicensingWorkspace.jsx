@@ -3,7 +3,7 @@ import { useAccount } from './AccountProvider.jsx';
 import { LICENSING_SECTIONS, LICENSING_STAGES, ADEMA_SOURCES, checklistFor, missingLicensingFields, prefillLicensingData } from '../services/licensingData.js';
 import * as recordsApi from '../services/professionalRecords.js';
 
-const button = 'min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50';
+const button = 'min-h-11 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50';
 export default function LicensingWorkspace({ administrative = false, onDirtyChange, api = recordsApi }) {
   const { user, access, technicianIdentity } = useAccount();
   const [cases, setCases] = useState([]), [properties, setProperties] = useState([]), [draft, setDraft] = useState(null), [section, setSection] = useState('client');

@@ -18,3 +18,5 @@ test('análises registram unidades/métodos e resultados qualitativos sem diagn�
   const value=validateEnvironmentalTest(record);assert.equal(value.type,'soil');assert.equal(value.data.parameters.at(-1).value,'Arenosa');
   assert.throws(()=>validateEnvironmentalTest(emptyEnvironmentalTest()),/propriedade/);
 });
+
+test('perfil profissional ausente nao impede abrir um rascunho',()=>{assert.equal(prefillLicensingData({profile:{fullName:'Ana Maria'},identity:null}).technicianName,'Ana Maria');});
