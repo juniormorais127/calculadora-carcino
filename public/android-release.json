@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "appId": "br.com.carcinogestao.app",
-  "versionCode": 1007,
-  "versionName": "1.0.3-teste",
-  "downloadUrl": "https://github.com/juniormorais127/calculadora-carcino/releases/download/android-teste-1.0.3-teste-b1007/CarcinoGestao-teste.apk",
-  "sha256": "7832a00acf9e1bada51dd3bbba53d1914a3f5b80980d88e1a0e8a6ae1157840a",
-  "publishedAt": "2026-10-19T21:16:50.685Z"
+  "versionCode": 1009,
+  "versionName": "1.0.4-teste",
+  "downloadUrl": "https://github.com/juniormorais127/calculadora-carcino/releases/download/android-teste-1.0.4-teste-b1009/CarcinoGestao-teste.apk",
+  "sha256": "de08f96f18eb5c871e352d48f8e34e8b081b6a2d509a7ab1f32c4973f22a8a49",
+  "publishedAt": "2026-10-20T07:41:09.840Z"
 }
