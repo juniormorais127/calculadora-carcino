@@ -116,6 +116,8 @@ test('cadastro assistido passa por auditoria, mantem apelido privado e produtor 
 test('mapa alterna satelite e ruas e troca versoes historicas sem mover a visualizacao', async ({ page }, testInfo) => {
   await page.goto('./');
   await page.getByRole('heading', { name: 'Entrar na minha conta' }).waitFor();
+  const tile = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 256; c.getContext('2d').fillRect(0, 0, 256, 256); return c.toDataURL().split(',')[1]; });
+  await page.route('**/tile/**', route => route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from(tile, 'base64') }));
   await page.evaluate(async () => {
     const React = (await import('/node_modules/.vite/deps/react.js')).default;
     const { createRoot } = (await import('/node_modules/.vite/deps/react-dom_client.js')).default;
@@ -124,8 +126,7 @@ test('mapa alterna satelite e ruas e troca versoes historicas sem mover a visual
     createRoot(host).render(React.createElement(Map, { visits: [{ id: 'map1', farmName: 'Fazenda Rio', pondId: 1, pondName: 'Viveiro 1', latitude: -10.95, longitude: -37.07, licenseStatus: 'unlicensed', technicianUid: 'tech', visitedOn: '2026-10-16' }] }));
   });
   await expect(page.getByRole('button', { name: 'Satélite atual', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.leaflet-tile-pane canvas').first()).toBeVisible();
-  await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('canvas.leaflet-tile-loaded').filter({ visible: true }).first()).toBeVisible({ timeout: 15000 });
   await page.screenshot({ path: testInfo.outputPath('satelite.png'), fullPage: true });
   await page.getByRole('button', { name: 'Mapa de ruas', exact: true }).click();
   await expect(page.locator('.leaflet-tile-pane img').first()).toHaveAttribute('src', /openstreetmap/);
@@ -134,8 +135,7 @@ test('mapa alterna satelite e ruas e troca versoes historicas sem mover a visual
   await expect(slider).toBeVisible({ timeout: 30000 });
   const transform = await page.locator('.leaflet-map-pane').getAttribute('style');
   await slider.fill('0');
-  await expect(page.locator('.leaflet-tile-pane canvas').first()).toBeVisible();
-  await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('canvas.leaflet-tile-loaded').filter({ visible: true }).first()).toBeVisible({ timeout: 15000 });
   await page.screenshot({ path: testInfo.outputPath('historico.png'), fullPage: true });
   expect(await page.locator('.leaflet-map-pane').getAttribute('style')).toBe(transform);
   await expect(page.locator('path.leaflet-interactive')).toHaveAttribute('fill', '#be123c');

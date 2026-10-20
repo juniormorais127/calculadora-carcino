@@ -73,21 +73,23 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
   // Mapas com os últimos dados
   const ultimaBiometriaPorViveiro = {};
   biometrias.forEach(b => {
-    if (!ultimaBiometriaPorViveiro[b.viveiroId] || new Date(b.data) > new Date(ultimaBiometriaPorViveiro[b.viveiroId].data)) {
+    const previous = ultimaBiometriaPorViveiro[b.viveiroId];
+    if (!previous || new Date(b.data) > new Date(previous.data) || (b.data === previous.data && Number(b.id) > Number(previous.id))) {
       ultimaBiometriaPorViveiro[b.viveiroId] = b;
     }
   });
 
   const ultimaAguaPorViveiro = {};
   qualidadeAgua.forEach(q => {
-    if (!ultimaAguaPorViveiro[q.viveiroId] || new Date(q.data) > new Date(ultimaAguaPorViveiro[q.viveiroId].data)) {
+    const previous = ultimaAguaPorViveiro[q.viveiroId];
+    if (!previous || new Date(q.data) > new Date(previous.data) || (q.data === previous.data && Number(q.id) > Number(previous.id))) {
       ultimaAguaPorViveiro[q.viveiroId] = q;
     }
   });
 
   // Se houver viveiros, seleciona o primeiro por padrão
   useEffect(() => {
-    if (viveiros.length > 0 && !selectedViveiroId) {
+    if (viveiros.length > 0 && !viveiros.some(item => String(item.id) === selectedViveiroId)) {
       setSelectedViveiroId(String(viveiros[0].id));
     }
   }, [viveiros]);
@@ -133,7 +135,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
       const infoFaixa = getFeedingRateInfo(bioAtual?.pesoMedioG || 10);
       setRacaoTratos(infoFaixa.frequenciaTratos);
     }
-  }, [selectedViveiroId, modoAutomaticoRacao]);
+  }, [selectedViveiroId, modoAutomaticoRacao, bioAtual?.biomassaKg, bioAtual?.pesoMedioG, aguaAtual?.temperatura, aguaAtual?.oxigenio]);
 
   // Estados da Calculadora de Água
   const [aguaVolumeM3, setAguaVolumeM3] = useState(12000);
@@ -148,7 +150,7 @@ export default function CalculadorasHub({ viveiros = [], biometrias = [], qualid
       if (aguaAtual?.alcalinidade) setAguaAlcalinidadeAtual(Number(aguaAtual.alcalinidade));
       if (aguaAtual?.ph) setAguaPh(Number(aguaAtual.ph));
     }
-  }, [selectedViveiroId, modoAutomaticoAgua]);
+  }, [selectedViveiroId, modoAutomaticoAgua, viveiroAtual?.volumeM3, aguaAtual?.alcalinidade, aguaAtual?.ph]);
 
   // Estados da Calculadora de Solo
   const [soloAreaM2, setSoloAreaM2] = useState(10000);

@@ -163,6 +163,7 @@ export function CampoNumero({ label, valor, onChange, step = "1", min = "0", dis
         <div className="relative flex-1 min-w-0">
           <input
             type="number"
+            aria-label={label}
             step={step}
             min={min}
             disabled={disabled}

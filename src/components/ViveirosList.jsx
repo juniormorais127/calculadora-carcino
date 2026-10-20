@@ -18,6 +18,7 @@ export default function ViveirosList({
   const [editingViveiro, setEditingViveiro] = useState(null);
   const [location, setLocation] = useState({ latitude: '', longitude: '' });
   const [saveError, setSaveError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const [nome, setNome] = useState("");
   const [areaM2, setAreaM2] = useState(10000);
@@ -91,7 +92,9 @@ export default function ViveirosList({
 
     let novoId = null;
     const isNovo = !editingViveiro;
-
+    if (busy) return;
+    setBusy(true);
+    try {
     if (editingViveiro) {
       await db.viveiros.update(editingViveiro.id, dados);
       novoId = editingViveiro.id;
@@ -106,17 +109,22 @@ export default function ViveirosList({
     if (isNovo && onViveiroCriado) {
       onViveiroCriado(novoId);
     }
+    } catch { setSaveError('Não foi possível salvar o viveiro. Confira o espaço disponível e tente novamente.'); }
+    finally { setBusy(false); }
   };
 
   const handleDelete = async (id) => {
-    if (confirm("Deseja realmente excluir este viveiro? Suas medições também serão removidas.")) {
-      await deleteViveiro(id, db);
-      onReload();
+    if (!busy && confirm("Deseja realmente excluir este viveiro? Suas medições também serão removidas.")) {
+      setBusy(true); setSaveError('');
+      try { await deleteViveiro(id, db); await onReload(); }
+      catch { setSaveError('Não foi possível excluir o viveiro. Tente novamente.'); }
+      finally { setBusy(false); }
     }
   };
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
+      {saveError && !isModalOpen && !isModalOpenExternal && <p role="alert" className="text-sm text-rose-900">{saveError}</p>}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl md:text-2xl font-semibold text-slate-900 flex items-center gap-2">
@@ -148,7 +156,7 @@ export default function ViveirosList({
                 <div>
                   <h3 className="text-base font-bold text-slate-900">{v.nome}</h3>
                   <div className="text-xs text-slate-600 mt-0.5">
-                    {(v.areaM2 / 10000).toFixed(2)} ha • {v.areaM2.toLocaleString()} m²
+                    {v.areaM2 == null ? 'Área não informada' : <>{(v.areaM2 / 10000).toFixed(2)} ha • {Number(v.areaM2).toLocaleString()} m²</>}
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
@@ -346,6 +354,7 @@ export default function ViveirosList({
                 </button>
                 <button
                   type="submit"
+                  disabled={busy}
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all"
                 >
                   {intencaoPosViveiro && !editingViveiro ? (

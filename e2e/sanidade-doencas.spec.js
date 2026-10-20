@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/producer.js';
 
 test('guia de doenças exibe foto clínica e fonte ABCC ao clicar na doença, com ampliação em modal', async ({ page }) => {
-  const base = process.env.VITE_BASE_PATH || '/';
-  await page.goto(`http://127.0.0.1:4175${base}`);
+  await page.goto('./');
 
   // 1. Navegar até a aba Sanidade & BPM
   const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });

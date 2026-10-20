@@ -22,6 +22,9 @@ export default function PasswordResetView({ code, mode }) {
   useEffect(() => {
     let disposed = false;
     setState('checking'); setError('');
+    const timeout = setTimeout(() => {
+      if (!disposed) { setError('A verificação demorou mais que o esperado. Confira a conexão e tente novamente.'); setState('invalid'); }
+    }, 12000);
     async function check() {
       try {
         if (!code) throw { code: 'auth/invalid-action-code' };
@@ -36,10 +39,10 @@ export default function PasswordResetView({ code, mode }) {
         } else throw { code: 'auth/invalid-action-code' };
       } catch (err) {
         if (!disposed) { setError(errorMessage(err)); setState('invalid'); }
-      }
+      } finally { clearTimeout(timeout); }
     }
     void check();
-    return () => { disposed = true; };
+    return () => { disposed = true; clearTimeout(timeout); };
   }, [code, mode, attempt]);
   const submit = async event => {
     event.preventDefault(); setError('');

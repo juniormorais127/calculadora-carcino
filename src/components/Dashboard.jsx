@@ -438,7 +438,7 @@ export default function Dashboard({
                         </span>
                       </div>
                       <div className="text-xs text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-                        <span>Área: {(v.areaM2 / 10000).toFixed(2)} ha ({v.areaM2.toLocaleString()} m²)</span>
+                        <span>Área: {v.areaM2 == null ? 'não informada' : <>{(v.areaM2 / 10000).toFixed(2)} ha ({Number(v.areaM2).toLocaleString()} m²)</>}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1 text-slate-700">
                           <Calendar className="w-3 h-3 text-slate-600" />

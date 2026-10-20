@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/producer.js';
 
 // Protege as correções de qualidade de água: alertas do painel gerados pela
 // tabela de referência e nitrito com limite dependente da salinidade.

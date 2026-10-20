@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/producer.js';
 
 test.describe('Fluxo Guiado de Primeiro Cadastro (Onboarding sem Viveiros)', () => {
   test.beforeEach(async ({ page }) => {

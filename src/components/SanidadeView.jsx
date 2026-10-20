@@ -21,6 +21,7 @@ import {
 import { DOENCAS_CAMARAO, BOAS_PRATICAS_ABCC } from "../data/carcinoData.js";
 import { DADOS_PROBIOTICOS_SOLO } from "../data/probioticosSolo.js";
 import { loadChecklist, saveChecklist } from "../services/checklistService.js";
+import { useDatabase } from './AccountProvider.jsx';
 
 const formatImgUrl = (path) => {
   if (!path) return "";
@@ -31,6 +32,7 @@ const formatImgUrl = (path) => {
 };
 
 export default function SanidadeView({ onNavigate }) {
+  const database = useDatabase();
   const [activeSubTab, setActiveSubTab] = useState("doencas"); // doencas, bpm, inovacoes
   const [buscaSintoma, setBuscaSintoma] = useState("");
   const [expandedDoencaId, setExpandedDoencaId] = useState("wssv");
@@ -57,7 +59,8 @@ export default function SanidadeView({ onNavigate }) {
 
   useEffect(() => {
     let active = true;
-    loadChecklist().then(saved => {
+    setChecklistReady(false);
+    loadChecklist(database).then(saved => {
       if (!active) return;
       checkedRef.current = saved;
       setCheckedItens(saved);
@@ -66,7 +69,7 @@ export default function SanidadeView({ onNavigate }) {
       if (active) setChecklistError("Não foi possível carregar o checklist salvo. Volte a esta aba para tentar novamente.");
     });
     return () => { active = false; };
-  }, []);
+  }, [database]);
 
   const toggleCheckItem = async (id) => {
     const novo = { ...checkedRef.current, [id]: !checkedRef.current[id] };
@@ -74,7 +77,7 @@ export default function SanidadeView({ onNavigate }) {
     setCheckedItens(novo);
     setChecklistError("");
     try {
-      await saveChecklist(novo);
+      await saveChecklist(novo, database);
     } catch {
       setChecklistError("Não foi possível salvar a alteração. Verifique o espaço disponível no aparelho e tente novamente.");
     }

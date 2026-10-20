@@ -5,6 +5,7 @@ import AccountProvider from "./components/AccountProvider.jsx";
 import "./index.css";
 import { isNativeApp } from './services/deviceFiles.js';
 import AppUpdatesProvider, { AppUpdateNotice } from './components/AppUpdates.jsx';
+import ScreenBoundary from './components/ScreenBoundary.jsx';
 if (import.meta.env.VITE_ANDROID_TEST === 'true' && isNativeApp()) import('./services/androidDiagnostics.js');
 
 if (import.meta.env.PROD && !isNativeApp() && 'serviceWorker' in navigator) {
@@ -19,6 +20,6 @@ if (import.meta.env.PROD && !isNativeApp() && 'serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AppUpdatesProvider><AppUpdateNotice /><AccountProvider><App /></AccountProvider></AppUpdatesProvider>
+    <ScreenBoundary><AppUpdatesProvider><AppUpdateNotice /><AccountProvider><App /></AccountProvider></AppUpdatesProvider></ScreenBoundary>
   </React.StrictMode>
 );

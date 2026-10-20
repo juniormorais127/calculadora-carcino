@@ -13,7 +13,8 @@ function localDatabase(uid) {
 }
 export async function readLocalVisitPhotos(uid, key) {
   const row = await localDatabase(uid).photos.get(key);
-  return row?.nativeFiles ? (await nativeStore()).read(uid, row.nativeFiles) : row?.files || [];
+  if (row?.nativeFiles) return (await nativeStore()).read(uid, row.nativeFiles);
+  return (row?.files || []).map(file => file.blob ? file : { name: file.name, type: file.type, blob: new Blob([file.bytes], { type: file.type }) });
 }
 export function watchLocalVisitPhotos(uid, key, next, error) {
   const subscription = liveQuery(() => readLocalVisitPhotos(uid, key)).subscribe({ next, error });
@@ -21,7 +22,12 @@ export function watchLocalVisitPhotos(uid, key, next, error) {
 }
 export async function saveLocalVisitPhotos(uid, key, files) {
   const db = localDatabase(uid);
-  if (!isNativeApp()) { await db.photos.put({ key, files, updatedAt: Date.now() }); return; }
+  if (!isNativeApp()) {
+    // WebKit may reject Blob/File cloning into IndexedDB (UnknownError).
+    // Raw bytes remain local and are reconstructed as Blobs only for display/PDF.
+    const storedFiles = await Promise.all(files.map(async file => ({ name: file.name, type: file.type, bytes: await file.blob.arrayBuffer() })));
+    await db.photos.put({ key, files: storedFiles, updatedAt: Date.now() }); return;
+  }
   const store = await nativeStore(), previous = await db.photos.get(key);
   const nativeFiles = await store.write(uid, files);
   try { await db.photos.put({ key, nativeFiles, updatedAt: Date.now() }); }

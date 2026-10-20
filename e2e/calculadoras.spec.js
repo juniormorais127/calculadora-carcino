@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/producer.js';
 
 // Abas adicionadas na expansão agronômica (calibre, crescimento, íons, aeração, bioflocos).
 // Cada uma precisa renderizar sem erro de runtime e sem estourar a largura da tela.

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Plus, TrendingUp, Calendar, Trash2, ArrowUpRight, Scale } from "lucide-react";
 import { useDatabase } from "./AccountProvider.jsx";
-import { calculateBiomass, getFeedingRateInfo } from "../services/calculatorService.js";
+import { saveBiometria, deleteBiometria } from '../services/biometrias.js';
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
 
 export default function BiometriaView({ 
@@ -14,6 +14,8 @@ export default function BiometriaView({
   onSolicitarCadastroViveiro = null
 }) {
   const db = useDatabase();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );
@@ -32,7 +34,7 @@ export default function BiometriaView({
   // Biometrias filtradas do viveiro atual ordenadas por data
   const biometriasViveiro = biometrias
     .filter(b => String(b.viveiroId) === String(selectedViveiroId))
-    .sort((a, b) => new Date(a.data) - new Date(b.data));
+    .sort((a, b) => new Date(a.data) - new Date(b.data) || Number(a.id) - Number(b.id));
 
   const ultimaBiometria = biometriasViveiro.length > 0 
     ? biometriasViveiro[biometriasViveiro.length - 1] 
@@ -62,7 +64,7 @@ export default function BiometriaView({
       return;
     }
     setData(new Date().toISOString().split("T")[0]);
-    setPesoMedioG(ultimaBiometria ? Number((ultimaBiometria.pesoMedioG + 1.2).toFixed(1)) : 5.0);
+    setPesoMedioG(ultimaBiometria ? Number(((Number(ultimaBiometria.pesoMedioG) || 0) + 1.2).toFixed(1)) : 5.0);
     setSobrevivenciaEstimada(ultimaBiometria ? ultimaBiometria.sobrevivenciaEstimada : 85);
     setNotas("");
     setIsModalOpen(true);
@@ -77,46 +79,27 @@ export default function BiometriaView({
     e.preventDefault();
     if (!viveiroAtual) return;
 
-    const qtdEstocada = Number(viveiroAtual.qtdPovoada) || (viveiroAtual.areaM2 * (viveiroAtual.densidadePovoamento || 10));
-    const camaroesEstimados = Math.round(qtdEstocada * (Number(sobrevivenciaEstimada) / 100));
-    const biomassaKg = calculateBiomass(camaroesEstimados, Number(pesoMedioG));
-
-    // Calcular ganho em relação à biometria anterior
-    let ganhoSemanalG = 0;
-    let ganhoDiarioG = 0;
-    if (ultimaBiometria) {
-      const diffPeso = Number(pesoMedioG) - Number(ultimaBiometria.pesoMedioG);
-      const diffDias = Math.max(1, Math.round((new Date(data) - new Date(ultimaBiometria.data)) / (1000 * 60 * 60 * 24)));
-      ganhoSemanalG = Number(((diffPeso / diffDias) * 7).toFixed(2));
-      ganhoDiarioG = Number((diffPeso / diffDias).toFixed(3));
-    }
-
-    await db.biometrias.add({
-      viveiroId: viveiroAtual.id,
-      data,
-      pesoMedioG: Number(pesoMedioG),
-      sobrevivenciaEstimada: Number(sobrevivenciaEstimada),
-      camaroesEstimados,
-      biomassaKg,
-      ganhoSemanalG,
-      ganhoDiarioG,
-      notas,
-      createdAt: new Date().toISOString()
-    });
-
-    handleClose();
-    onReload();
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      await saveBiometria(db, viveiroAtual, { data, pesoMedioG, sobrevivenciaEstimada, notas });
+      await onReload();
+      handleClose();
+    } catch (err) { setError(err.message || 'Não foi possível salvar a biometria. Tente novamente.'); }
+    finally { setBusy(false); }
   };
 
   const handleDelete = async (id) => {
-    if (confirm("Excluir esta medição de biometria?")) {
-      await db.biometrias.delete(id);
-      onReload();
-    }
+    if (busy || !confirm("Excluir esta medição de biometria?")) return;
+    setBusy(true); setError('');
+    try { await deleteBiometria(db, id); await onReload(); }
+    catch (err) { setError(err.message || 'Não foi possível excluir a biometria. Tente novamente.'); }
+    finally { setBusy(false); }
   };
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
+      {error && !isModalOpen && !isModalOpenExternal && <p role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -263,7 +246,9 @@ export default function BiometriaView({
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => handleDelete(b.id)}
-                            className="text-rose-700 hover:text-rose-700 p-1 rounded hover:bg-white"
+                            disabled={busy}
+                            aria-label={`Excluir biometria de ${b.data}`}
+                            className="text-rose-700 hover:text-rose-700 min-h-11 min-w-11 p-2 disabled:opacity-50 rounded hover:bg-white"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -288,6 +273,7 @@ export default function BiometriaView({
             </h3>
 
             <form onSubmit={handleSave} className="space-y-4">
+              {error && <p role="alert" className="text-sm text-rose-900">{error}</p>}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Viveiro:</label>
                 <select
@@ -372,9 +358,10 @@ export default function BiometriaView({
                 </button>
                 <button
                   type="submit"
+                  disabled={busy}
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm "
                 >
-                  Gravar Biometria
+                  {busy ? 'Salvando…' : 'Gravar Biometria'}
                 </button>
               </div>
             </form>

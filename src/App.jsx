@@ -21,6 +21,7 @@ import TechnicalVisitBridge from './components/TechnicalVisitBridge.jsx';
 import { accountRole, motivoDoBloqueioDeAcesso } from './services/accountPermissions.js';
 import { CheckCircle2, X } from "lucide-react";
 import { isNativeApp } from './services/deviceFiles.js';
+import ScreenBoundary from './components/ScreenBoundary.jsx';
 
 export default function App() {
   const { user, access, accessLoading, accessError } = useAccount();
@@ -216,7 +217,7 @@ function ProductionApp() {
             <p className="text-sm font-semibold text-slate-600">Carregando banco de dados local...</p>
           </div>
         ) : (
-          <>
+          <ScreenBoundary key={activeTab}>
             {activeTab === "conta" && <AccountView onVisits={() => handleNavigate('visitas')} />}
             {activeTab === 'visitas' && (technician ? <TechnicianWorkspace onReload={loadData} onDirtyChange={setTechnicalDirty} /> : <TechnicalVisitsView onReload={loadData} />)}
             {activeTab === "dashboard" && (
@@ -305,7 +306,7 @@ function ProductionApp() {
                 onReload={loadData}
               />
             )}
-          </>
+          </ScreenBoundary>
         )}
       </main>
       <footer className="site-footer max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 text-xs text-slate-500 flex flex-wrap justify-between gap-2 border-t border-slate-200">

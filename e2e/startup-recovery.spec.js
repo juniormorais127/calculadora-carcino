@@ -15,6 +15,7 @@ test('sessão que não responde oferece recuperação e aceita resposta tardia s
     }, React.createElement('p', null, 'Sessão recuperada')));
   });
   await expect(page.getByText('Preparando o acesso ao CarcinoGestão…').last()).toBeVisible();
+  await page.waitForFunction(() => typeof window.finishAuth === 'function');
   await page.clock.fastForward(12500);
   await expect(page.getByRole('heading', { name: 'Não foi possível concluir o acesso' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toBeEnabled();

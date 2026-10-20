@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('link inválido permite solicitar nova recuperação', async ({ page }) => {
+  await page.route('**/accounts:resetPassword?*', route => route.fulfill({ status: 400, json: { error: { message: 'INVALID_OOB_CODE' } } }));
   await page.goto('./?mode=resetPassword&oobCode=invalid-test-code');
   await expect(page.getByRole('alert')).toContainText('Este link expirou');
   await expect(page).not.toHaveURL(/oobCode/);

@@ -15,6 +15,8 @@ export default function QualidadeAguaView({
   onSolicitarCadastroViveiro = null
 }) {
   const db = useDatabase();
+  const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [selectedViveiroId, setSelectedViveiroId] = useState(
     viveiros.length > 0 ? String(viveiros[0].id) : ""
   );
@@ -145,16 +147,19 @@ export default function QualidadeAguaView({
     if (ferro !== "" && Number.isFinite(Number(ferro))) medicao.ferro = Number(ferro);
     if (manganes !== "" && Number.isFinite(Number(manganes))) medicao.manganes = Number(manganes);
 
-    await db.qualidadeAgua.add(medicao);
-
-    handleClose();
-    onReload();
+    if (busy) return;
+    setBusy(true); setSaveError('');
+    try { await db.qualidadeAgua.add(medicao); await onReload(); handleClose(); }
+    catch { setSaveError('Não foi possível salvar a medição. Confira o espaço disponível e tente novamente.'); }
+    finally { setBusy(false); }
   };
 
   const handleDelete = async (id) => {
-    if (confirm("Excluir esta análise de água?")) {
-      await db.qualidadeAgua.delete(id);
-      onReload();
+    if (!busy && confirm("Excluir esta análise de água?")) {
+      setBusy(true); setSaveError('');
+      try { await db.qualidadeAgua.delete(id); await onReload(); }
+      catch { setSaveError('Não foi possível excluir a medição. Tente novamente.'); }
+      finally { setBusy(false); }
     }
   };
 
@@ -165,6 +170,7 @@ export default function QualidadeAguaView({
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
+      {saveError && !isModalOpen && !isModalOpenExternal && <p role="alert" className="text-sm text-rose-900">{saveError}</p>}
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -412,7 +418,9 @@ export default function QualidadeAguaView({
                     <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => handleDelete(q.id)}
-                        className="text-rose-700 hover:text-rose-700 p-1 rounded hover:bg-white"
+                        disabled={busy}
+                        aria-label={`Excluir medição de ${q.data}`}
+                        className="text-rose-700 hover:text-rose-700 min-h-11 min-w-11 p-2 rounded hover:bg-white disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -437,6 +445,7 @@ export default function QualidadeAguaView({
             </h3>
 
             <form onSubmit={handleSave} className="space-y-4">
+              {saveError && <p role="alert" className="text-sm text-rose-900">{saveError}</p>}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Viveiro:</label>
                 <select
@@ -671,6 +680,7 @@ export default function QualidadeAguaView({
                 </button>
                 <button
                   type="submit"
+                  disabled={busy}
                   className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm "
                 >
                   Salvar Medição
