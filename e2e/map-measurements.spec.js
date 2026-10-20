@@ -13,7 +13,7 @@ test('map draws and edits paths and polygons without changing property markers',
     createRoot(host).render(React.createElement(Map, { visits: [{ id: 'fixture', farmName: 'Teste', latitude: -10.95, longitude: -37.07, licenseStatus: 'licensed' }] }));
   });
   const map = page.getByLabel('Mapa das visitas e do licenciamento', { exact: true });
-  await page.getByRole('button', { name: 'Caminho', exact: true }).click();
+  await page.getByRole('button', { name: 'Medir', exact: true }).click();
   await map.click({ position: { x: 70, y: 100 } });
   await map.click({ position: { x: 240, y: 100 } });
   await expect(page.getByText(/Distância total:/)).toBeVisible();

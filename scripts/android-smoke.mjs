@@ -52,7 +52,7 @@ try {
   await expect(page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Baixar APK Android', exact: true })).toBeEnabled();
   await page.evaluate(() => window.__androidDiagnostics.showMeasurementMap());
-  await page.getByRole('button', { name: 'Caminho', exact: true }).click();
+  await page.getByRole('button', { name: 'Medir', exact: true }).click();
   const measurementMap = page.getByLabel('Mapa das visitas e do licenciamento', { exact: true });
   // Android WebViews attach without Playwright's hasTouch flag. Dispatch real
   // touch input through CDP rather than locator.tap(), which rejects that flag.
