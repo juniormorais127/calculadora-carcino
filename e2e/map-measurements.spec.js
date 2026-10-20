@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('map draws and edits paths and polygons without changing property markers', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 426, height: 812 });
-  await page.route('**/ArcGIS/rest/services/**', route => route.abort());
+  await page.route('**/World_Imagery/MapServer/tile/**', route => route.abort());
   await page.goto('./');
   await page.evaluate(async () => {
     const React = (await import('/node_modules/.vite/deps/react.js')).default;

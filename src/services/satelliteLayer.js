@@ -9,8 +9,9 @@ function loadImage(source) {
     const entry = { image: null, promise: null };
     entry.promise = new Promise((resolve, reject) => {
       const image = new Image();
-      image.onload = () => { entry.image = image; resolve(image); };
-      image.onerror = () => reject(new Error('Imagem indisponível'));
+      const timer = setTimeout(() => { image.onload = image.onerror = null; image.src = ''; reject(new Error('Tempo de resposta da imagem excedido')); }, 6000);
+      image.onload = () => { clearTimeout(timer); entry.image = image; resolve(image); };
+      image.onerror = () => { clearTimeout(timer); reject(new Error('Imagem indisponível')); };
       image.src = source;
     }).catch(error => {
       images.delete(source); unavailableUntil.set(source, Date.now() + 15000);
@@ -36,10 +37,13 @@ export function satelliteCrop(coords, sourceZoom, width = 256, height = 256) {
   return { x: (coords.x % scale) * width / scale, y: (coords.y % scale) * height / scale, width: width / scale, height: height / scale };
 }
 export function satelliteLayer(url, options = {}) {
+  const renderedTiles = new Map();
   const Layer = L.GridLayer.extend({
     createTile(coords, done) {
       const canvas = document.createElement('canvas'), size = this.getTileSize();
       canvas.width = size.x; canvas.height = size.y;
+      canvas.imageryCoords = coords;
+      renderedTiles.set(`${coords.z}/${coords.x}/${coords.y}`, canvas);
       let cancelled = false, finished = false, displayedZoom = -1;
       canvas.cancelImageLoad = () => { cancelled = true; };
       const draw = (image, zoom) => {
@@ -47,6 +51,7 @@ export function satelliteLayer(url, options = {}) {
         const crop = satelliteCrop(coords, zoom, image.naturalWidth, image.naturalHeight);
         canvas.getContext('2d').drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, size.x, size.y);
         displayedZoom = zoom;
+        canvas.imagerySourceZoom = zoom;
         if (!finished) { finished = true; done(null, canvas); }
       };
       // Show an already loaded ancestor immediately, then refine it. The
@@ -55,7 +60,8 @@ export function satelliteLayer(url, options = {}) {
         const cached = images.get(tileUrl(url, coords, zoom))?.image;
         if (cached) { setTimeout(() => draw(cached, zoom), 0); break; }
       }
-      if (coords.z > 17) void loadImage(tileUrl(url, coords, 17)).then(image => draw(image, 17)).catch(() => {});
+      const previewZoom = coords.z > 17 ? 17 : Math.max(0, coords.z - 2);
+      if (previewZoom < coords.z) void loadImage(tileUrl(url, coords, previewZoom)).then(image => draw(image, previewZoom)).catch(() => {});
       const render = async () => {
         for (let zoom = coords.z; zoom >= 0 && !cancelled; zoom--) {
           try {
@@ -73,7 +79,19 @@ export function satelliteLayer(url, options = {}) {
       return canvas;
     },
   });
-  const layer = new Layer({ maxZoom: 22, maxNativeZoom: 19, ...options });
-  layer.on('tileunload', event => event.tile.cancelImageLoad?.());
+  const layer = new Layer({ maxZoom: 22, maxNativeZoom: 19, updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 1, ...options });
+  layer.sourceZoomAt = latlng => {
+    const zoom = Math.min(layer._map?.getZoom() ?? 0, layer.options.maxNativeZoom);
+    const pixel = layer._map?.project(latlng, zoom);
+    if (!pixel) return null;
+    const size = layer.getTileSize(), count = 2 ** zoom;
+    const x = ((Math.floor(pixel.x / size.x) % count) + count) % count, y = Math.floor(pixel.y / size.y);
+    return renderedTiles.get(`${zoom}/${x}/${y}`)?.imagerySourceZoom ?? null;
+  };
+  layer.on('tileunload', event => {
+    event.tile.cancelImageLoad?.();
+    const coords = event.tile.imageryCoords;
+    if (coords && renderedTiles.get(`${coords.z}/${coords.x}/${coords.y}`) === event.tile) renderedTiles.delete(`${coords.z}/${coords.x}/${coords.y}`);
+  });
   return layer;
 }
