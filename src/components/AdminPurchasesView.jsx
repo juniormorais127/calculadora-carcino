@@ -3,7 +3,7 @@ import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'f
 import { firestore } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
 import { EVENT_LABELS, periodBounds, summarizeEvents } from '../services/purchaseMetrics.js';
-import { isSenior } from '../services/accountPermissions.js';
+import { isAdmin } from '../services/purchaseMetrics.js';
 
 const localDay = millis => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(millis));
 const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
@@ -31,7 +31,7 @@ export default function AdminPurchasesView({ readPage = getDocs }) {
   const [category, setCategory] = useState('Todas');
   const [kind, setKind] = useState('Todos');
   const generation = useRef(0);
-  const allowed = isSenior(user, access);
+  const allowed = isAdmin(user, access);
   async function fetchPage(append, token) {
     setBusy(true); setError('');
     try {

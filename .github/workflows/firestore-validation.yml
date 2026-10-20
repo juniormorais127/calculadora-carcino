@@ -1,0 +1,23 @@
+name: Validar regras e áreas técnicas
+on:
+  push:
+    paths: ['firestore.rules', 'tests/**', 'src/services/licensing*', 'src/services/environmental*', 'src/services/professional*', '.github/workflows/firestore-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npx --yes firebase-tools emulators:exec --project demo-carcino --only firestore "npm test"

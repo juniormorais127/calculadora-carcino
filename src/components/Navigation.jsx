@@ -1,8 +1,8 @@
 import React from "react";
 import { LayoutDashboard, Layers, Activity, Droplets, Calculator, ShieldAlert, Store, Settings } from "lucide-react";
 
-export default function Navigation({ activeTab, setActiveTab }) {
-  const tabs = [
+export default function Navigation({ activeTab, setActiveTab, professional = false }) {
+  const producerTabs = [
     { id: "dashboard", label: "Painel", icon: LayoutDashboard },
     { id: "viveiros", label: "Viveiros", icon: Layers },
     { id: "biometria", label: "Biometria", icon: Activity },
@@ -12,6 +12,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
     { id: "mercado", label: "Onde Comprar", mobileLabel: "Comprar", icon: Store },
     { id: "backup", label: "Ajustes", icon: Settings },
   ];
+  const tabs = professional ? [{ id:'visitas', label:'Área técnica', icon:LayoutDashboard },{ id:'dashboard', label:'Minha produção', mobileLabel:'Produção', icon:Layers },producerTabs[4],producerTabs[6],producerTabs[7]] : producerTabs;
 
   return (
     <>

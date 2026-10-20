@@ -20,7 +20,7 @@ import FieldNotebook from './FieldNotebook.jsx';
 
 const button = 'min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-emerald-700';
 const input = 'mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-emerald-700';
-export default function TechnicalVisitsView({ administrative = false, onReload, api = fieldApi }) {
+export default function TechnicalVisitsView({ administrative = false, focused = false, onReload, api = fieldApi }) {
   const { user, access, database, technicianIdentity, identityLoading, identityError } = useAccount();
   const identified = hasTechnicianIdentity(technicianIdentity) && technicianIdentity.fullName === access?.fullName;
   const technician = !administrative && accountRole(access, user.uid) === 'field_technician';
@@ -139,14 +139,14 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
     <div className="space-y-2"><h2 className="text-2xl font-bold">{administrative ? 'Visitas e licenciamento' : 'Visitas técnicas'}</h2><p className="text-sm text-slate-600 max-w-2xl">O técnico propõe ajustes. O cliente revisa e aceita ou recusa o relatório. A localização só muda após o aceite.</p></div>
     {canAuditTechnicalSupport(user, access) && <button className={button} onClick={() => setTab('authorizations')}>Autorizações e auditoria</button>}
     {technician && <nav aria-label="Área de visitas" className="flex flex-wrap gap-2"><button className={button} aria-pressed={tab === 'client'} onClick={() => setTab('client')}>Minha propriedade</button><button className={button} aria-pressed={tab === 'technician'} onClick={() => setTab('technician')}>Meus atendimentos</button></nav>}
-    {tab === 'technician' && <button className={`${button} border-emerald-700 text-emerald-800`} onClick={() => { setHistoryRequest(value => value + 1); technicianMapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); technicianMapRef.current?.focus({ preventScroll: true }); }}>Mapa e imagens históricas</button>}
+    {tab === 'technician' && !focused && <button className={`${button} border-emerald-700 text-emerald-800`} onClick={() => { setHistoryRequest(value => value + 1); technicianMapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); technicianMapRef.current?.focus({ preventScroll: true }); }}>Mapa e imagens históricas</button>}
     {error && <p ref={feedbackRef} tabIndex={-1} role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-4">{error}</p>}
     {message && <p ref={feedbackRef} tabIndex={-1} role="status" className="text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-4">{message}</p>}
-    {tab === 'technician' && <TechnicianIdentityEditor accountName={access?.fullName} value={technicianIdentity} loading={identityLoading} loadError={identityError} onSave={value => api.saveTechnicianIdentity(user, value)} />}
+    {tab === 'technician' && !focused && <TechnicianIdentityEditor accountName={access?.fullName} value={technicianIdentity} loading={identityLoading} loadError={identityError} onSave={value => api.saveTechnicianIdentity(user, value)} />}
     {tab === 'technician' && !identified && <p className="text-sm font-semibold text-amber-900">Salve sua foto e o tipo de atendimento acima para liberar o envio de visitas e notificações. O CREA é opcional.</p>}
     {!administrative && <AssistedProducers key={`assisted:${tab}`} mode={tab === 'technician' ? 'technician' : 'client'} identified={identified} authorizedOwners={grants.filter(item => item.active).map(item => item.ownerUid)} />}
     {!administrative && <TechnicalAuthorizations mode={tab === 'technician' ? 'technician' : 'client'} />}
-    {tab === 'technician' && <FieldNotebook key={user.uid} user={user} technicianName={access?.fullName} />}
+    {tab === 'technician' && !focused && <FieldNotebook key={user.uid} user={user} technicianName={access?.fullName} />}
     {tab === 'technician' && <div className="space-y-3"><button className={`${button} bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800`} disabled={busy || !identified} onClick={() => {
       if (independent) { focusForm(); return; }
       setPropertyName(''); setRecipientUid(null); setClientEmail(''); setSummary(''); setPrivateNotes(''); setLicenseStatus('unknown'); setLicenseNumber(''); setLicenseRegisteredOn(''); setLicenseExpiresOn(''); setPondId('');
@@ -190,7 +190,7 @@ export default function TechnicalVisitsView({ administrative = false, onReload, 
       <div className="flex flex-wrap gap-3"><button disabled={busy || photoBusy} className={button}>{busy ? 'Enviando visita…' : 'Registrar visita e enviar para aceite'}</button><button type="button" disabled={busy} onClick={() => setFarm(null)} className={button}>Cancelar visita</button></div>
     </form>}
     {administrative && <TechnicalVisitMap visits={allVisits} />}
-    {tab === 'technician' && <div ref={technicianMapRef} tabIndex={-1} className="scroll-mt-24"><TechnicianVisitMap uid={user.uid} visits={allVisits} historyRequest={historyRequest} /></div>}
+    {tab === 'technician' && !focused && <div ref={technicianMapRef} tabIndex={-1} className="scroll-mt-24"><TechnicianVisitMap uid={user.uid} visits={allVisits} historyRequest={historyRequest} /></div>}
     <div className="space-y-5"><h3 className="text-lg font-bold">{administrative ? 'Histórico de visitas' : tab === 'technician' ? 'Propriedades visitadas e alterações propostas' : 'Relatórios recebidos e notificações'}</h3>
       {!ordered.length && <p className="text-sm text-slate-600">Nenhuma visita registrada.</p>}
       {ordered.map(visit => <article key={visit.id} className="space-y-3 border-b border-slate-300 pb-5">

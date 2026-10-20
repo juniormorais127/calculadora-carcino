@@ -1,0 +1,40 @@
+import {test,expect} from '@playwright/test';
+test('área técnica separa tópicos e salva rascunho com obrigatórios pendentes e parâmetros personalizados',async({page},testInfo)=>{
+  await page.setViewportSize({width:426,height:900});await page.goto('./');
+  await page.evaluate(async()=>{
+    const React=(await import('/node_modules/.vite/deps/react.js')).default;
+    const{createRoot}=(await import('/node_modules/.vite/deps/react-dom_client.js')).default;
+    const{AccountContext}=await import('/src/components/AccountProvider.jsx');
+    const{default:Workspace}=await import('/src/components/TechnicianWorkspace.jsx');
+    window.professionalWrites=[];const watchers={};let records=[];
+    const api={watchProfessionalRecords(kind,uid,admin,next){watchers[kind]=next;next(records.filter(item=>item.kind===kind));return()=>{};},loadProfessionalProperties:async()=>[{sourceId:'fixture',name:'Fazenda Azul',fullName:'Maria Santos',phone:'+5579999999999',email:'maria@example.com'}],saveProfessionalRecord:async(kind,user,input)=>{window.professionalWrites.push({kind,input});const item={...input,id:'fixture',kind,revision:1};records=[item];watchers[kind]?.([item]);return'fixture';},readProfessionalHistory:async()=>[]};
+    const value={user:{uid:'tech-fixture',email:'ana@example.com',emailVerified:true},access:{role:'field_technician',fullName:'Ana Maria Silva',phone:'+5579999999999'},technicianIdentity:null,database:{},identityLoading:false};
+    document.getElementById('root').style.display='none';const host=document.createElement('div');host.className='max-w-6xl mx-auto p-4';document.body.append(host);createRoot(host).render(React.createElement(AccountContext.Provider,{value},React.createElement(Workspace,{professionalApi:api})));
+  });
+  await page.getByLabel('Abrir tópico',{exact:true}).selectOption('licensing');
+  await expect(page.getByRole('heading',{name:'Licenciamento Adema',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Monitoramento ambiental',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Novo processo de licenciamento',exact:true}).click();
+  await page.getByLabel('Preencher a partir de uma propriedade acessível').selectOption('0');
+  await expect(page.locator('#license-clientName')).toHaveValue('Maria Santos');
+  await expect(page.locator('#license-clientDocument')).toHaveAttribute('aria-invalid','true');
+  await page.getByRole('button',{name:'Responsável técnico',exact:false}).click();
+  await expect(page.locator('#license-technicianName')).toHaveValue('Ana Maria Silva');
+  await expect(page.locator('#license-art')).toHaveAttribute('aria-invalid','true');
+  await page.getByRole('button',{name:'Salvar processo / rascunho',exact:true}).click();
+  await expect(page.getByText('Fazenda Azul',{exact:true})).toBeVisible();
+  expect((await page.evaluate(()=>window.professionalWrites))[0].input.stage).toBe('draft');
+  await page.getByLabel('Abrir tópico',{exact:true}).selectOption('environment');
+  await page.getByRole('button',{name:'Solo e sedimento',exact:true}).click();
+  await page.getByRole('button',{name:'Registrar coleta / ensaio',exact:true}).click();
+  await page.getByLabel('PropriedadeObrigatório',{exact:false}).fill('Fazenda Azul');
+  await page.getByLabel('Resultado',{exact:true}).first().fill('7,2');
+  await page.getByRole('button',{name:'Adicionar outro parâmetro',exact:true}).click();
+  await page.getByLabel('Parâmetro',{exact:true}).last().fill('Teste personalizado');
+  await page.getByLabel('Resultado',{exact:true}).last().fill('Arenoso');
+  for(const width of [426,1440]){await page.setViewportSize({width,height:900});await page.screenshot({path:testInfo.outputPath(`professional-${width}.png`),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+  await page.getByRole('button',{name:'Salvar coleta',exact:true}).click();
+  await expect(page.getByText('Fazenda Azul · Ponto de coleta',{exact:true})).toBeVisible();
+  const writes=await page.evaluate(()=>window.professionalWrites);expect(writes.at(-1).kind).toBe('environmentalTests');expect(writes.at(-1).input.type).toBe('soil');
+});
+test('central operacional tem entrada separada e exige login administrativo',async({page})=>{await page.goto('./central-operacional/index.html');await expect(page.getByRole('heading',{name:'Acesso administrativo',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Criar conta gratuita',exact:true})).toHaveCount(0);});

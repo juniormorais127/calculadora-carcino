@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, doc, getDocs, limit, orderBy, query, serverTimestamp, startAfter, Timestamp, updateDoc } from 'firebase/firestore';
-import { firestore } from '../services/firebase.js';
+import { collection, doc, getDocs, limit, orderBy, query, serverTimestamp, startAfter, Timestamp, writeBatch } from 'firebase/firestore';
+import { firestore, auth } from '../services/firebase.js';
 import { useAccount } from './AccountProvider.jsx';
 import { isAdmin } from '../services/purchaseMetrics.js';
 import { expirationMillis, premiumStatus, accountRole, ACCOUNT_ROLES, canManageUser, assignableRoles, isSenior } from '../services/accountPermissions.js';
@@ -16,10 +16,16 @@ export async function readUsers(cursor) {
   return { users: result.docs.map(doc => ({ ...doc.data(), uid: doc.id })), cursor: result.docs.at(-1), more: result.size === 200 };
 }
 export async function writePermission(uid, data, adminUid) {
-  await updateDoc(doc(firestore, 'accountProfiles', uid), { role: data.role, premium: data.premium, canAuthorizeTechnicalSupport: data.canAuthorizeTechnicalSupport === true, expiresAt: data.premium && data.expiresAt ? Timestamp.fromMillis(data.expiresAt) : null, changedBy: adminUid, changedAt: serverTimestamp() });
+  const batch=writeBatch(firestore);
+  batch.update(doc(firestore, 'accountProfiles', uid), { role: data.role, premium: data.premium, canAuthorizeTechnicalSupport: data.canAuthorizeTechnicalSupport === true, expiresAt: data.premium && data.expiresAt ? Timestamp.fromMillis(data.expiresAt) : null, changedBy: adminUid, changedAt: serverTimestamp() });
+  batch.set(doc(collection(firestore,'adminActivity')),{actorUid:adminUid,actorEmail:auth.currentUser.email,action:'permissions.updated',collection:'accountProfiles',entityId:uid,label:uid,occurredAt:serverTimestamp(),revision:0});
+  await batch.commit();
 }
 export async function writeContact(uid, phone, adminUid) {
-  await updateDoc(doc(firestore, 'accountProfiles', uid), { phone, changedBy: adminUid, changedAt: serverTimestamp() });
+  const batch=writeBatch(firestore);
+  batch.update(doc(firestore, 'accountProfiles', uid), { phone, changedBy: adminUid, changedAt: serverTimestamp() });
+  batch.set(doc(collection(firestore,'adminActivity')),{actorUid:adminUid,actorEmail:auth.currentUser.email,action:'contact.updated',collection:'accountProfiles',entityId:uid,label:uid,occurredAt:serverTimestamp(),revision:0});
+  await batch.commit();
 }
 export default function AdminUsersView({ loadUsers = readUsers, savePermission = writePermission, saveContact = writeContact }) {
   const { user, access } = useAccount();

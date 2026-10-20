@@ -20,7 +20,7 @@ export function motivoDoBloqueioDeAcesso({ user, perfil, perfilCarregando = fals
 }
 
 export function premiumStatus(profile, now = Date.now()) {
-  if (profile?.role === 'senior') return 'Acesso completo';
+  if (['senior', 'administrator'].includes(profile?.role)) return 'Acesso completo';
   if (!profile?.premium) return 'Gratuito';
   const expiry = profile.expiresAt?.toMillis?.() ?? profile.expiresAt;
   if (expiry && Number(expiry) <= now) return 'Expirado';

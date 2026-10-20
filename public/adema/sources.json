@@ -1,0 +1,32 @@
+[
+  {
+    "file": "requerimento.pdf",
+    "sha256": "12672d07165c6b6f98f54db5bbdaacba963273371f0bb7ebc705299b54180ffa",
+    "checkedOn": "2026-10-20"
+  },
+  {
+    "file": "procuracao.pdf",
+    "sha256": "afcb80709cefb438bacd1344a1c9fb1b7c8518aa15190dd146dfff3cd755d73f",
+    "checkedOn": "2026-10-20"
+  },
+  {
+    "file": "tra-ls.pdf",
+    "sha256": "de3aa74b4cbbea686e43b1104a8d9abe6775692d0d018eaeb1379363dab4e5af",
+    "checkedOn": "2026-10-20"
+  },
+  {
+    "file": "rce-ls.pdf",
+    "sha256": "6024a02c40b5e8670f361080095abe1897ceecd3c988bea1c6e623fc6e424a77",
+    "checkedOn": "2026-10-20"
+  },
+  {
+    "file": "checklist-aquicultura.pdf",
+    "sha256": "74869e8b7e43be2649b4fe22d438252276a9324dc2364e82a3879312746203be",
+    "checkedOn": "2026-10-20"
+  },
+  {
+    "file": "analise-previa.pdf",
+    "sha256": "bdb1634556e650c7b9f2611648548e30952a4aad9deb30e8550bf99eaf244b13",
+    "checkedOn": "2026-10-20"
+  }
+]

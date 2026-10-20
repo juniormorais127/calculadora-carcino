@@ -74,7 +74,7 @@ export default function AccountView({ onVisits }) {
     <h2 className="text-2xl font-bold text-slate-900">Minha conta</h2>
     <AccountNameEditor value={account.access?.fullName} onSave={name => saveAccountName(user, name)} />
     {onVisits && <button className={`${button} border border-emerald-700 text-emerald-800`} onClick={onVisits}>Visitas técnicas e autorizações</button>}
-    {isAdmin(user, account.access) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}admin/index.html`}>Abrir administração</a>}
+    {isAdmin(user, account.access) && <a className={`${button} bg-emerald-700 text-white inline-flex items-center`} href={`${import.meta.env.BASE_URL}central-operacional/index.html`}>Abrir administração</a>}
     <p className="text-sm text-slate-700 break-all">Conectado como <strong>{user.email}</strong></p>
     <p className="text-sm text-slate-700">Permissão de serviços: <strong>{account.access ? premiumStatus({ ...account.access, role: accountRole(account.access, user.uid) }) : 'Consultando…'}</strong></p>
     {account.access && <p className="text-sm text-slate-700">Perfil: <strong>{ACCOUNT_ROLES[accountRole(account.access, user.uid)]}</strong></p>}

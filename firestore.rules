@@ -8,8 +8,8 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/accountProfiles/$(uid))
         ? get(/databases/$(database)/documents/accountProfiles/$(uid)).data.get('role', 'producer') : 'producer';
     }
-    function senior() { return request.auth != null && (primarySenior(request.auth.uid) || profileRole(request.auth.uid) == 'senior'); }
-    function admin() { return request.auth != null && (senior() || profileRole(request.auth.uid) == 'administrator'); }
+    function senior() { return request.auth != null && request.auth.token.email_verified == true && (primarySenior(request.auth.uid) || profileRole(request.auth.uid) == 'senior'); }
+    function admin() { return request.auth != null && request.auth.token.email_verified == true && (senior() || profileRole(request.auth.uid) == 'administrator'); }
     function supportAuditor() { return request.auth != null && request.auth.token.email_verified == true && (admin() || get(/databases/$(database)/documents/accountProfiles/$(request.auth.uid)).data.get('canAuthorizeTechnicalSupport', false) == true); }
     function propertyKey(name) {
       return name.lower().replace('[áàâãä]', 'a').replace('[éèêë]', 'e').replace('[íìîï]', 'i').replace('[óòôõö]', 'o').replace('[úùûü]', 'u').replace('ç', 'c').replace('ñ', 'n').replace('[^a-z0-9]+', '-').replace('^-|-$', '');
@@ -47,13 +47,16 @@ service cloud.firestore {
           && request.resource.data.premium is bool
           && (request.resource.data.expiresAt == null || request.resource.data.expiresAt is timestamp);
       }
-      allow create: if owner(uid) && validProfile()
+      allow create: if (senior() && !primarySenior(uid) && validProfile()
+        && request.resource.data.role in ['administrator', 'field_technician', 'producer']
+        && request.resource.data.createdAt == request.time && request.resource.data.changedAt == request.time && request.resource.data.changedBy == request.auth.uid)
+        || (owner(uid) && validProfile()
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time && request.resource.data.lastSeenAt == request.time
         && request.resource.data.premium == false && request.resource.data.expiresAt == null
         && request.resource.data.get('canAuthorizeTechnicalSupport', false) == false
         && (request.resource.data.get('role', 'producer') == 'producer' || (primarySenior(uid) && request.resource.data.role == 'senior'))
-        && request.resource.data.changedBy == null && request.resource.data.changedAt == null;
+        && request.resource.data.changedBy == null && request.resource.data.changedAt == null);
       allow update: if validProfile() && (
         (owner(uid) && !('fullName' in resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName']))
         ||
@@ -77,13 +80,13 @@ service cloud.firestore {
     }
     match /accountNames/{uid} {
       allow get: if owner(uid) || admin();
-      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['fullName', 'createdAt'])
+      allow create: if (owner(uid) || senior()) && request.resource.data.keys().hasOnly(['fullName', 'createdAt'])
         && request.resource.data.fullName is string && request.resource.data.fullName.size() >= 5 && request.resource.data.fullName.size() <= 800 && request.resource.data.fullName.matches('^.+ .+$')
         && request.resource.data.createdAt == request.time;
     }
     match /purchaseEvents/{eventId} {
-      allow get: if senior() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
-      allow list: if senior();
+      allow get: if admin() || (request.auth != null && (!exists(/databases/$(database)/documents/purchaseEvents/$(eventId)) || resource.data.uid == request.auth.uid));
+      allow list: if admin();
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['uid', 'kind', 'targetId', 'targetName', 'category', 'occurredAt', 'receivedAt'])
         && request.resource.data.uid == request.auth.uid
@@ -384,6 +387,57 @@ service cloud.firestore {
       allow create, update: if owner(uid) && identifiedFieldTech()
         && request.resource.data.keys().hasOnly(['alias', 'createdAt']) && request.resource.data.alias is string && request.resource.data.alias.size() <= 400 && request.resource.data.createdAt == request.time
         && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.technicianUid == uid && getAfter(/databases/$(database)/documents/assistedProducers/$(id)).data.auditStatus == 'pending';
+    }
+    function professionalRecordAccess(data) { return request.auth != null && request.auth.token.email_verified == true && (admin() || (fieldTech() && data.technicianUid == request.auth.uid)); }
+    function validProfessionalRecord(kind, id) {
+      let value = request.resource.data;
+      return value.keys().hasOnly(['data', 'stage', 'type', 'checklist', 'technicianUid', 'ownerUid', 'createdBy', 'createdAt', 'updatedAt', 'updatedBy', 'revision', 'auditId'])
+        && value.technicianUid is string && value.technicianUid.size() <= 128 && (value.ownerUid == null || (value.ownerUid is string && value.ownerUid.size() <= 128))
+        && value.createdBy is string && value.data is map && value.data.size() <= 150
+        && value.data.propertyName is string && value.data.propertyName.size() >= 1 && value.data.propertyName.size() <= 800
+        && value.updatedBy == request.auth.uid && value.updatedAt == request.time && value.revision is int
+        && value.auditId is string && value.auditId.size() <= 128
+        && getAfter(/databases/$(database)/documents/adminActivity/$(value.auditId)).data.actorUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/adminActivity/$(value.auditId)).data.collection == kind
+        && getAfter(/databases/$(database)/documents/adminActivity/$(value.auditId)).data.entityId == id
+        && getAfter(/databases/$(database)/documents/$(kind)/$(id)/history/$(value.auditId)).data.revision == value.revision
+        && getAfter(/databases/$(database)/documents/$(kind)/$(id)/history/$(value.auditId)).data.savedBy == request.auth.uid
+        && ((kind == 'licensingCases' && value.checklist is map && value.checklist.size() <= 50
+          && value.stage in ['draft','documents','review','protocol','analysis','corrections','issued','closed']
+          && (value.stage != 'issued' || (value.data.officialLicenseNumber.size() > 0 && value.data.licenseIssuedOn.size() > 0 && value.data.licenseExpiresOn >= value.data.licenseIssuedOn)))
+          || (kind == 'environmentalTests' && value.type in ['water','soil','other'] && value.data.parameters is list && value.data.parameters.size() <= 100));
+    }
+    match /{kind}/{id} {
+      allow read: if kind in ['licensingCases','environmentalTests'] && professionalRecordAccess(resource.data);
+      allow create: if kind in ['licensingCases','environmentalTests'] && (fieldTech() || admin()) && professionalRecordAccess(request.resource.data)
+        && validProfessionalRecord(kind, id) && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time && request.resource.data.revision == 1
+        && (request.resource.data.ownerUid == null || admin() || fieldAccess(request.resource.data.ownerUid));
+      allow update: if kind in ['licensingCases','environmentalTests'] && professionalRecordAccess(resource.data) && validProfessionalRecord(kind, id)
+        && request.resource.data.technicianUid == resource.data.technicianUid && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.auditId != resource.data.auditId;
+      match /history/{eventId} {
+        allow read: if kind in ['licensingCases','environmentalTests'] && professionalRecordAccess(get(/databases/$(database)/documents/$(kind)/$(id)).data);
+        allow create: if kind in ['licensingCases','environmentalTests'] && professionalRecordAccess(getAfter(/databases/$(database)/documents/$(kind)/$(id)).data)
+          && request.resource.data.savedBy == request.auth.uid
+          && request.resource.data.diff(getAfter(/databases/$(database)/documents/$(kind)/$(id)).data).affectedKeys().hasOnly(['savedBy'])
+          && getAfter(/databases/$(database)/documents/$(kind)/$(id)).data.auditId == eventId;
+      }
+    }
+    match /adminActivity/{id} {
+      allow read: if admin();
+      allow create: if request.auth != null && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly(['actorUid','actorEmail','action','collection','entityId','label','occurredAt','revision'])
+        && request.resource.data.actorUid == request.auth.uid && request.resource.data.actorEmail == request.auth.token.email
+        && request.resource.data.occurredAt == request.time && request.resource.data.label is string && request.resource.data.label.size() <= 800
+        && request.resource.data.entityId is string && request.resource.data.entityId.size() <= 128
+        && request.resource.data.revision is int
+        && ((request.resource.data.collection in ['licensingCases','environmentalTests'] && request.resource.data.action in ['record.created','record.updated']
+          && getAfter(/databases/$(database)/documents/$(request.resource.data.collection)/$(request.resource.data.entityId)).data.auditId == id
+          && getAfter(/databases/$(database)/documents/$(request.resource.data.collection)/$(request.resource.data.entityId)).data.updatedBy == request.auth.uid)
+        || (admin() && request.resource.data.collection == 'accountProfiles' && request.resource.data.action in ['permissions.updated','contact.updated','admin.created']
+          && getAfter(/databases/$(database)/documents/accountProfiles/$(request.resource.data.entityId)).data.changedBy == request.auth.uid
+          && getAfter(/databases/$(database)/documents/accountProfiles/$(request.resource.data.entityId)).data.changedAt == request.time));
     }
     match /users/{uid}/state/current {
       allow read, delete: if verifiedOwner(uid);

@@ -18,7 +18,7 @@ try {
   let page = await open();
   await page.evaluate(() => { sessionStorage.setItem('android-origin-check', 'same-app'); window.__androidDiagnostics.showAccount('administrator'); });
   await page.getByRole('link', { name: 'Abrir administra\u00e7\u00e3o', exact: true }).click();
-  await page.waitForURL('**/admin/index.html');
+  await page.waitForURL('**/central-operacional/index.html');
   await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem('android-origin-check'))).toBe('same-app');
   await page.waitForFunction(() => !!window.__androidDiagnostics);
@@ -27,7 +27,7 @@ try {
   await expect(page.getByRole('button', { name: 'Usu\u00e1rios e permiss\u00f5es', exact: true })).toHaveCount(0);
   await page.evaluate(() => window.__androidDiagnostics.showAdmin('administrator'));
   await expect(page.getByRole('button', { name: 'Usu\u00e1rios e permiss\u00f5es', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Interesse em compras', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Interesse em compras', exact: true })).toBeVisible();
   await page.evaluate(() => window.__androidDiagnostics.showAdmin('senior'));
   await expect(page.getByRole('button', { name: 'Interesse em compras', exact: true })).toBeVisible();
   await device.screenshot({ path: 'android-evidence/admin-senior.png' });

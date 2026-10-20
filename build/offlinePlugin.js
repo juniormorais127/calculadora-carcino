@@ -34,7 +34,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
   if (request.mode === 'navigate') {
-    const fallback = url.pathname.startsWith(BASE + 'admin/') ? 'admin/index.html' : 'index.html';
+    const fallback = url.pathname.startsWith(BASE + 'central-operacional/') ? 'central-operacional/index.html' : url.pathname.startsWith(BASE + 'admin/') ? 'admin/index.html' : 'index.html';
     event.respondWith(fetch(request).catch(() => caches.open(CACHE).then(cache => cache.match(BASE + fallback))));
   } else if (FILES.some(file => url.pathname === BASE + file)) {
     event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname, { ignoreVary: true })) || fetch(request)));

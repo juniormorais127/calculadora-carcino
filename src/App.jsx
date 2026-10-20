@@ -16,6 +16,7 @@ import { ShrimpMarkIcon } from "./components/icons/CustomAquacultureIcons.jsx";
 import PasswordResetView from "./components/PasswordResetView.jsx";
 import VerifyEmailView from "./components/VerifyEmailView.jsx";
 import TechnicalVisitsView from './components/TechnicalVisitsView.jsx';
+import TechnicianWorkspace from './components/TechnicianWorkspace.jsx';
 import TechnicalVisitBridge from './components/TechnicalVisitBridge.jsx';
 import { accountRole, motivoDoBloqueioDeAcesso } from './services/accountPermissions.js';
 import { CheckCircle2, X } from "lucide-react";
@@ -55,6 +56,7 @@ function ProductionApp() {
   const { database: db, user, access, syncStatus, dataVersion, sync } = useAccount();
   const technician = accountRole(access, user.uid) === 'field_technician';
   const [activeTab, setActiveTab] = useState(() => technician ? 'visitas' : 'dashboard');
+  const [technicalDirty, setTechnicalDirty] = useState(false);
   const [viveiros, setViveiros] = useState([]);
   const [biometrias, setBiometrias] = useState([]);
   const [qualidadeAgua, setQualidadeAgua] = useState([]);
@@ -121,6 +123,7 @@ function ProductionApp() {
   }, [feedbackBanner]);
 
   const handleNavigate = (tab) => {
+    if (tab !== activeTab && technicalDirty && !confirm('Há alterações não salvas no formulário técnico. Descartar e sair desta área?')) return;
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -174,7 +177,7 @@ function ProductionApp() {
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-2 pb-20 md:pb-6">
-        <Navigation activeTab={activeTab} setActiveTab={handleNavigate} />
+        <Navigation activeTab={activeTab} setActiveTab={handleNavigate} professional={technician} />
         {technician && activeTab !== 'visitas' && <div className="my-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 py-3"><span className="text-sm font-semibold text-slate-800">Área do técnico de campo</span><button className="min-h-11 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" onClick={() => handleNavigate('visitas')}>Registrar visita técnica</button></div>}
         <TechnicalVisitBridge onOpen={() => handleNavigate('visitas')} onReload={loadData} />
         {user && <div role="status" className={`my-3 flex flex-wrap justify-between items-center gap-2 rounded-xl border px-3 py-2 text-xs ${syncStatus.state === 'synced' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
@@ -215,7 +218,7 @@ function ProductionApp() {
         ) : (
           <>
             {activeTab === "conta" && <AccountView onVisits={() => handleNavigate('visitas')} />}
-            {activeTab === 'visitas' && <TechnicalVisitsView onReload={loadData} />}
+            {activeTab === 'visitas' && (technician ? <TechnicianWorkspace onReload={loadData} onDirtyChange={setTechnicalDirty} /> : <TechnicalVisitsView onReload={loadData} />)}
             {activeTab === "dashboard" && (
               <Dashboard
                 viveiros={viveiros}
