@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LICENSE_LABELS, VISIT_LABELS } from '../services/technicalVisitData.js';
 import { satelliteLayer } from '../services/satelliteLayer.js';
+import MapMeasurements from './MapMeasurements.jsx';
 
 const satelliteUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false';
 const satelliteCredit = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
@@ -18,6 +19,7 @@ function loadArchive() {
 export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
   const host = useRef(null), mapRef = useRef(null), layerRef = useRef(null), markersRef = useRef(null);
   const lastBounds = useRef('');
+  const [mapInstance, setMapInstance] = useState(null);
   const [error, setError] = useState(false), [basemap, setBasemap] = useState('satellite');
   const [resolutionFallback, setResolutionFallback] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false), [archive, setArchive] = useState([]), [historyIndex, setHistoryIndex] = useState(0), [historyError, setHistoryError] = useState(''), [historyLoading, setHistoryLoading] = useState(false);
@@ -36,8 +38,9 @@ export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
     const initialPoints = visits.filter(visit => Number.isFinite(visit.latitude) && Number.isFinite(visit.longitude)).map(visit => [visit.latitude, visit.longitude]);
     const map = L.map(host.current, { scrollWheelZoom: false }).fitBounds(initialPoints, { padding: [30, 30], maxZoom: 16 });
     mapRef.current = map; markersRef.current = L.layerGroup().addTo(map);
+    setMapInstance(map);
     const observer = new ResizeObserver(() => map.invalidateSize()); observer.observe(host.current);
-    return () => { observer.disconnect(); map.remove(); mapRef.current = null; layerRef.current = null; markersRef.current = null; lastBounds.current = ''; };
+    return () => { observer.disconnect(); map.remove(); setMapInstance(null); mapRef.current = null; layerRef.current = null; markersRef.current = null; lastBounds.current = ''; };
   }, [hasPoints]);
   useEffect(() => {
     const map = mapRef.current;
@@ -78,6 +81,7 @@ export default function TechnicalVisitMap({ visits, historyRequest = 0 }) {
   return <div className="space-y-3">{hasPoints ? <>
     <div role="group" aria-label="Tipo de imagem do mapa" className="flex flex-wrap gap-2">{[['satellite', 'Satélite atual'], ['streets', 'Mapa de ruas']].map(([id, label]) => <button key={id} type="button" aria-pressed={basemap === id} className={`${button} ${basemap === id ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-slate-300 bg-white text-slate-800'}`} onClick={() => setBasemap(id)}>{label}</button>)}<button type="button" className={`${button} border-slate-300 bg-white text-slate-800`} aria-expanded={historyOpen} onClick={() => { setHistoryOpen(value => !value); if (archive.length) setBasemap('history'); }}>Comparar imagens históricas</button></div>
     {historyOpen && <div className="space-y-2 rounded-xl border border-slate-300 bg-slate-50 p-4">{historyLoading ? <p role="status" className="text-sm">Consultando versões históricas do satélite…</p> : historyError ? <p role="status" className="text-sm text-amber-900">{historyError}</p> : archive.length > 0 && <><label className="block text-sm font-semibold">Versão histórica do mapa: {archive[historyIndex].releaseDateLabel}<input aria-label="Data da versão histórica do mapa" type="range" min={0} max={archive.length - 1} value={historyIndex} className="block w-full min-h-11 accent-emerald-700" onChange={event => { setHistoryIndex(Number(event.target.value)); setBasemap('history'); }} /></label><div className="flex justify-between text-xs text-slate-600"><span>{archive[0].releaseDateLabel}</span><span>{archive[archive.length - 1].releaseDateLabel}</span></div><p className="text-xs text-slate-600">Arraste a barra e alterne com “Satélite atual” para comparar o mesmo local. A data identifica a publicação da versão, não o dia da captura. Algumas versões podem mostrar a mesma imagem nesta região.</p></>}</div>}
+    {mapInstance && <MapMeasurements map={mapInstance} />}
     <div ref={host} aria-label="Mapa das visitas e do licenciamento" className="relative z-0 h-96 w-full rounded-xl border border-slate-300" />
     {resolutionFallback && <p role="status" className="text-xs text-slate-600">Ampliando a melhor imagem disponível neste local. O provedor não oferece mais detalhe em parte desta área, mas você pode continuar aproximando.</p>}
     <p className="text-xs text-slate-600">{basemap === 'history' && release ? `Esri Wayback · Versão publicada em ${release.releaseDateLabel}.` : basemap === 'satellite' ? 'Satélite: Esri World Imagery. Imagens não são em tempo real; cobertura e resolução variam por região.' : 'Mapa de ruas: OpenStreetMap.'} A imagem ajuda na conferência visual e não comprova, sozinha, propriedade ou licenciamento.</p>

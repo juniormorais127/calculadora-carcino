@@ -13,6 +13,7 @@ import { AccountContext } from '../components/AccountProvider.jsx';
 import { getAccountDatabase } from './db.js';
 import AppUpdatesProvider, { AppUpdateNotice, AndroidDownloadSettings } from '../components/AppUpdates.jsx';
 import { androidUpdateApi } from './androidUpdates.js';
+import TechnicalVisitMap from '../components/TechnicalVisitMap.jsx';
 let diagnosticRoot, host;
 function mount(element) {
   diagnosticRoot?.unmount();
@@ -25,6 +26,9 @@ function accountFixture(role) {
   return { user: { uid: 'android-admin-test', email: 'test@example.test', emailVerified: true }, access: { role, fullName: 'Test account', phone: '+5579999999999' }, accessLoading: false, database: getAccountDatabase('android-admin-test'), metadata: { accounts: { get: async () => null } }, syncStatus: { state: 'local', message: 'Test fixture' }, logout: async () => {}, sync: async () => {} };
 }
 window.__androidDiagnostics = {
+  showMeasurementMap() {
+    mount(React.createElement(TechnicalVisitMap, { visits: [{ id: 'measurement-test', farmName: 'Test property', latitude: -10.95, longitude: -37.07, licenseStatus: 'licensed' }] }));
+  },
   async realUpdateCheck() {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
     try { return { installed: await androidUpdateApi.installed(), release: await androidUpdateApi.release(controller.signal) }; }

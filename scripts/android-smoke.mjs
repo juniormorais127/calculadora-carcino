@@ -51,6 +51,15 @@ try {
   await page.evaluate(() => window.__androidDiagnostics.showUpdates('web'));
   await expect(page.getByRole('status', { name: 'Atualiza\u00e7\u00e3o do aplicativo', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Baixar APK Android', exact: true })).toBeEnabled();
+  await page.evaluate(() => window.__androidDiagnostics.showMeasurementMap());
+  await page.getByRole('button', { name: 'Caminho', exact: true }).click();
+  const measurementMap = page.getByLabel('Mapa das visitas e do licenciamento', { exact: true });
+  await measurementMap.tap({ position: { x: 70, y: 100 } });
+  await measurementMap.tap({ position: { x: 220, y: 100 } });
+  await expect(page.getByText(/Dist\u00e2ncia total:/)).toBeVisible();
+  await page.getByRole('button', { name: 'Concluir medi\u00e7\u00e3o', exact: true }).click();
+  await expect(page.getByText(/2 de 200 pontos/)).toBeVisible();
+  await device.screenshot({ path: 'android-evidence/map-measurement.png' });
   const written = await page.evaluate(() => window.__androidDiagnostics.write());
   expect(written.count).toBe(1); expect(written.nativeCount).toBe(1); expect(written.otherAccount).toBe(0); expect(written.pdfBytes).toBeGreaterThan(1000);
   await device.screenshot({ path: 'android-evidence/login-phone.png' });
@@ -78,7 +87,7 @@ try {
   await expect.poll(async () => String(await device.shell('dumpsys activity activities')), { timeout: 15000 }).toContain('ChooserActivity');
   await device.screenshot({ path: 'android-evidence/android-pdf-share.png' });
   await device.shell('input keyevent 4');
-  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true, adminNavigation: true, adminRoleGates: true, androidUpdateCheck: updateCheck, updateNoticeVersionGates: true }, null, 2));
+  await writeFile('android-evidence/results.json', JSON.stringify({ written, restored, offlineRestart: true, nativeGps: true, nativePdfShare: true, adminNavigation: true, adminRoleGates: true, androidUpdateCheck: updateCheck, updateNoticeVersionGates: true, mapMeasurementTouch: true }, null, 2));
 } catch (error) {
   await device.screenshot({ path: 'android-evidence/failure.png' });
   await writeFile('android-evidence/failure.txt', String(error.stack || error));
