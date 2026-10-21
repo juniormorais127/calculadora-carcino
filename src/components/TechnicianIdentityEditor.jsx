@@ -1,3 +1,4 @@
+import InfoDisclosure from './InfoDisclosure.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { prepareTechnicianPhoto, validateTechnicianIdentity, hasTechnicianIdentity } from '../services/technicianIdentity.js';
 
@@ -25,7 +26,7 @@ export default function TechnicianIdentityEditor({ value, accountName, onSave, l
   return <section className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 space-y-4"><h3 className="text-lg font-bold">Identificação do técnico</h3>
     {loading ? <p role="status" className="text-sm text-slate-600">Consultando identificação…</p> : <>
       {loadError && <p role="alert" className="text-sm text-rose-800">{loadError}</p>}
-      <p className="text-sm text-slate-600">A identificação usa o nome fixo da conta, sua foto e o tipo de atendimento. O CREA é opcional. O cliente verá esses dados para identificar o profissional.</p>
+      <InfoDisclosure label="Identificação profissional">A identificação usa o nome fixo da conta, sua foto e o tipo de atendimento. O CREA é opcional. O cliente verá esses dados para identificar o profissional.</InfoDisclosure>
       <input ref={photoInput} type="file" aria-label="Foto do técnico (obrigatória)" accept="image/jpeg,image/png,image/webp" onChange={photo} disabled={busy} className="hidden" />
       <button type="button" disabled={busy} onClick={() => photoInput.current?.click()} className="min-h-11 rounded-xl border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50">{photoDataUrl ? 'Trocar foto do técnico' : 'Anexar foto do técnico'}</button>
       {complete && !editing ? <div className="space-y-3"><div className="flex items-center gap-3"><img src={value.photoDataUrl} alt={`Foto de ${value.fullName}`} className="h-20 w-20 rounded-xl object-cover" /><div><p className="font-semibold">{value.fullName}</p><p className="text-sm">{value.creaNumber ? `CREA: ${value.creaNumber}` : 'N\u00e3o tem CREA cadastrado'}</p><p className="text-sm">{value.employmentType === 'organization' ? value.organizationName : 'Atendimento particular'}</p></div></div><button type="button" className="min-h-11 text-sm font-semibold text-emerald-800 underline underline-offset-4" onClick={() => setEditing(true)}>Editar identificação profissional</button></div> : <form onSubmit={submit} className="space-y-4">

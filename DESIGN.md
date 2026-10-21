@@ -38,6 +38,8 @@ Início por serviços: clientes e visitas, monitoramento ambiental, licenciament
 
 ## Dados e estados
 
+Explicações longas da área técnica ficam em botões de informação. Nos serviços iniciais, o ícone “i” fica ao lado do nome, separado do botão que abre a função. A ajuda expande no fluxo da página, funciona por toque e teclado e pode ser fechada por Escape ou pelo botão de fechar. Campos obrigatórios, consentimentos, erros, pendências e estados dos registros continuam visíveis.
+
 Os layouts não alteram as regras de sincronização ou acesso. Nuvem como referência online, alterações offline reenviadas automaticamente. Fotos de relatórios permanecem no aparelho e podem compor o PDF local. Avisos de manutenção, erros, carregamento e recuperação devem continuar visíveis e utilizáveis. A administração mantém sua estrutura separada e compartilha os tokens visuais.
 
 As imagens de aprovação são conceitos, com dados ilustrativos; a implementação apresenta os dados reais e não inventa capacidades para copiar uma imagem.

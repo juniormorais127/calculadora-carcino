@@ -1,3 +1,4 @@
+import InfoDisclosure from './InfoDisclosure.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { listLocalReports, saveLocalReport } from '../services/fieldNotebook.js';
 import LocalVisitPhotos, { VisitGuide } from './LocalVisitPhotos.jsx';
@@ -28,7 +29,7 @@ export default function FieldNotebook({ user, technicianName }) {
     finally { setBusy(false); }
   }
   function edit(field, value) { setReport(previous => ({ ...previous, [field]: value })); setDirty(true); setMessage('Alterações ainda não salvas. Use Salvar relatório neste aparelho.'); }
-  return <section className="space-y-4 rounded-2xl border border-slate-300 bg-white p-5 max-w-2xl"><h3 className="text-lg font-bold">Relatórios locais de campo</h3><p className="text-sm text-slate-700">Prepare a visita sem internet, anexe fotos e gere uma guia em PDF. Estes relatórios ficam somente neste aparelho; não enviam notificações, não passam por auditoria e não alteram o cadastro do cliente. Para isso, use o registro de visita com conexão.</p>
+  return <section className="space-y-4 rounded-2xl border border-slate-300 bg-white p-5 max-w-2xl"><h3 className="text-lg font-bold">Relatórios locais de campo</h3><InfoDisclosure label="Relatórios locais">Prepare a visita sem internet, anexe fotos e gere uma guia em PDF. Estes relatórios ficam somente neste aparelho; não enviam notificações, não passam por auditoria e não alteram o cadastro do cliente. Para isso, use o registro de visita com conexão.</InfoDisclosure>
     <button type="button" className={button} disabled={busy || !!report} onClick={() => void persist({ id: crypto.randomUUID(), farmName: '', visitedOn: new Date().toLocaleDateString('en-CA'), summary: '', technicianName: technicianName || user.email, licenseStatus: 'unknown', latitude: '', longitude: '', status: 'local' })}>Novo relatório local</button>
     {report ? <form className="space-y-4" onSubmit={event => { event.preventDefault(); void persist(report); }}>
       <label className="block text-sm font-semibold">Nome da propriedade<input required maxLength={200} className={input} value={report.farmName} onChange={event => edit('farmName', event.target.value)} /></label>

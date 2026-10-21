@@ -1,4 +1,5 @@
 import React from 'react';
+import InfoDisclosure from './InfoDisclosure.jsx';
 import { ClipboardList, FlaskConical, FileCheck2, MapPinned, FileText, UserRound, ChevronRight, PlusCircle } from 'lucide-react';
 
 const topics = [
@@ -12,7 +13,9 @@ const topics = [
 export default function TechnicalTopics({onNavigate}) {
   return <section aria-label="Serviços técnicos" className="space-y-5">
     <button onClick={()=>onNavigate('visits')} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-emerald-800 px-5 py-3 text-base font-bold text-white hover:bg-emerald-900"><PlusCircle className="size-6"/>Iniciar visita</button>
-    <div className="grid gap-3 md:grid-cols-2">{topics.map(([id,label,description,Icon])=><button key={id} onClick={()=>onNavigate(id)} className="task-link flex min-h-24 items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left hover:border-emerald-400 hover:bg-emerald-50/40"><Icon className="size-8 shrink-0 text-emerald-800" aria-hidden="true"/><span className="min-w-0 flex-1"><span className="block text-base font-bold text-slate-900">{label}</span><span className="mt-1 block text-sm text-slate-600">{description}</span></span><ChevronRight className="size-5 shrink-0 text-slate-500" aria-hidden="true"/></button>)}</div>
-    <p className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">Selecione uma propriedade no atendimento para aproveitar seus dados nos testes, no licenciamento e no relatório. Alterações seguem as autorizações e revisões de cada serviço.</p>
+    <div className="grid items-start gap-3 md:grid-cols-2">{topics.map(([id,label,description,Icon])=><div key={id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center rounded-2xl border border-slate-200 bg-white pr-2">
+      <button onClick={()=>onNavigate(id)} className="task-link flex min-h-20 items-center gap-3 rounded-2xl p-4 text-left hover:bg-emerald-50/40"><Icon className="size-6 shrink-0 text-emerald-800" aria-hidden="true"/><span className="min-w-0 flex-1 text-base font-semibold text-slate-900">{label}</span><ChevronRight className="size-4 shrink-0 text-slate-500" aria-hidden="true"/></button>
+      <InfoDisclosure compact label={label} className="contents" panelClassName="col-span-2 m-3 mt-0">{description}.{id==='reports'&&' Estes relatórios não enviam notificações nem alteram o cadastro do cliente. Salve o PDF para compartilhar.'}</InfoDisclosure>
+    </div>)}</div>
   </section>;
 }
