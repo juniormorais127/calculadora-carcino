@@ -1,10 +1,12 @@
-import { serializeData, normalizeData, isEmptyData } from './cloudData.js';
+import { serializeData, normalizeData, isEmptyData, DATA_TABLES } from './cloudData.js';
+import { mergeCloudData } from './cloudMerge.js';
 
 // Dependencies are injected so offline/error/conflict paths can be tested without credentials.
 export function createCloudSync({ remote, readLocal, replaceLocal, readMeta, saveMeta, onStatus = () => {} }) {
   let stopped = false;
   let running = null;
   let again = false;
+  let raceRetries = 0;
   const report = value => { if (!stopped) onStatus(value); };
   const perform = async () => {
     report({ state: 'syncing', message: 'Sincronizando com sua conta…' });
@@ -15,32 +17,37 @@ export function createCloudSync({ remote, readLocal, replaceLocal, readMeta, sav
       const cloud = await remote.read();
       if (stopped) return;
       const dirty = meta ? signature !== meta.baseline : !isEmptyData(local);
-      if (dirty && cloud.revision !== (meta?.revision || 0)) {
-        // An interrupted previous publication can already match the saved local copy.
-        if (!cloud.data || serializeData(cloud.data) !== signature) {
-          report({ state: 'conflict', message: 'Há alterações diferentes neste aparelho e na nuvem. Exporte seu backup antes de escolher a versão que deseja manter.' });
-          return;
-        }
+      let target = local;
+      const serverReset = !cloud.data && (meta?.revision || 0) > 0;
+      const diverged = serverReset || (dirty && cloud.data && cloud.revision !== (meta?.revision || 0) && serializeData(cloud.data) !== signature);
+      if (serverReset) target = { versao: 1, ...Object.fromEntries(DATA_TABLES.map(table => [table, []])) };
+      else if (cloud.data && !dirty) target = normalizeData(cloud.data);
+      else if (diverged) {
+        let base;
+        try { base = normalizeData(JSON.parse(meta?.baseline)); } catch { /* Legacy copies without shared baseline use cloud authority. */ }
+        target = base ? mergeCloudData(base, local, cloud.data) : normalizeData(cloud.data);
       }
-      if (cloud.data && (!dirty || serializeData(cloud.data) === signature)) {
-        if (serializeData(cloud.data) !== signature) {
-          // Do not overwrite an edit made while the cloud request was in flight.
-          if (serializeData(await readLocal()) !== signature) { again = true; return; }
-          await replaceLocal(cloud.data, signature);
-        }
-        await saveMeta({ revision: cloud.revision, baseline: serializeData(cloud.data), syncedAt: Date.now() });
-      } else if (dirty) {
-        const revision = await remote.write(local, cloud.revision);
+      // Edits made during the network read belong to the next reconciliation.
+      if (serializeData(await readLocal()) !== signature) { again = true; return; }
+      const targetSignature = serializeData(target);
+      const cloudSignature = serializeData(cloud.data || { versao: 1, ...Object.fromEntries(DATA_TABLES.map(table => [table, []])) });
+      const rebased = { revision: cloud.revision, baseline: cloudSignature || signature, ...(diverged ? { recovery: local, recoveryAt: Date.now() } : {}) };
+      if (targetSignature !== signature) {
+        // Data and shared baseline are committed together by the local adapter.
+        await replaceLocal(target, signature, rebased);
+      } else if (diverged) await saveMeta(rebased);
+      if (stopped) return;
+      if (targetSignature !== cloudSignature && (cloud.data || !isEmptyData(target))) {
+        const revision = await remote.write(target, cloud.revision);
         if (stopped) return;
-        await saveMeta({ revision, baseline: signature, syncedAt: Date.now() });
-      } else if (!meta) {
-        await saveMeta({ revision: 0, baseline: signature, syncedAt: Date.now() });
-      }
+        await saveMeta({ revision, baseline: targetSignature, syncedAt: Date.now() });
+      } else await saveMeta({ revision: cloud.revision, baseline: targetSignature, syncedAt: Date.now() });
       if (serializeData(await readLocal()) !== (await readMeta())?.baseline) { again = true; return; }
-      report({ state: 'synced', message: 'Dados salvos na sua conta.' });
+      report({ state: 'synced', message: 'Dados atualizados na nuvem. Cópia offline disponível neste aparelho.' });
     } catch (error) {
       if (error.code === 'sync/conflict') {
-        report({ state: 'conflict', message: 'Outro aparelho salvou alterações. Exporte seu backup antes de escolher qual versão manter.' });
+        again = raceRetries++ < 2;
+        report({ state: 'pending', message: 'Outro aparelho atualizou a conta. Reconciliando automaticamente com a nuvem; os registros deste aparelho estão preservados.' });
       } else {
         const messages = {
           'permission-denied': 'O Firebase não autorizou a sincronização desta sessão. Sua cópia local está preservada. Tente sincronizar novamente ou entre de novo na conta.',
@@ -54,6 +61,7 @@ export function createCloudSync({ remote, readLocal, replaceLocal, readMeta, sav
   const sync = () => {
     if (stopped) return Promise.resolve();
     if (running) { again = true; return running; }
+    raceRetries = 0;
     running = (async () => { do { again = false; await perform(); } while (again && !stopped); })()
       .finally(() => { running = null; });
     return running;
@@ -66,8 +74,9 @@ export function createCloudSync({ remote, readLocal, replaceLocal, readMeta, sav
       if (!cloud.data) throw new Error('Não há uma cópia na nuvem.');
       if (stopped) return;
       if (serializeData(await readLocal()) !== serializeData(previous)) throw new Error('Os registros foram alterados durante a recuperação. Tente novamente.');
-      await replaceLocal(cloud.data, serializeData(previous));
-      await saveMeta({ revision: cloud.revision, baseline: serializeData(cloud.data), recovery: previous, syncedAt: Date.now() });
+      const nextMeta = { revision: cloud.revision, baseline: serializeData(cloud.data), recovery: previous, syncedAt: Date.now() };
+      await replaceLocal(cloud.data, serializeData(previous), nextMeta);
+      await saveMeta(nextMeta);
       report({ state: 'synced', message: 'Versão da nuvem recuperada. A cópia anterior deste aparelho está disponível para baixar.' });
     },
   };

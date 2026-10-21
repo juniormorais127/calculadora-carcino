@@ -1,4 +1,4 @@
-import { collection, doc, getDocFromServer, getDocsFromServer, writeBatch, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDocFromServer, getDocsFromServer, writeBatch, runTransaction, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, firestore } from './firebase.js';
 import { getIdTokenResult, reload } from 'firebase/auth';
 import { createSessionVerifier } from './verifiedSession.js';
@@ -18,6 +18,16 @@ export function remoteFor(uid) {
     }
   };
   return {
+    watchChanges(next, error) {
+      let cancelled = false, stop = () => {};
+      void verifySession(uid).then(() => {
+        if (cancelled) return;
+        stop = onSnapshot(head, { includeMetadataChanges: true }, snapshot => {
+          if (!snapshot.metadata.fromCache) next(snapshot.data()?.revision || 0);
+        }, error);
+      }).catch(err => { if (!cancelled) error(err); });
+      return () => { cancelled = true; stop(); };
+    },
     async read() {
       await verifySession(uid);
       // A writer may publish during a read; retry instead of returning mixed versions.

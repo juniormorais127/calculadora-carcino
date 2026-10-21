@@ -6,6 +6,7 @@ import { db as guestDb, getAccountDatabase, exportLocalDatabase, importLocalData
 import { createCloudSync } from '../services/cloudSync.js';
 import { remoteFor } from '../services/cloudRemote.js';
 import { serializeData } from '../services/cloudData.js';
+import { readSyncMetadata, saveSyncMetadata } from '../services/localSyncMetadata.js';
 import { flushPurchaseEvents } from '../services/purchaseTracking.js';
 import { registerAccountProfile } from '../services/accountProfiles.js';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -20,7 +21,7 @@ metadata.version(1).stores({ accounts: 'uid' });
 export const useAccount = () => useContext(AccountContext);
 export const useDatabase = () => useAccount()?.database || guestDb;
 
-function AccountSession({ user, children, syncProduction }) {
+function AccountSession({ user, children, syncProduction, createRemote }) {
   const [localReady, setLocalReady] = useState(false);
   const markLocalReady = useCallback(() => setLocalReady(true), []);
   const [access, setAccess] = useState(null);
@@ -63,6 +64,7 @@ function AccountSession({ user, children, syncProduction }) {
     return () => { disposed = true; clearTimeout(profileTimeout); unsubscribe(); window.removeEventListener('online', register); };
   }, [user?.uid]);
   const database = useMemo(() => user ? getAccountDatabase(user.uid) : guestDb, [user?.uid]);
+  const readMeta = useCallback(() => readSyncMetadata(database, () => metadata.accounts.get(user.uid)), [database, user?.uid]);
   const [syncStatus, setSyncStatus] = useState({ state: user ? 'syncing' : 'local', message: user ? 'Conectando sua conta…' : 'Modo local: dados somente neste navegador.' });
   const [dataVersion, setDataVersion] = useState(0);
   const controller = useRef(null);
@@ -78,56 +80,67 @@ function AccountSession({ user, children, syncProduction }) {
     if (!user || !syncProduction || !user.emailVerified || !localReady) return;
     let timer;
     let disposed = false;
+    let lastState = 'pending', watching = false, stopRemote = () => {};
+    const remote = createRemote(user.uid);
+    const watchRemote = () => {
+      if (disposed || watching) return;
+      watching = true;
+      stopRemote = remote.watchChanges(revision => {
+        void readMeta().then(meta => { if (!disposed && revision !== (meta?.revision || 0)) schedule(); }).catch(() => {});
+      }, () => { watching = false; lastState = 'pending'; });
+    };
     const sync = createCloudSync({
-      remote: remoteFor(user.uid),
+      remote,
       readLocal: async () => JSON.parse(await exportLocalDatabase(database)),
-      replaceLocal: async (data, expected) => {
+      replaceLocal: async (data, expected, nextMeta) => {
+        const previousMeta = await readMeta();
         await database.transaction('rw', database.tables, async () => {
           if (expected && serializeData(JSON.parse(await exportLocalDatabase(database))) !== expected) {
             throw Object.assign(new Error('Os registros locais foram alterados.'), { code: 'sync/conflict' });
           }
           await importLocalDatabase(JSON.stringify(data), database);
+          await saveSyncMetadata(database, nextMeta || {}, previousMeta);
         });
         if (!disposed) setDataVersion(version => version + 1);
       },
-      readMeta: () => metadata.accounts.get(user.uid),
-      saveMeta: async data => metadata.transaction('rw', metadata.accounts, async () => {
-        const old = await metadata.accounts.get(user.uid);
-        await metadata.accounts.put({ ...old, ...data, uid: user.uid });
-      }),
-      onStatus: setSyncStatus,
+      readMeta,
+      saveMeta: async data => saveSyncMetadata(database, data, await readMeta()),
+      onStatus: value => { lastState = value.state; setSyncStatus(value); if (value.state === 'synced') watchRemote(); },
     });
     controller.current = sync;
     const schedule = () => {
       clearTimeout(timer);
-      setSyncStatus(old => old.state === 'conflict' ? old : { state: 'pending', message: 'Verificando alterações para sincronizar…' });
+      lastState = 'pending';
+      setSyncStatus({ state: 'pending', message: navigator.onLine ? 'Atualizando a nuvem automaticamente…' : 'Sem internet. Alterações guardadas neste aparelho; envio automático ao reconectar.' });
       timer = setTimeout(() => {
         if (navigator.onLine) void sync.sync();
         else setSyncStatus({ state: 'pending', message: 'Sem internet. Alterações salvas neste aparelho; aguardando sincronização.' });
       }, 700);
     };
-    const subscription = liveQuery(() => exportLocalDatabase(database)).subscribe({ next: schedule, error: () => setSyncStatus({ state: 'pending', message: 'Não foi possível acessar a cópia local.' }) });
+    let lastSignature;
+    const subscription = liveQuery(async () => serializeData(JSON.parse(await exportLocalDatabase(database)))).subscribe({ next: signature => { if (signature !== lastSignature) { lastSignature = signature; schedule(); } }, error: () => setSyncStatus({ state: 'pending', message: 'Não foi possível acessar a cópia local.' }) });
+    const retryPending = setInterval(() => { if (!disposed && navigator.onLine && lastState === 'pending') void sync.sync(); }, 15000);
     window.addEventListener('online', schedule);
     window.addEventListener('offline', schedule);
     window.addEventListener('focus', schedule);
     schedule();
     return () => {
-      disposed = true; clearTimeout(timer); subscription.unsubscribe(); sync.stop();
+      disposed = true; clearTimeout(timer); clearInterval(retryPending); stopRemote(); subscription.unsubscribe(); sync.stop();
       controller.current = null;
       window.removeEventListener('online', schedule); window.removeEventListener('offline', schedule); window.removeEventListener('focus', schedule);
     };
-  }, [database, user?.uid, user?.emailVerified, syncProduction, localReady]);
+  }, [database, user?.uid, user?.emailVerified, syncProduction, localReady, readMeta, createRemote]);
   const value = {
     user, database, syncStatus, dataVersion, access, accessError, accessLoading, technicianIdentity, identityLoading, identityError, markLocalReady,
     sync: () => controller.current?.sync(),
     useCloud: () => controller.current?.useCloud(),
     logout: () => signOut(auth),
-    metadata,
+    metadata: { accounts: { get: uid => user && uid === user.uid ? readMeta() : metadata.accounts.get(uid), put: value => metadata.accounts.put(value) } },
   };
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
-export default function AccountProvider({ children, syncProduction = true, observeAuth = onIdTokenChanged }) {
+export default function AccountProvider({ children, syncProduction = true, observeAuth = onIdTokenChanged, createRemote = remoteFor }) {
   const [{ user }, setIdentity] = useState({ user: undefined });
   const [startupError, setStartupError] = useState(false);
   useEffect(() => {
@@ -136,5 +149,5 @@ export default function AccountProvider({ children, syncProduction = true, obser
     return () => { clearTimeout(timer); stop(); };
   }, [observeAuth]);
   if (user === undefined) return <main className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 p-6"><div className="max-w-md space-y-4">{startupError ? <><h1 className="text-xl font-bold text-slate-900">Não foi possível concluir o acesso</h1><p role="alert">A sessão demorou mais que o esperado para responder. Verifique a conexão e tente abrir novamente. Seus registros neste aparelho foram preservados.</p><button type="button" className="min-h-12 rounded-xl bg-emerald-800 px-4 py-3 font-semibold text-white" onClick={() => window.location.reload()}>Tentar novamente</button></> : <p role="status">Preparando o acesso ao CarcinoGestão…</p>}</div></main>;
-  return <AccountSession key={user?.uid || 'local'} user={user} syncProduction={syncProduction}>{children}</AccountSession>;
+  return <AccountSession key={user?.uid || 'local'} user={user} syncProduction={syncProduction} createRemote={createRemote}>{children}</AccountSession>;
 }

@@ -11,6 +11,7 @@ const schema = {
 export function createDatabase(name) {
   const database = new Dexie(name);
   database.version(1).stores(schema);
+  database.version(2).stores({ ...schema, syncMetadata: '&key' });
   return database;
 }
 
@@ -203,7 +204,7 @@ export async function seedInitialDataIfEmpty({ force = false } = {}, database = 
  */
 export async function exportLocalDatabase(database = db) {
   const db = database;
-  return db.transaction('r', db.tables, async () => {
+  return db.transaction('r', db.tables.filter(table => table.name !== 'syncMetadata'), async () => {
     const backup = {
       versao: 1,
       dataExportacao: new Date().toISOString(),
@@ -224,7 +225,7 @@ export async function importLocalDatabase(jsonString, database = db) {
   const db = database;
   const data = JSON.parse(jsonString);
   if (!data || data.versao !== 1) throw new Error('Versão de backup inválida ou incompatível.');
-  for (const table of db.tables) {
+  for (const table of db.tables.filter(table => table.name !== 'syncMetadata')) {
     const rows = data[table.name];
     if (!Array.isArray(rows)) throw new Error(`Tabela ausente ou inválida: ${table.name}.`);
     const ids = new Set();
@@ -242,7 +243,7 @@ export async function importLocalDatabase(jsonString, database = db) {
     }
   }
   await db.transaction('rw', db.tables, async () => {
-    for (const table of db.tables) {
+    for (const table of db.tables.filter(table => table.name !== 'syncMetadata')) {
       await table.clear();
       if (data[table.name].length) await table.bulkAdd(data[table.name]);
     }
@@ -255,7 +256,7 @@ export async function importLocalDatabase(jsonString, database = db) {
 export async function clearLocalDatabase(database = db) {
   const db = database;
   await db.transaction('rw', db.tables, async () => {
-    for (const table of db.tables) await table.clear();
+    for (const table of db.tables.filter(table => table.name !== 'syncMetadata')) await table.clear();
     await db.configuracoes.add({ chave: 'baseInicializada', valor: true });
   });
 }

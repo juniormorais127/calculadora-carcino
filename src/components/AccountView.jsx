@@ -87,19 +87,10 @@ export default function AccountView({ onVisits }) {
     {accountRole(account.access, user.uid) !== 'field_technician' && <FieldNotebook key={user.uid} user={user} technicianName={account.access?.fullName} />}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
       <h3 className="flex gap-2 items-center font-bold"><Cloud className="w-5 h-5 text-emerald-700" />Seus dados de produção</h3>
-      <p className="text-sm text-slate-700">Cada login possui registros independentes. Ao entrar em outro aparelho, sua cópia da nuvem será recuperada. Sem internet, você pode continuar usando a cópia deste aparelho.</p>
+      <p className="text-sm text-slate-700">A nuvem é a referência da sua conta quando há conexão. Sem internet, os registros ficam neste aparelho e são enviados automaticamente ao reconectar. Alterações em dados diferentes são combinadas; se o mesmo dado mudar nos dois lugares, prevalece a nuvem.</p>
       <p role="status" className="text-sm font-semibold text-slate-700">{syncStatus.message}</p>
       <button className={`${button} bg-emerald-700 text-white`} disabled={busy || syncStatus.state === 'syncing'} onClick={() => run(account.sync)}>Sincronizar agora</button>
-      {syncStatus.state === 'conflict' && <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 space-y-3 text-amber-950">
-        <p className="text-sm">Há duas versões diferentes. Baixe o backup deste aparelho antes de recuperar a nuvem. A sincronização automática não substitui suas alterações.</p>
-        <div className="flex flex-wrap gap-2">
-          <button className={`${button} border border-amber-500`} onClick={() => run(async () => download(JSON.parse(await exportLocalDatabase(database)), 'backup-antes-da-recuperacao.json'))}>Baixar backup deste aparelho</button>
-          <button className={`${button} border border-amber-500`} disabled={busy} onClick={() => {
-            if (window.confirm('Usar a versão da nuvem no lugar dos registros deste aparelho? Uma cópia local anterior será guardada para recuperação.')) void run(account.useCloud);
-          }}>Usar versão da nuvem</button>
-        </div>
-      </div>}
-      {recovery && <button className={`${button} border border-slate-300 text-slate-700 inline-flex gap-2 items-center`} onClick={() => download(recovery, 'backup-copia-anterior.json')}><Download className="w-4 h-4" />Baixar cópia anterior à recuperação</button>}
+      {recovery && <div className="space-y-2"><p className="text-xs text-slate-600">Uma cópia anterior deste aparelho foi preservada durante a conciliação automática.</p><button className={`${button} border border-slate-300 text-slate-700 inline-flex gap-2 items-center`} onClick={() => download(recovery, 'backup-copia-anterior.json')}><Download className="w-4 h-4" />Baixar cópia anterior à conciliação</button></div>}
     </div>
     {legacy && <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 space-y-3">
       <h3 className="font-bold text-emerald-950">Registros anteriores neste navegador</h3>
