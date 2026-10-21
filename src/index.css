@@ -1,10 +1,78 @@
 @import "tailwindcss";
 
+/* Sergipe: green actions, blue information, yellow attention, coral brand. */
+@theme {
+  --color-emerald-50: #eff8f3;
+  --color-emerald-100: #dbefe3;
+  --color-emerald-200: #b6ddc7;
+  --color-emerald-300: #85c6a5;
+  --color-emerald-400: #45a77a;
+  --color-emerald-500: #218553;
+  --color-emerald-600: #117448;
+  --color-emerald-700: #08613e;
+  --color-emerald-800: #07533c;
+  --color-emerald-900: #084532;
+  --color-emerald-950: #073b32;
+  --color-slate-50: #f7f9f8;
+  --color-slate-100: #eef2f1;
+  --color-slate-200: #dce5e2;
+  --color-slate-300: #bbc9c4;
+  --color-slate-400: #60756d;
+  --color-slate-500: #5b7068;
+  --color-slate-600: #485e56;
+  --color-slate-700: #354b44;
+  --color-slate-800: #243e35;
+  --color-slate-900: #142c27;
+  --color-slate-950: #0b201b;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 @layer base {
   body {
     -webkit-tap-highlight-color: transparent;
-    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans);
   }
+}
+
+::selection { background: #b6ddc7; color: #073b32; }
+html { scrollbar-color: #85a99a #f7f9f8; }
+input, textarea { caret-color: #07533c; }
+a { text-underline-offset: 3px; }
+.brand-mark { color: #e85e3f; }
+.carcino-app > main { padding-top: 0; }
+.app-header { box-shadow: 0 2px 8px rgb(7 59 50 / 3%); }
+.task-link { transition: border-color 160ms ease, background-color 160ms ease; }
+.production-metrics > div { border-color: #dce5e2; border-radius: 16px; box-shadow: none; }
+.production-metrics > div > .flex > div { background: #eff8f3; color: #07533c; box-shadow: none; }
+.production-metrics > div:nth-child(3) > .flex > div { background: #eff6ff; color: #1d4ed8; }
+@media (max-width: 767px) {
+  .production-metrics > div { padding: 14px; }
+  .production-metrics > div > .flex { flex-direction: row-reverse; justify-content: flex-end; gap: 8px; }
+  .production-metrics > div > .flex > div { padding: 8px; }
+  .production-metrics > div > .mt-3 { margin-top: 8px; }
+  .production-metrics > div:nth-child(n+3) { padding: 10px 14px; }
+  .production-metrics > div:nth-child(n+3) > .flex > div,
+  .production-metrics > div:nth-child(n+3) .text-\[11px\] { display: none; }
+  .production-metrics > div:nth-child(n+3) .text-2xl { font-size: 20px; line-height: 24px; }
+}
+.carcino-app :is(.animate-water-ripple,.radar-ping,.animate-float-gentle,.animate-pulse-glow) { animation: none; }
+.carcino-app .card-hover-lift:hover { transform: none; box-shadow: 0 4px 12px rgb(7 59 50 / 6%); }
+.light-panel { color: #142c27; }
+.light-panel :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-emerald-300,.text-teal-300) { color: #354b44; }
+.light-panel :is(.text-emerald-400,.text-teal-400) { color: #07533c; }
+.light-panel :is(.text-amber-300,.text-amber-400) { color: #92400e; }
+.light-panel button { color: #07533c; background: white; border: 1px solid #bbc9c4; }
+form label { font-size: 14px; line-height: 1.5; }
+@layer base {
+  input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea {
+    border-radius: 10px;
+    border-color: #bbc9c4;
+    accent-color: #07533c;
+  }
+  input::placeholder, textarea::placeholder { color: #5b7068; opacity: 1; }
+  input[type=checkbox], input[type=radio] { accent-color: #07533c; }
+  button { cursor: pointer; }
+  h1, h2, h3 { letter-spacing: -0.025em; }
 }
 
 .tabular-nums {

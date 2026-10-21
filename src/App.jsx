@@ -41,10 +41,10 @@ export default function App() {
     online: navigator.onLine,
   });
   if (motivoDoBloqueio || action.mode) return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 px-5 py-8 sm:py-14">
+    <main className="carcino-auth min-h-screen bg-slate-50 text-slate-900 px-5 py-8 sm:py-14">
       <div className="mx-auto max-w-md">
         <header className="flex items-center gap-3 mb-6">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-white"><ShrimpMarkIcon className="h-8 w-8" /></div>
+          <div className="brand-mark flex h-12 w-12 shrink-0 items-center justify-center"><ShrimpMarkIcon className="h-8 w-8" /></div>
           <div><h1 className="text-xl font-bold tracking-tight">CarcinoGestão</h1><p className="text-sm text-slate-600">Gestão da sua produção de camarão</p></div>
         </header>
         {action.mode ? <PasswordResetView mode={action.mode} code={action.code} /> : user ? <VerifyEmailView /> : <AccountView />}
@@ -139,7 +139,7 @@ function ProductionApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="carcino-app min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Header
         farmProfile={farmProfile}
         telaAtual={activeTab}

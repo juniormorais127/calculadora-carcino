@@ -21,7 +21,7 @@ test.describe('Fluxo Guiado de Primeiro Cadastro (Onboarding sem Viveiros)', () 
 
   test('clicar em + Biometria sem viveiros abre modal orientativo e apos cadastrar viveiro abre tela de biometria', async ({ page }) => {
     // 1. Verificar que o botão + Biometria NÃO está disabled
-    const btnBiometria = page.getByRole('button', { name: '+ Biometria' });
+    const btnBiometria = page.getByRole('button', { name: 'Registrar biometria' });
     await expect(btnBiometria).toBeVisible();
     await expect(btnBiometria).toBeEnabled();
 
@@ -70,7 +70,7 @@ test.describe('Fluxo Guiado de Primeiro Cadastro (Onboarding sem Viveiros)', () 
 
   test('clicar em + Qualidade Água sem viveiros abre modal orientativo e apos cadastrar viveiro abre medicao de agua', async ({ page }) => {
     // 1. Clicar em + Qualidade Água
-    const btnAgua = page.getByRole('button', { name: '+ Qualidade Água' });
+    const btnAgua = page.getByRole('button', { name: 'Registrar água' });
     await expect(btnAgua).toBeVisible();
     await expect(btnAgua).toBeEnabled();
     await btnAgua.click();

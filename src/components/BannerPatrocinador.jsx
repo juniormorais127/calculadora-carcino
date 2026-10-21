@@ -14,7 +14,7 @@ export default function BannerPatrocinador({ onNavigateMercado, categoriaFiltro 
   const anuncio = lista[anuncioAtivoIndex % lista.length];
 
   return (
-    <div className="w-full bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-md border border-emerald-500/30 overflow-hidden relative">
+    <div className="w-full light-panel bg-blue-50 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-md border border-emerald-500/30 overflow-hidden relative">
       {/* Luz ambiente de fundo */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
 

@@ -1,15 +1,15 @@
 import React, { useState } from "react";
+import ProductionTasks from "./ProductionTasks.jsx";
+import GrowthOverview from "./GrowthOverview.jsx";
+import { useAccount } from "./AccountProvider.jsx";
 import { 
   Layers, 
   Scale, 
   AlertTriangle, 
   PlusCircle, 
-  TrendingUp, 
   Droplets,
   Calendar,
-  ChevronRight,
-  Store,
-  Sprout
+  ChevronRight
 } from "lucide-react";
 import { ShrimpGroupIcon, FeedPelletsIcon, EarthenPondIcon } from "./icons/CustomAquacultureIcons.jsx";
 import ModalAvisoViveiroObrigatorio from "./ModalAvisoViveiroObrigatorio.jsx";
@@ -27,6 +27,7 @@ export default function Dashboard({
   onIniciarCadastroComIntencao,
   onCarregarExemplos
 }) {
+  const { access } = useAccount();
   const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
   const [tipoAviso, setTipoAviso] = useState("biometria");
 
@@ -152,58 +153,18 @@ export default function Dashboard({
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
-      {/* Top Banner & Quick Actions */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-emerald-950 border border-emerald-800/40 rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-950/15 relative overflow-hidden">
-        {/* Subtle decorative aquatic light bursts */}
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute right-32 -bottom-16 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Painel de Operações da Fazenda
-              </h2>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs animate-water-ripple">
-                <span className="relative flex h-2 w-2">
-                  <span className="radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                {viveirosAtivos.length} {viveirosAtivos.length === 1 ? "viveiro ativo" : "viveiros ativos"}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-              Acompanhamento zootécnico e telemetria de viveiros. Dados salvos 100% no seu aparelho, sem depender de internet.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={handleCliqueBiometria}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/40 hover:shadow-emerald-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>+ Biometria</span>
-            </button>
-
-            <button
-              onClick={handleCliqueAgua}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-950/40 hover:shadow-sky-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
-            >
-              <Droplets className="w-4 h-4" />
-              <span>+ Qualidade Água</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <section className="production-heading flex flex-wrap items-end justify-between gap-4 pt-5">
+        <div><h2 className="text-3xl font-bold tracking-tight text-slate-900">Olá, {access?.fullName?.split(' ')[0] || 'produtor'}</h2><p className="mt-2 text-base text-emerald-900">Minha produção · {viveirosAtivos.length} viveiro(s) ativo(s)</p></div>
+        <div className="flex flex-wrap gap-2"><button onClick={handleCliqueBiometria} className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900"><PlusCircle className="size-5"/>Registrar biometria</button><button onClick={handleCliqueAgua} className="flex min-h-12 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 font-semibold text-blue-800"><Droplets className="size-5"/>Registrar água</button></div>
+      </section>
 
       {/* KPI Grid de Telemetria Zootécnica */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="production-metrics grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Biomassa Estimada */}
-        <div className="bg-gradient-to-br from-white via-white to-emerald-50/50 border border-emerald-200/90 hover:border-emerald-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-emerald-900/10 flex flex-col justify-between group">
+        <div className="bg-white border border-emerald-200/90 hover:border-emerald-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-emerald-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Biomassa Estimada</span>
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-600/30 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-2xl bg-emerald-800 text-white shadow-sm shadow-emerald-600/30 group-hover:scale-110 transition-transform">
               <ShrimpGroupIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
@@ -223,10 +184,10 @@ export default function Dashboard({
         </div>
 
         {/* Card 2: Ração do Dia */}
-        <div className="bg-gradient-to-br from-white via-white to-amber-50/50 border border-amber-200/90 hover:border-amber-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-amber-900/10 flex flex-col justify-between group">
+        <div className="bg-white border border-amber-200/90 hover:border-amber-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-amber-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Ração Hoje (Prev.)</span>
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-600/30 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-2xl bg-amber-100 text-amber-950 text-white shadow-sm shadow-amber-600/30 group-hover:scale-110 transition-transform">
               <FeedPelletsIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
@@ -242,10 +203,10 @@ export default function Dashboard({
         </div>
 
         {/* Card 3: Peso Médio Geral */}
-        <div className="bg-gradient-to-br from-white via-white to-sky-50/50 border border-sky-200/90 hover:border-sky-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-sky-900/10 flex flex-col justify-between group">
+        <div className="bg-white border border-sky-200/90 hover:border-sky-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-sky-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Peso Médio Geral</span>
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sm shadow-sky-600/30 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-2xl bg-blue-700 text-white shadow-sm shadow-sky-600/30 group-hover:scale-110 transition-transform">
               <Scale className="w-5 h-5 -m-0.5" />
             </div>
           </div>
@@ -261,10 +222,10 @@ export default function Dashboard({
         </div>
 
         {/* Card 4: Viveiros em Produção */}
-        <div className="bg-gradient-to-br from-white via-white to-teal-50/50 border border-teal-200/90 hover:border-teal-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-teal-900/10 flex flex-col justify-between group">
+        <div className="bg-white border border-teal-200/90 hover:border-teal-400 card-hover-lift rounded-3xl p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-teal-900/10 flex flex-col justify-between group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">Viveiros Ativos</span>
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-sm shadow-teal-600/30 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-2xl bg-emerald-800 text-white shadow-sm shadow-teal-600/30 group-hover:scale-110 transition-transform">
               <EarthenPondIcon className="w-5 h-5 -m-0.5" />
             </div>
           </div>
@@ -283,49 +244,8 @@ export default function Dashboard({
       </div>
 
       {/* Atalhos Rápidos: Mercado / Vendedores e Probióticos de Solo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <div 
-          onClick={() => onNavigate("mercado")}
-          className="bg-white border border-slate-200 hover:border-emerald-500/50 card-hover-lift rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
-        >
-          <div className="space-y-1 min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block">
-              Guia Comercial
-            </span>
-            <h4 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
-              Representantes Locais por Estado
-            </h4>
-            <p className="text-xs text-slate-600 line-clamp-2">
-              Contatos de WhatsApp de vendedores de rações (ADM, Guabi, AquaNutri), probióticos e corretivos.
-            </p>
-          </div>
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-700 flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-            <Store className="w-5 h-5" />
-          </div>
-        </div>
+      <ProductionTasks onNavigate={onNavigate} />
 
-        <div 
-          onClick={() => onNavigate("calculadoras")}
-          className="bg-white border border-slate-200 hover:border-amber-500/50 card-hover-lift rounded-2xl p-4 shadow-2xs cursor-pointer transition-all flex items-start justify-between gap-3 group"
-        >
-          <div className="space-y-1 min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full inline-block">
-              Manejo do Fundo
-            </span>
-            <h4 className="text-sm font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
-              Biorremediação & Probióticos de Solo
-            </h4>
-            <p className="text-xs text-slate-600 line-clamp-2">
-              Calcule doses de Bacillus e protocolo de ativação com melaço para combater lodo negro e H2S.
-            </p>
-          </div>
-          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 flex-shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-all">
-            <Sprout className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* Alertas Críticos (se houver) */}
       {alertas.length > 0 && (
         <div className="bg-white border border-amber-600/30 rounded-2xl p-4 shadow-sm space-y-2.5">
           <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
@@ -490,6 +410,7 @@ export default function Dashboard({
         )}
       </div>
 
+      <GrowthOverview viveiros={viveiros} biometrias={biometrias} />
       {/* Modal de Aviso de Viveiro Obrigatório */}
       <ModalAvisoViveiroObrigatorio
         isOpen={modalAvisoAberto}

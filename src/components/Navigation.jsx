@@ -1,73 +1,29 @@
-import React from "react";
-import { LayoutDashboard, Layers, Activity, Droplets, Calculator, ShieldAlert, Store, Settings } from "lucide-react";
+import React, { useState } from 'react';
+import { House, Waves, Activity, Droplets, Calculator, ShieldAlert, Store, Settings, ClipboardList, PlusCircle, X, UserRound } from 'lucide-react';
 
 export default function Navigation({ activeTab, setActiveTab, professional = false }) {
+  const [expanded, setExpanded] = useState(false);
   const producerTabs = [
-    { id: "dashboard", label: "Painel", icon: LayoutDashboard },
-    { id: "viveiros", label: "Viveiros", icon: Layers },
-    { id: "biometria", label: "Biometria", icon: Activity },
-    { id: "agua", label: "Água", icon: Droplets },
-    { id: "calculadoras", label: "Cálculos", icon: Calculator },
-    { id: "sanidade", label: "Sanidade & BPM", mobileLabel: "Sanidade", icon: ShieldAlert },
-    { id: "mercado", label: "Onde Comprar", mobileLabel: "Comprar", icon: Store },
-    { id: "backup", label: "Ajustes", icon: Settings },
+    { id:'dashboard', label:'Painel', icon:House }, { id:'viveiros', label:'Viveiros', icon:Waves },
+    { id:'biometria', label:'Biometria', icon:Activity }, { id:'agua', label:'Água', icon:Droplets },
+    { id:'calculadoras', label:'Cálculos', icon:Calculator }, { id:'sanidade', label:'Sanidade & BPM', icon:ShieldAlert },
+    { id:'mercado', label:'Onde Comprar', icon:Store }, { id:'backup', label:'Ajustes', icon:Settings },
   ];
-  const tabs = professional ? [{ id:'visitas', label:'Área técnica', icon:LayoutDashboard },{ id:'dashboard', label:'Minha produção', mobileLabel:'Produção', icon:Layers },producerTabs[4],producerTabs[6],producerTabs[7]] : producerTabs;
-
-  return (
-    <>
-      {/* Desktop / Tablet Top Nav */}
-      <nav aria-label="Navegação principal" className="hidden md:flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl border border-slate-200 max-w-6xl mx-auto my-3 px-2.5 shadow-sm">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              aria-current={isActive ? "page" : undefined}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                isActive
-                  ? "bg-gradient-to-r from-emerald-700 to-teal-700 text-white shadow-md shadow-emerald-950/20 scale-[1.02]"
-                  : "text-slate-600 hover:text-emerald-950 hover:bg-emerald-50/70 active:scale-95"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Mobile Bottom Fixed Nav */}
-      <nav aria-label="Navegação principal" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 px-1 py-1 pb-safe shadow-[0_-2px_8px_rgba(15,23,42,0.04)]">
-        <div className="flex items-center justify-between">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                aria-current={isActive ? "page" : undefined}
-                aria-label={tab.label}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center min-h-[52px] min-w-0 flex-1 py-1 px-0.5 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                  isActive
-                    ? "text-emerald-800 font-bold"
-                    : "text-slate-500 hover:text-slate-800 font-medium"
-                }`}
-              >
-                <div className={`p-1.5 rounded-xl transition-all ${isActive ? "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-sm shadow-emerald-600/30 scale-105" : "text-slate-500"}`}>
-                  <Icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 2} />
-                </div>
-                <span className={`text-[10px] tracking-tight mt-0.5 truncate max-w-full ${isActive ? "font-bold text-emerald-900" : "font-medium text-slate-600"}`}>
-                  {tab.mobileLabel || tab.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-    </>
-  );
+  const tabs = professional ? [{ id:'visitas', label:'Área técnica', icon:ClipboardList }, { id:'dashboard', label:'Minha produção', icon:Waves }, ...producerTabs.slice(4)] : producerTabs;
+  function navigate(id) { setExpanded(false); setActiveTab(id); }
+  const primary = professional
+    ? [{ id:'visitas', label:'Início', icon:House }, { id:'dashboard', label:'Produção', icon:Waves }, { id:'menu', label:'Mais', icon:PlusCircle }, { id:'conta', label:'Conta', icon:UserRound }]
+    : [{ id:'dashboard', label:'Início', icon:House }, { id:'viveiros', label:'Viveiros', icon:Waves }, { id:'menu', label:'Registros', icon:PlusCircle }, { id:'conta', label:'Conta', icon:UserRound }];
+  return <>
+    <nav aria-label="Navegação principal" className="desktop-navigation hidden md:flex flex-wrap gap-1 border-b border-slate-200 bg-white py-3 mb-6">
+      {tabs.map(({id,label,icon:Icon}) => <button key={id} onClick={()=>navigate(id)} aria-current={activeTab===id?'page':undefined} className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${activeTab===id?'bg-emerald-800 text-white':'text-slate-600 hover:bg-emerald-50 hover:text-emerald-950'}`}><Icon className="size-5" aria-hidden="true"/>{label}</button>)}
+    </nav>
+    <nav aria-label="Navegação principal" className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white pb-safe">
+      {expanded && <div className="max-h-[65dvh] overflow-y-auto border-b border-slate-200 p-4 shadow-lg" aria-label="Todos os serviços">
+        <div className="flex items-center justify-between mb-2"><h2 className="text-lg font-bold text-emerald-950">{professional?'Serviços e produção':'O que deseja registrar?'}</h2><button aria-label="Fechar menu" onClick={()=>setExpanded(false)} className="p-3"><X className="size-5"/></button></div>
+        <div className="grid grid-cols-2 gap-2">{tabs.map(({id,label,icon:Icon})=><button key={id} onClick={()=>navigate(id)} className="flex min-h-14 items-center gap-2 rounded-xl border border-slate-200 px-3 text-left text-sm font-semibold text-emerald-950 hover:bg-emerald-50"><Icon className="size-5 shrink-0" aria-hidden="true"/>{label}</button>)}</div>
+      </div>}
+      <div className="flex">{primary.map(({id,label,icon:Icon})=><button key={id} onClick={()=>id==='menu'?setExpanded(!expanded):navigate(id)} aria-expanded={id==='menu'?expanded:undefined} aria-current={activeTab===id?'page':undefined} className={`flex flex-1 flex-col items-center justify-center gap-1 min-h-16 py-2 text-xs ${activeTab===id || (id==='menu'&&expanded)?'text-emerald-800 font-bold':'text-slate-600'}`}><Icon className="size-6" aria-hidden="true"/>{label}</button>)}</div>
+    </nav>
+  </>;
 }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mountProducer } from './fixtures/producer.js';
+import { mountProducer, navigateProduction } from './fixtures/producer.js';
 
 test('produtor preserva cadastro, checklist e backup após reabrir', async ({ page }) => {
   const errors = [];
@@ -12,12 +12,12 @@ test('produtor preserva cadastro, checklist e backup após reabrir', async ({ pa
   await page.getByRole('button', { name: 'Salvar Viveiro', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Viveiro 01', exact: true })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
-  await nav.getByRole('button', { name: 'Sanidade & BPM', exact: true }).click();
+  await navigateProduction(page, 'Sanidade & BPM');
   await page.getByRole('button', { name: 'Checklist BPM ABCC' }).click();
   const check = page.getByRole('checkbox').first();
   await check.check();
   await expect(check).toBeChecked();
-  await nav.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await navigateProduction(page, 'Ajustes');
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar Arquivo de Backup (JSON)' }).click();
   const download = await downloaded;
@@ -30,9 +30,9 @@ test('produtor preserva cadastro, checklist e backup após reabrir', async ({ pa
   await page.reload();
   await mountProducer(page);
   expect(errors).toEqual([]);
-  await nav.getByRole('button', { name: 'Viveiros', exact: true }).click();
+  await navigateProduction(page, 'Viveiros');
   await expect(page.getByRole('heading', { name: 'Viveiro 01', exact: true })).toBeVisible();
-  await nav.getByRole('button', { name: 'Sanidade & BPM', exact: true }).click();
+  await navigateProduction(page, 'Sanidade & BPM');
   await page.getByRole('button', { name: 'Checklist BPM ABCC' }).click();
   await expect(page.getByRole('checkbox').first()).toBeChecked();
 });

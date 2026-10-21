@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/producer.js';
+import { test, expect, navigateProduction } from './fixtures/producer.js';
 
 // Abas adicionadas na expansão agronômica (calibre, crescimento, íons, aeração, bioflocos).
 // Cada uma precisa renderizar sem erro de runtime e sem estourar a largura da tela.
@@ -20,11 +20,11 @@ test('abas novas de calculadora renderizam com os dados de exemplo', async ({ pa
   await expect(page.getByText('Carregando banco de dados local...')).toBeHidden();
 
   const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
-  await nav.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await navigateProduction(page, 'Ajustes');
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Carregar Dados de Exemplo' }).click();
 
-  await nav.getByRole('button', { name: 'Cálculos', exact: true }).click();
+  await navigateProduction(page, 'Cálculos');
 
   for (const aba of ABAS) {
     const seletorMobile = page.getByRole('button', { name: /trocar calculadora/i });
@@ -57,11 +57,11 @@ test('sub-aba de biorremediação com probióticos renderiza os avisos sem quebr
   await expect(page.getByText('Carregando banco de dados local...')).toBeHidden();
 
   const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
-  await nav.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await navigateProduction(page, 'Ajustes');
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Carregar Dados de Exemplo' }).click();
 
-  await nav.getByRole('button', { name: 'Cálculos', exact: true }).click();
+  await navigateProduction(page, 'Cálculos');
 
   await page.getByRole('button', { name: /trocar calculadora/i }).click();
   await page.getByRole('button', { name: 'Calagem de Solo', exact: true }).click();

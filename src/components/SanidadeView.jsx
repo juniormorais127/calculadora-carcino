@@ -524,7 +524,7 @@ export default function SanidadeView({ onNavigate }) {
       {activeSubTab === "probioticos" && (
         <div className="space-y-5">
           {/* Banner de Apresentação */}
-          <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-teal-500/30">
+          <div className="light-panel bg-blue-50 text-slate-900 rounded-3xl p-5 sm:p-6 shadow-md border border-teal-500/30">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-2 max-w-2xl">
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/40 px-2.5 py-0.5 rounded-full inline-block">

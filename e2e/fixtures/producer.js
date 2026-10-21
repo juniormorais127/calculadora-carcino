@@ -35,3 +35,10 @@ export const test = base.extend({
   },
 });
 export { expect };
+
+export async function navigateProduction(page, name) {
+  const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
+  const target = nav.getByRole('button', { name, exact: true }).first();
+  if (!(await target.isVisible())) await nav.getByRole('button', { name: 'Registros', exact: true }).click();
+  await target.click();
+}

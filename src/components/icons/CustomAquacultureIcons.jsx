@@ -205,11 +205,18 @@ export function WaterQualityIcon({ className = "w-6 h-6", size, strokeWidth = 1.
 
 // A reduced shrimp mark for the compact header logo.
 export function ShrimpMarkIcon({ className = "w-6 h-6", ...props }) {
-  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
-    <path d="M5 9C7 4 13 2 20 4M5 9C8 6 12 6 15 7M3 7l3 3" />
-    <path d="M6 10c4-2 9-1 12 3 3 5-1 9-6 8l-3-1 3-3c3 1 5-1 3-3-2-2-5-2-8-1l-1-3Z" />
-    <path d="m12 10-2 3m6-1-2 3m4 1-3 1M8 14l-1 2m4-2-1 2M9 20l-3 1" />
-    <circle cx="7" cy="10.5" r=".8" fill="currentColor" stroke="none" />
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className={className} aria-hidden="true" {...props}>
+    <g fill="currentColor">
+      <path d="M18 10c7-3 17-1 26 4l-15 3-8-1Z"/>
+      <path d="M16 10c-4 1-7 3-9 6l9 5 6-5Z"/>
+      <path d="m6 18 9 5-2 7-10-2c0-4 1-7 3-10Z"/>
+      <path d="m3 30 10 2 3 6-7 5c-3-3-5-7-6-13Z"/>
+      <path d="m11 44 7-5 6 1 1 7c-5 1-10 0-14-3Z"/>
+      <path d="m27 40 5-3 4 4-5 3-4 3Z"/>
+      <path d="m14 25 7-5 6 1-8 5 5 4-8 1Z"/>
+    </g>
+    <circle cx="29" cy="13" r="1.1" fill="white"/>
+    <g fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M23 10c4-5 12-6 20-3M22 11c6-2 13-2 20 0M21 26l5 4m-7 1 4 4"/></g>
   </svg>;
 }
 

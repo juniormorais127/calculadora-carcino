@@ -372,7 +372,7 @@ export default function MercadoView({ estadoInicial = "TODOS", marcaInicial = "T
 
       <p className="text-xs text-slate-600">Contabilizamos acessos e cliques nesta área para medir o interesse nas ofertas e contatos. Um clique não confirma uma compra.</p>
       {/* Card Institucional para Empresas que querem Anunciar a Logo */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-6 shadow-md border border-emerald-500/20 space-y-4">
+      <div className="light-panel bg-blue-50 text-slate-900 rounded-3xl p-6 shadow-md border border-emerald-500/20 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2">

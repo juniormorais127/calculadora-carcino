@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/producer.js';
+import { test, expect, navigateProduction } from './fixtures/producer.js';
 
 const sizes = [
   { width: 320, height: 640 },
@@ -24,13 +24,13 @@ for (const size of sizes) {
     await page.goto('./');
     await expect(page.getByText('Carregando banco de dados local...')).toBeHidden();
     const nav = page.getByRole('navigation', { name: 'Navegação principal' }).filter({ visible: true });
-    await nav.getByRole('button', { name: 'Ajustes', exact: true }).click();
+    await navigateProduction(page, 'Ajustes');
     page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Carregar Dados de Exemplo' }).click();
-    await nav.getByRole('button', { name: 'Viveiros', exact: true }).click();
+    await navigateProduction(page, 'Viveiros');
     await expect(page.getByRole('heading', { name: 'Viveiro 01 - Engorda Principal' })).toBeVisible();
     for (const name of ['Painel', 'Viveiros', 'Biometria', 'Água', 'Cálculos', 'Sanidade & BPM', 'Onde Comprar', 'Ajustes']) {
-      await nav.getByRole('button', { name, exact: true }).click();
+      await navigateProduction(page, name);
       await expectNoOverflow(page);
       if (['Viveiros', 'Biometria', 'Água'].includes(name)) {
         const addName = { Viveiros: 'Novo Viveiro', Biometria: 'Nova Biometria', 'Água': 'Nova Medição' }[name];
@@ -58,7 +58,7 @@ for (const size of sizes) {
         await page.getByRole('button', { name: 'Novidades & Futuro' }).click();
         await expectNoOverflow(page);
         await page.getByRole('button', { name: 'Guia de Doenças' }).click();
-        const card = page.locator('button[aria-expanded]').first();
+        const card = page.locator('main button[aria-expanded]:not(nav button)').filter({ visible: true }).first();
         await card.focus();
         const before = await card.getAttribute('aria-expanded');
         await page.keyboard.press('Enter');
@@ -67,7 +67,7 @@ for (const size of sizes) {
     }
     expect(errors).toEqual([]);
     if (browserName === 'chromium' && [320, 1440].includes(size.width)) {
-      await nav.getByRole('button', { name: 'Painel', exact: true }).click();
+      await navigateProduction(page, 'Painel');
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' });
     }
